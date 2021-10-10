@@ -21,6 +21,9 @@ The mod should aim to fit into the base game without looking like a mod.
 		also adds support for a speed scale for tactical "homm-style" combat
 		settings are adjusted using the native game settings window (ugly unity mod manager go away!)
 
+	Army Disband button
+		You can't disband armies that have generals
+
 
 Acknowledgments:  
 
@@ -30,3 +33,10 @@ Acknowledgments:
 -	@newman55 for the original FastTravel mod
 -   PS: Spacehamster's [Modding Wiki](https://github.com/spacehamster/OwlcatModdingWiki/wiki/Beginner-Guide) is an excellent place to start if you want to start modding on your own.
 -   Join our [Discord](https://discord.gg/bQVwsP7cky)
+
+
+
+ASSETS:
+
+DisbandArmy Icon made by Freepik (https://www.freepik.com) from https://www.flaticon.com/
+

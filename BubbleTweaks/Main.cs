@@ -11,6 +11,11 @@ using Kingmaker.Localization;
 using Kingmaker.UI.SettingsUI;
 using Kingmaker.Settings;
 using Kingmaker.PubSubSystem;
+using Kingmaker.Globalmap;
+using UnityEngine.UI;
+using Owlcat.Runtime.UI.Controls.Button;
+using Kingmaker.UI.Common;
+using Kingmaker.Globalmap.State;
 
 namespace BubbleTweaks {
 
@@ -93,7 +98,9 @@ namespace BubbleTweaks {
         }
     }
 
+#if DEBUG
     [EnableReloading]
+#endif
     static class Main {
         private static Harmony harmony;
         public static bool Enabled;
@@ -101,7 +108,9 @@ namespace BubbleTweaks {
         [System.Diagnostics.CodeAnalysis.SuppressMessage("CodeQuality", "IDE0051:Remove unused private members", Justification = "harmony method")]
         static bool Load(UnityModManager.ModEntry modEntry) {
             harmony = new Harmony(modEntry.Info.Id);
+#if DEBUG
             modEntry.OnUnload = OnUnload;
+#endif
             modEntry.OnUpdate = OnUpdate;
             ModSettings.ModEntry = modEntry;
             ModSettings.LoadAllSettings();
@@ -109,6 +118,7 @@ namespace BubbleTweaks {
             PostPatchInitializer.Initialize();
             Enabled = true;
             SpeedTweaks.Install();
+            Crusade.Install();
 
 
             return true;
@@ -124,6 +134,7 @@ namespace BubbleTweaks {
         static bool OnUnload(UnityModManager.ModEntry modEntry) {
             harmony.UnpatchAll();
             SpeedTweaks.Uninstall();
+            Crusade.Uninstall();
 
             return true;
 
