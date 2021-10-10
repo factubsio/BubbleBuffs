@@ -3,356 +3,26 @@
     "BaseFixes": {
         "DisableAll": false,
         "Enabled": {
-            "AlternateClassProgressions": true,
-            "FeatSelections": true,
-            "FixPrebuffCLs": true,
-            "CoupDeGrace": true,
-            "FixCriticalConfirmationOn20": true,
-            "DisableNaturalArmorStacking": true,
-            "DisablePolymorphStacking": true,
-            "DisableCannyDefenseStacking": true,
-            "DisableAfterCombatDeactivationOfUnlimitedAbilities": true,
-            "FixMountedLongspearModifer": true,
-            "FixInherentSkillpoints": true,
-            "FixBackgroundModifiers": true,
-            "FixShadowSpells": true,
-            "MetamagicStacking": true,
-            "SelectiveMetamagicNonInstantaneous": true
-        }
-    },
-    "DRRework": {
-        "DisableAll": false,
-        "Enabled": {
-            "Base": true
-        }
-    },
-    "Aeon": {
-        "DisableAll": false,
-        "Enabled": {
-            "AeonBaneUses": true,
-            "AeonGreaterBane": true
-        }
-    },
-    "Azata": {
-        "DisableAll": false,
-        "Enabled": {
-            "AzataPerformanceResource": true,
-            "AzataSongToggles": true,
-            "FavorableMagic": true,
-            "ZippyMagic": true
-        }
-    },
-    "Lich": {
-        "DisableAll": false,
-        "Enabled": {
-            "DeathRush": true,
-            "SpellbookMerging": true
-        }
-    },
-    "Trickster": {
-        "DisableAll": false,
-        "Enabled": {
-            "UseMagicDevice2": true
-        }
-    },
-    "Alchemist": {
-        "DisableAll": false,
-        "Base": {
-            "DisableAll": false,
-            "Enabled": {}
-        },
-        "Archetypes": {
-            "Grenadier": {
-                "DisableAll": false,
-                "Enabled": {
-                    "BrewPotions": true,
-                    "PoisonResistance": true
-                }
-            }
-        }
-    },
-    "Arcanist": {
-        "DisableAll": false,
-        "Base": {
-            "DisableAll": false,
-            "Enabled": {
-                "PreparedSpellUI": true
-            }
-        },
-        "Archetypes": {}
-    },
-    "Barbarian": {
-        "DisableAll": false,
-        "Base": {
-            "DisableAll": false,
-            "Enabled": {}
-        },
-        "Archetypes": {}
-    },
-    "Bloodrager": {
-        "DisableAll": false,
-        "Base": {
-            "DisableAll": false,
-            "Enabled": {
-                "AbysalBulk": true,
-                "Spellbook": true
-            }
-        },
-        "Archetypes": {
-            "Primalist": {
-                "DisableAll": false,
-                "Enabled": {
-                    "FixBrokenRagePowers": true,
-                    "RagePowerFeatQualifications": true
-                }
-            },
-            "ReformedFiend": {
-                "DisableAll": false,
-                "Enabled": {
-                    "HatredAgainstEvil": true,
-                    "DamageReduction": true
-                }
-            }
-        }
-    },
-    "Cavalier": {
-        "DisableAll": false,
-        "Base": {
-            "DisableAll": false,
-            "Enabled": {
-                "CavalierMobility": true,
-                "CavalierMountSelection": true,
-                "SupremeCharge": true
-            }
-        },
-        "Archetypes": {
-            "Gendarme": {
-                "DisableAll": false,
-                "Enabled": {
-                    "TransfixingCharge": true
-                }
-            }
-        }
-    },
-    "Fighter": {
-        "DisableAll": false,
-        "Base": {
-            "DisableAll": false,
-            "Enabled": {
-                "AdvancedWeaponTraining": true,
-                "AdvancedArmorTraining": true,
-                "TwoHandedWeaponTraining": true,
-                "WeaponTrainingStacking": true
-            }
-        },
-        "Archetypes": {
-            "TwoHandedFighter": {
-                "DisableAll": false,
-                "Enabled": {
-                    "AdvancedWeaponTraining": true
-                }
-            }
-        }
-    },
-    "Magus": {
-        "DisableAll": false,
-        "Base": {
-            "DisableAll": false,
-            "Enabled": {
-                "SpellCombatAbilityVariants": true,
-                "SpellCombatDisableImmediatly": true
-            }
-        },
-        "Archetypes": {
-            "SwordSaint": {
-                "DisableAll": false,
-                "Enabled": {
-                    "PerfectCritical": true
-                }
-            }
-        }
-    },
-    "Monk": {
-        "DisableAll": false,
-        "Base": {
-            "DisableAll": false,
-            "Enabled": {}
-        },
-        "Archetypes": {
-            "ZenArcher": {
-                "DisableAll": false,
-                "Enabled": {
-                    "PerfectStrike": true
-                }
-            }
-        }
-    },
-    "Oracle": {
-        "DisableAll": false,
-        "Base": {
-            "DisableAll": false,
-            "Enabled": {
-                "NaturesWhisperMonkStacking": true
-            }
-        },
-        "Archetypes": {}
-    },
-    "Kineticist": {
-        "DisableAll": false,
-        "Base": {
-            "DisableAll": false,
-            "Enabled": {}
-        },
-        "Archetypes": {}
-    },
-    "Paladin": {
-        "DisableAll": false,
-        "Base": {
-            "DisableAll": false,
-            "Enabled": {
-                "DivineMountTemplate": true
-            }
-        },
-        "Archetypes": {}
-    },
-    "Ranger": {
-        "DisableAll": false,
-        "Base": {
-            "DisableAll": false,
-            "Enabled": {
-                "FavoredEnemy": true
-            }
-        },
-        "Archetypes": {
-            "EspionageExpert": {
-                "DisableAll": false,
-                "Enabled": {
-                    "Trapfinding": true
-                }
-            }
-        }
-    },
-    "Rogue": {
-        "DisableAll": false,
-        "Base": {
-            "DisableAll": false,
-            "Enabled": {
-                "Trapfinding": true,
-                "RogueTalentSelection": true,
-                "SlipperyMind": true
-            }
-        },
-        "Archetypes": {
-            "EldritchScoundrel": {
-                "DisableAll": false,
-                "Enabled": {
-                    "SneakAttackProgression": true,
-                    "RogueTalentProgression": true
-                }
-            }
-        }
-    },
-    "Slayer": {
-        "DisableAll": false,
-        "Base": {
-            "DisableAll": false,
-            "Enabled": {
-                "Trapfinding": true
-            }
-        },
-        "Archetypes": {}
-    },
-    "Witch": {
-        "DisableAll": false,
-        "Base": {
-            "DisableAll": false,
-            "Enabled": {
-                "DeathCurse": true,
-                "DeliciousFright": true,
-                "EvilEye": true,
-                "Hoarfrost": true,
-                "RestlessSlumber": true,
-                "Slumber": true
-            }
-        },
-        "Archetypes": {}
-    },
-    "Hellknight": {
-        "DisableAll": false,
-        "Enabled": {
-            "PentamicFaith": true
-        }
-    },
-    "Loremaster": {
-        "DisableAll": false,
-        "Enabled": {
-            "Prerequisites": true,
-            "SpellProgression": true,
-            "SpellSecrets": true,
-            "TricksterTricks": true
         }
     },
     "Spells": {
         "DisableAll": false,
         "Enabled": {
-            "BelieveInYourself": true,
-            "BestowCurseGreater": true,
-            "CrusadersEdge": true,
-            "DispelMagicGreater": true,
-            "GreaterMagicWeapon": true,
-            "MagicalVestment": true,
-            "OdeToMiraculousMagic": true,
-            "RemoveFear": true,
-            "SecondBreath": true,
-            "ShadowConjuration": true,
-            "ShadowEvocation": true,
-            "ShadowEvocationGreater": true,
-            "WrackingRay": true,
-            "FixSpellFlags": true
-        }
-    },
-    "Bloodlines": {
-        "DisableAll": false,
-        "Enabled": {
-            "BloodlineRestrictions": true
         }
     },
     "Feats": {
         "DisableAll": false,
         "Enabled": {
-            "BolsteredMetamagic": true,
-            "CraneWing": true,
-            "EmpowerMetamagic": true,
-            "Endurance": true,
-            "FencingGrace": true,
-            "IndomitableMount": true,
-            "MaximizeMetamagic": true,
-            "MountedCombat": true,
-            "PersistantMetamagic": true,
-            "ShatterDefenses": true,
-            "SlashingGrace": true,
-            "SpellFocus": true,
-            "SpiritedCharge": true,
-            "VitalStrike": true,
-            "WeaponFinesse": true
         }
     },
     "MythicAbilities": {
         "DisableAll": false,
         "Enabled": {
-            "BloodlineAscendance": true,
-            "EnduringSpells": true,
-            "FavoriteMetamagic": true,
-            "MythicCharge": true,
-            "SecondBloodline": true,
-            "SecondBloodragerBloodline": true
         }
     },
     "MythicFeats": {
         "DisableAll": false,
         "Enabled": {
-            "ExtraFeat": true,
-            "ExtraMythicAbility": true
         }
     },
     "Items": {
@@ -364,17 +34,11 @@
         "Equipment": {
             "DisableAll": false,
             "Enabled": {
-                "MagiciansRing": true,
-                "ManglingFrenzy": true,
-                "MetamagicRods": true,
-                "HolySymbolofIomedae": true
             }
         },
         "Weapons": {
             "DisableAll": false,
             "Enabled": {
-                "BladeOfTheMerciful": true,
-                "HonorableJudgement": true
             }
         }
     },
@@ -383,7 +47,6 @@
         "Buildings": {
             "DisableAll": false,
             "Enabled": {
-                "TrainingGrounds": true
             }
         }
     }

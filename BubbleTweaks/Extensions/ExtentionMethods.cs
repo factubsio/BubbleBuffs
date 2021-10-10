@@ -21,7 +21,7 @@ using static Kingmaker.Blueprints.Classes.Prerequisites.Prerequisite;
 
 namespace BubbleTweaks.Extensions {
     static class ExtentionMethods {
-        public static IEnumerable<GameAction> FlattenAllActions(this BlueprintScriptableObject blueprint) {
+          public static IEnumerable<GameAction> FlattenAllActions(this BlueprintScriptableObject blueprint) {
             List<GameAction> actions = new List<GameAction>();
             foreach (var component in blueprint.ComponentsArray) {
                 Type type = component.GetType();
@@ -397,8 +397,6 @@ namespace BubbleTweaks.Extensions {
             }
             return false;
         }
-
-        static readonly FastRef<BlueprintArchetype, Sprite> blueprintArchetype_set_Icon = Helpers.CreateFieldSetter<BlueprintArchetype, Sprite>("m_Icon");
 
         public static void FixDomainSpell(this BlueprintAbility spell, int level, string spellListId) {
             var spellList = Resources.GetBlueprint<BlueprintSpellList>(spellListId);

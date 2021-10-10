@@ -111,20 +111,25 @@ namespace BubbleTweaks.Utilities {
             // (It's common for many features to use the same localized text.
             // In that case, we reuse the old entry instead of making a new one.)
             LocalizedString localized;
+            Main.Log("x");
             if (textToLocalizedString.TryGetValue(value, out localized)) {
                 return localized;
             }
+            Main.Log("a");
             var strings = LocalizationManager.CurrentPack.Strings;
+            Main.Log("b");
             String oldValue;
             if (strings.TryGetValue(key, out oldValue) && value != oldValue) {
 #if DEBUG
                 Main.LogDebug($"Info: duplicate localized string `{key}`, different text.");
 #endif
             }
+            Main.Log("y");
             strings[key] = value;
             localized = new LocalizedString {
                 m_Key = key
             };
+            Main.Log("z");
             textToLocalizedString[value] = localized;
             return localized;
         }
