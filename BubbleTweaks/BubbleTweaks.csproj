@@ -215,7 +215,6 @@
     <Content Include="Assets\Feats\Icon_MountedManiac.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="UnityEngine.InputModule.dll" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Target Name="EnsureNuGetPackageBuildImports" AfterTargets="BeforeClean">
