@@ -1,5 +1,7 @@
 ## PLEASE DO NOT SUBMIT BUG REPORTS WHILE USING THIS MOD AS THERE ARE SIGNIFICANT CHANGES IF YOU ABSOLUTELY MUST SUBMIT A BUG REPORT PLEASE NOTIFY OWLCAT THAT IT IS IN USE
 
+# Disable FastTravel if you're using this, otherwise they will fight over trying to set the speed.
+
 This mod does not aim to introduce any changes to the game balance or mecahnics.
 
 It is purely quality of life features.
