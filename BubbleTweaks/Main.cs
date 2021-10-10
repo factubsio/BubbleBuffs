@@ -67,7 +67,9 @@ namespace BubbleTweaks {
 
             GlobalMapSpeedSlider = MakeSliderFloat("settings.game.global-map.time-scale", "Increase animation speed when on the global map", "Speeds up the animation speed of all tokens on the global map.", 1, 10, 0.1f);
             GlobalMapSpeedSlider.LinkSetting(GlobalMapSpeed);
-
+            (GlobalMapSpeed as IReadOnlySettingEntity<float>).OnValueChanged += (_) => {
+                SpeedTweaks.UpdateSpeed();
+            };
         }
 
         private static readonly BubbleSettings instance = new();

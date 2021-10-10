@@ -82,7 +82,7 @@ namespace BubbleTweaks {
             return true;
         }
 
-        private static void UpdateSpeed() {
+        public static void UpdateSpeed() {
             BlueprintGlobalMap blueprintGlobalMap = Game.Instance?.Player?.GlobalMap?.LastActivated?.Blueprint;
             if (blueprintGlobalMap == null) {
                 return;
