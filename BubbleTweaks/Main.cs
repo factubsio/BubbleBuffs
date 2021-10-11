@@ -115,11 +115,13 @@ namespace BubbleTweaks {
 #endif
             modEntry.OnUpdate = OnUpdate;
             ModSettings.ModEntry = modEntry;
+
             ModSettings.LoadAllSettings();
             harmony.PatchAll();
             PostPatchInitializer.Initialize();
             Enabled = true;
             SpeedTweaks.Install();
+
             Crusade.Install();
 
 
