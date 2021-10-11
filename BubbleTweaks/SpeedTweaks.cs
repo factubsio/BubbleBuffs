@@ -46,7 +46,6 @@ namespace BubbleTweaks {
 
                 } else {
                     if (lastGameMode != Game.Instance.CurrentMode) {
-                        Main.Log($"current game mode {Game.Instance.CurrentMode}");
                         lastGameMode = Game.Instance.CurrentMode;
                     }
                     Game.Instance.TimeController.PlayerTimeScale = 1f;

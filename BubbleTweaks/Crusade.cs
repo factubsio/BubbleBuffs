@@ -88,10 +88,13 @@ namespace BubbleTweaks {
                 buttonNew.name = "BUBBLE_JUMP_TO_SIEGE";
 
                 buttonNew.GetComponentInChildren<TextMeshProUGUI>().text = "Jump to Siege";
+                buttonNew.SetActive(true);
 
                 buttonNew.transform.localPosition -= new Vector3(0, 50, 0);
+
                 JumpToSiegeButton = buttonNew.GetComponentInChildren<OwlcatButton>();
                 JumpToSiegeButton.Interactable = AnySettlementsUnderSiege;
+
 
                 JumpToSiegeButton.m_OnSingleLeftClick = new Button.ButtonClickedEvent();
                 JumpToSiegeButton.m_OnSingleLeftClick.AddListener(() => {
