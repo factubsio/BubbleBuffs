@@ -16,6 +16,7 @@ using UnityEngine.UI;
 using Owlcat.Runtime.UI.Controls.Button;
 using Kingmaker.UI.Common;
 using Kingmaker.Globalmap.State;
+using Kingmaker.UI.ServiceWindow;
 
 namespace BubbleTweaks {
 
@@ -77,8 +78,6 @@ namespace BubbleTweaks {
     }
 
 
-
-
     [HarmonyPatch(typeof(UISettingsManager), "Initialize")]
     static class SettingsInjector {
         static bool Initialized = false;
@@ -116,13 +115,15 @@ namespace BubbleTweaks {
             modEntry.OnUpdate = OnUpdate;
             ModSettings.ModEntry = modEntry;
 
-            ModSettings.LoadAllSettings();
-            harmony.PatchAll();
-            PostPatchInitializer.Initialize();
-            Enabled = true;
-            SpeedTweaks.Install();
+            //ModSettings.LoadAllSettings();
+            //harmony.PatchAll();
+            //PostPatchInitializer.Initialize();
+            //Enabled = true;
+            //SpeedTweaks.Install();
 
-            Crusade.Install();
+            //Crusade.Install();
+
+            Buffer.Install();
 
 
             return true;
@@ -136,9 +137,11 @@ namespace BubbleTweaks {
         }
 
         static bool OnUnload(UnityModManager.ModEntry modEntry) {
-            harmony.UnpatchAll();
-            SpeedTweaks.Uninstall();
-            Crusade.Uninstall();
+//            harmony.UnpatchAll();
+//            SpeedTweaks.Uninstall();
+//            Crusade.Uninstall();
+//
+            Buffer.Uninstall();
 
             return true;
 

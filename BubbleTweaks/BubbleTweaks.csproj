@@ -142,6 +142,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Buffer.cs" />
     <Compile Include="Config\Blueprints.cs" />
     <Compile Include="Config\IDisableableGroup.cs" />
     <Compile Include="Config\IUpdatableSettings.cs" />
