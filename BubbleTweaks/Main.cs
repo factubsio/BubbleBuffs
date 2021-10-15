@@ -131,8 +131,8 @@ namespace BubbleTweaks {
 
         static void OnUpdate(UnityModManager.ModEntry modEntry, float delta) {
 
-            if (Input.GetKeyDown(KeyCode.B) && Input.GetKey(KeyCode.LeftControl)) {
-
+            if (Input.GetKeyDown(KeyCode.B) && (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift))) {
+                Buffer.CreateAndShowWindow();
             }
         }
 
