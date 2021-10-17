@@ -1,0 +1,8 @@
+{
+    "NewSettingsOffByDefault": false,
+    "Archetypes": {
+        "DisableAll": false,
+        "Enabled": {
+        }
+    }
+}

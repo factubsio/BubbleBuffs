@@ -5,9 +5,9 @@ using Kingmaker.UnitLogic.Abilities.Blueprints;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using BubbleTweaks.Extensions;
+using BubbleBuffs.Extensions;
 
-namespace BubbleTweaks.Utilities {
+namespace BubbleBuffs.Utilities {
     static class SpellTools {
         public static void AddToSpellList(this BlueprintAbility spell, BlueprintSpellList spellList, int level) {
             AddComponentIfMissing(spellList);

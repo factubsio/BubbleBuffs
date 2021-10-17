@@ -2,9 +2,9 @@
 using Kingmaker.Blueprints;
 using System;
 using System.Collections.Generic;
-using BubbleTweaks.Config;
+using BubbleBuffs.Config;
 
-namespace BubbleTweaks {
+namespace BubbleBuffs {
     static class Resources {
         public static readonly Dictionary<BlueprintGuid, SimpleBlueprint> ModBlueprints = new Dictionary<BlueprintGuid, SimpleBlueprint>();
 

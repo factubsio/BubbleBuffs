@@ -11,9 +11,9 @@ using Kingmaker.UnitLogic.Mechanics.Components;
 using Kingmaker.Utility;
 using System;
 using System.Linq;
-using BubbleTweaks.Extensions;
+using BubbleBuffs.Extensions;
 
-namespace BubbleTweaks.Utilities {
+namespace BubbleBuffs.Utilities {
     static class FeatTools {
         public static void AddAsFeat(params BlueprintFeature[] features) {
             foreach (var feature in features) {

@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace BubbleTweaks.Config {
+namespace BubbleBuffs.Config {
     public class SettingGroup {
         public bool DisableAll = false;
         public SortedDictionary<string, bool> Enabled = new SortedDictionary<string, bool>();

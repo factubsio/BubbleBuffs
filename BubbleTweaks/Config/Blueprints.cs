@@ -7,7 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 
-namespace BubbleTweaks.Config {
+namespace BubbleBuffs.Config {
     public class Blueprints : IUpdatableSettings {
         [JsonProperty]
         private bool OverrideIds = false;

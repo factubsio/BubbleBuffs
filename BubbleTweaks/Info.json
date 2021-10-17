@@ -1,13 +1,13 @@
 ﻿{
-    "AssemblyName": "BubbleTweaks.dll",
+    "AssemblyName": "BubbleBuffs.dll",
     "Author": "bubbles",
-    "DisplayName": "Bubble Tweaks",
-    "EntryMethod": "BubbleTweaks.Main.Load",
+    "DisplayName": "Bubble Buffs (internal)",
+    "EntryMethod": "BubbleBuffs.Main.Load",
     "GameVersion": "1.0.8",
     "HomePage": "https://github.com/factubsio/BubbleTweaks/releases",
-    "Id": "BubbleTweaks",
+    "Id": "BubbleBuffs",
     "ManagerVersion": "0.23.0",
     "Repository": "https://raw.githubusercontent.com/factubsio/BubbleTweaks/master/Repository.json",
     "Requirements": [],
-    "Version": "0.3.0"
+    "Version": "0.0.1"
 }

@@ -3,7 +3,7 @@ using System.IO;
 using System.Reflection;
 using static UnityModManagerNet.UnityModManager;
 
-namespace BubbleTweaks.Config {
+namespace BubbleBuffs.Config {
     static class ModSettings {
         public static ModEntry ModEntry;
         public static Fixes Fixes;
@@ -19,7 +19,7 @@ namespace BubbleTweaks.Config {
             var assembly = Assembly.GetExecutingAssembly();
             string userConfigFolder = ModEntry.Path + "UserSettings";
             Directory.CreateDirectory(userConfigFolder);
-            var resourcePath = $"BubbleTweaks.Config.{fileName}";
+            var resourcePath = $"BubbleBuffs.Config.{fileName}";
             var userPath = $"{userConfigFolder}{Path.DirectorySeparatorChar}{fileName}";
 
 

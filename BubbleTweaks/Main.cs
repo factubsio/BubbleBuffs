@@ -3,8 +3,8 @@ using JetBrains.Annotations;
 using Kingmaker;
 using Kingmaker.Blueprints.JsonSystem;
 using System;
-using BubbleTweaks.Config;
-using BubbleTweaks.Utilities;
+using BubbleBuffs.Config;
+using BubbleBuffs.Utilities;
 using UnityModManagerNet;
 using UnityEngine;
 using Kingmaker.Localization;
@@ -17,8 +17,9 @@ using Owlcat.Runtime.UI.Controls.Button;
 using Kingmaker.UI.Common;
 using Kingmaker.Globalmap.State;
 using Kingmaker.UI.ServiceWindow;
+using BubbleBuffs;
 
-namespace BubbleTweaks {
+namespace BubbleBuffs {
 
     public class BubbleSettings {
         public SettingsEntityFloat TacticalCombatSpeed = new("bubbles.settings.game.tactical.time-scale", 1.0f);
@@ -123,7 +124,7 @@ namespace BubbleTweaks {
 
             //Crusade.Install();
 
-            Buffer.Install();
+            BubbleBuffer.Install();
 
 
             return true;
@@ -131,8 +132,11 @@ namespace BubbleTweaks {
 
         static void OnUpdate(UnityModManager.ModEntry modEntry, float delta) {
 
+            if (Input.GetKeyDown(KeyCode.I) && (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift))) {
+                BubbleBuffer.InstallHandler.HandleWarning(Kingmaker.UI.WarningNotificationType.GameLoaded);
+            }
             if (Input.GetKeyDown(KeyCode.B) && (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift))) {
-                Buffer.ToggleWindow();
+                BubbleBuffer.Execute();
             }
         }
 
@@ -141,7 +145,7 @@ namespace BubbleTweaks {
 //            SpeedTweaks.Uninstall();
 //            Crusade.Uninstall();
 //
-            Buffer.Uninstall();
+            BubbleBuffer.Uninstall();
 
             return true;
 

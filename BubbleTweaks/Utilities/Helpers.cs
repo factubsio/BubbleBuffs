@@ -21,9 +21,9 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Reflection;
-using BubbleTweaks.Config;
+using BubbleBuffs.Config;
 
-namespace BubbleTweaks.Utilities {
+namespace BubbleBuffs.Utilities {
     public static class Helpers {
         public static T Create<T>(Action<T> init = null) where T : new() {
             var result = new T();

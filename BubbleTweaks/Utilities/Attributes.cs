@@ -3,7 +3,7 @@ using System;
 using System.Linq;
 using System.Reflection;
 
-namespace BubbleTweaks.Utilities {
+namespace BubbleBuffs.Utilities {
     class PostPatchInitializeAttribute : Attribute {
     }
 

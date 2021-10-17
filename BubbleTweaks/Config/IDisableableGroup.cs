@@ -1,4 +1,4 @@
-﻿namespace BubbleTweaks.Config {
+﻿namespace BubbleBuffs.Config {
     public interface IDisableableGroup {
         bool GroupIsDisabled();
     }

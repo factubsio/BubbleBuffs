@@ -1,7 +1,7 @@
 ﻿using Kingmaker.Utility;
 using System.Collections.Generic;
 
-namespace BubbleTweaks.Config {
+namespace BubbleBuffs.Config {
     public class Fixes : IUpdatableSettings {
         public bool NewSettingsOffByDefault = false;
         public SettingGroup BaseFixes = new SettingGroup();

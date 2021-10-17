@@ -15,11 +15,11 @@ using Kingmaker.Utility;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using BubbleTweaks.Utilities;
+using BubbleBuffs.Utilities;
 using UnityEngine;
 using static Kingmaker.Blueprints.Classes.Prerequisites.Prerequisite;
 
-namespace BubbleTweaks.Extensions {
+namespace BubbleBuffs.Extensions {
     static class ExtentionMethods {
           public static IEnumerable<GameAction> FlattenAllActions(this BlueprintScriptableObject blueprint) {
             List<GameAction> actions = new List<GameAction>();

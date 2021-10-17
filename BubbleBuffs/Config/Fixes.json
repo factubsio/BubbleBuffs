@@ -1,0 +1,53 @@
+{
+    "NewSettingsOffByDefault": false,
+    "BaseFixes": {
+        "DisableAll": false,
+        "Enabled": {
+        }
+    },
+    "Spells": {
+        "DisableAll": false,
+        "Enabled": {
+        }
+    },
+    "Feats": {
+        "DisableAll": false,
+        "Enabled": {
+        }
+    },
+    "MythicAbilities": {
+        "DisableAll": false,
+        "Enabled": {
+        }
+    },
+    "MythicFeats": {
+        "DisableAll": false,
+        "Enabled": {
+        }
+    },
+    "Items": {
+        "DisableAll": false,
+        "Armor": {
+            "DisableAll": false,
+            "Enabled": {}
+        },
+        "Equipment": {
+            "DisableAll": false,
+            "Enabled": {
+            }
+        },
+        "Weapons": {
+            "DisableAll": false,
+            "Enabled": {
+            }
+        }
+    },
+    "Crusade": {
+        "DisableAll": false,
+        "Buildings": {
+            "DisableAll": false,
+            "Enabled": {
+            }
+        }
+    }
+}
