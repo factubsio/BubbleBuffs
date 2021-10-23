@@ -1115,7 +1115,7 @@ namespace BubbleBuffs {
                 elements.Add(new TooltipBrickSeparator());
 
                 foreach (var r in bad) {
-                    elements.Add(new TooltipBrickIconAndName(r.buff.Spell.Icon, $"<b>{r.buff.NameMeta}</b>", TooltipBrickElementType.Small));
+                    elements.Add(new TooltipBrickIconAndName(r.buff.Spell.Icon, $"<b>{r.buff.Name}</b>", TooltipBrickElementType.Small));
                     foreach (var msg in r.messages)
                         elements.Add(new TooltipBrickText("   " + msg));
 
@@ -1576,9 +1576,6 @@ namespace BubbleBuffs {
             widgetCache.ResetStats();
             using (new BubbleProfiler("making widgets")) {
                 foreach (var buff in state.BuffList) {
-                    if (buff.Name.StartsWith("Death")) {
-                        Main.Log($"buff: {buff.NameMeta}");
-                    }
                     GameObject widget = widgetCache.Get(scrollContent);
                     var button = widget.GetComponent<OwlcatButton>();
                     button.OnHover.RemoveAllListeners();
@@ -1592,7 +1589,6 @@ namespace BubbleBuffs {
                         if (!button.IsSelected) {
                             button.SetSelected(true);
                         }
-                        Main.Log($"Selecting: {buff?.NameMeta ?? "-"}");
                         currentSelectedSpell.Value = buff;
                         previousSelection = button;
                     });

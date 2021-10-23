@@ -103,19 +103,15 @@ namespace BubbleBuffs {
         };
 
         public void Execute(BuffGroup buffGroup) {
-            Main.Log("Here");
             var lastExecuted = lastExecutedForGroup[buffGroup];
             if (lastExecuted > 0 && (Time.realtimeSinceStartup - lastExecuted) < .5f) {
                 return;
             }
-            Main.Log("Here");
             lastExecutedForGroup[buffGroup] = Time.realtimeSinceStartup;
 
             Main.Verbose($"Begin buff: {buffGroup}");
 
-            Main.Log("Here");
             State.Recalculate(false);
-            Main.Log("Here2");
 
 
             TargetWrapper[] targets = Bubble.Group.Select(u => new TargetWrapper(u)).ToArray();
@@ -130,8 +126,6 @@ namespace BubbleBuffs {
             List<CastTask> tasks = new();
 
             foreach (var buff in State.BuffList.Where(b => b.InGroup == buffGroup && b.Fulfilled > 0)) {
-
-                Main.Log($"Trying to cast {buff.NameMeta}");
 
                 try {
                     var needed = new HashSet<BlueprintBuff>(buff.BuffsApplied.Select(x => x.Buff));
