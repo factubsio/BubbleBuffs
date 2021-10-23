@@ -18,19 +18,15 @@ using Kingmaker.UI.Common;
 using Kingmaker.Globalmap.State;
 using Kingmaker.UI.ServiceWindow;
 using BubbleBuffs;
+using System.Collections.Generic;
+using Kingmaker.UI.AbilityTarget;
+using Kingmaker.UI;
+using Kingmaker.Blueprints.Root;
+using Kingmaker.Controllers.Rest;
 
 namespace BubbleBuffs {
 
     public class BubbleSettings {
-        public SettingsEntityFloat TacticalCombatSpeed = new("bubbles.settings.game.tactical.time-scale", 1.0f);
-        public SettingsEntityFloat InCombatSpeed = new("bubbles.settings.game.in-combat.time-scale", 1.0f);
-        public SettingsEntityFloat OutOfCombatSpeed = new("bubbles.settings.game.out-of-combat.time-scale", 1.0f);
-        public SettingsEntityFloat GlobalMapSpeed = new("bubbles.settings.game.global-map.time-scale", 1.0f);
-
-        public UISettingsEntitySliderFloat TacticalCombatSpeedSlider;
-        public UISettingsEntitySliderFloat InCombatSpeedSlider;
-        public UISettingsEntitySliderFloat OutOfCombatSpeedSlider;
-        public UISettingsEntitySliderFloat GlobalMapSpeedSlider;
 
         private BubbleSettings() { }
 
@@ -58,20 +54,6 @@ namespace BubbleBuffs {
         }
 
         public void Initialize() {
-            TacticalCombatSpeedSlider = MakeSliderFloat("settings.game.tactical.time-scale", "Increase tactical combat animation speed", "Speeds up the animation speed of the all characters in tactical battle mode.", 1, 10, 0.1f);
-            TacticalCombatSpeedSlider.LinkSetting(TacticalCombatSpeed);
-
-            InCombatSpeedSlider = MakeSliderFloat("settings.game.in-combat.time-scale", "Increase animation speed when in combat", "Speeds up the animation speed of the all characters when engaged in combat.", 1, 10, 0.1f);
-            InCombatSpeedSlider.LinkSetting(InCombatSpeed);
-
-            OutOfCombatSpeedSlider = MakeSliderFloat("settings.game.out-of-combat.time-scale", "Increase animation speed when not in combat", "Speeds up the animation speed of the all characters when not engaged in combat.", 1, 10, 0.1f);
-            OutOfCombatSpeedSlider.LinkSetting(OutOfCombatSpeed);
-
-            GlobalMapSpeedSlider = MakeSliderFloat("settings.game.global-map.time-scale", "Increase animation speed when on the global map", "Speeds up the animation speed of all tokens on the global map.", 1, 10, 0.1f);
-            GlobalMapSpeedSlider.LinkSetting(GlobalMapSpeed);
-            (GlobalMapSpeed as IReadOnlySettingEntity<float>).OnValueChanged += (_) => {
-                SpeedTweaks.UpdateSpeed();
-            };
         }
 
         private static readonly BubbleSettings instance = new();
@@ -91,12 +73,12 @@ namespace BubbleBuffs {
 
             BubbleSettings.Instance.Initialize();
 
-            Game.Instance.UISettingsManager.m_GameSettingsList.Add(
-                BubbleSettings.MakeSettingsGroup("bubble.speed-tweaks", "Bubble speed tweaks",
-                    BubbleSettings.Instance.GlobalMapSpeedSlider,
-                    BubbleSettings.Instance.InCombatSpeedSlider,
-                    BubbleSettings.Instance.OutOfCombatSpeedSlider,
-                    BubbleSettings.Instance.TacticalCombatSpeedSlider));
+            //Game.Instance.UISettingsManager.m_GameSettingsList.Add(
+            //    BubbleSettings.MakeSettingsGroup("bubble.speed-tweaks", "Bubble speed tweaks",
+            //        BubbleSettings.Instance.GlobalMapSpeedSlider,
+            //        BubbleSettings.Instance.InCombatSpeedSlider,
+            //        BubbleSettings.Instance.OutOfCombatSpeedSlider,
+            //        BubbleSettings.Instance.TacticalCombatSpeedSlider));
         }
     }
 
@@ -116,15 +98,19 @@ namespace BubbleBuffs {
             modEntry.OnUpdate = OnUpdate;
             ModSettings.ModEntry = modEntry;
 
+            if (UnityModManager.gameVersion.Minor == 1)
+                UIHelpers.WidgetPaths = new WidgetPaths_1_1();
+            else
+                UIHelpers.WidgetPaths = new WidgetPaths_1_0();
+            harmony.PatchAll();
+
             //ModSettings.LoadAllSettings();
-            //harmony.PatchAll();
-            //PostPatchInitializer.Initialize();
             //Enabled = true;
             //SpeedTweaks.Install();
 
             //Crusade.Install();
 
-            BubbleBuffer.Install();
+            GlobalBubbleBuffer.Install();
 
 
             return true;
@@ -132,20 +118,35 @@ namespace BubbleBuffs {
 
         static void OnUpdate(UnityModManager.ModEntry modEntry, float delta) {
 
+#if DEBUG
             if (Input.GetKeyDown(KeyCode.I) && (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift))) {
-                BubbleBuffer.InstallHandler.HandleWarning(Kingmaker.UI.WarningNotificationType.GameLoaded);
+                GlobalBubbleBuffer.Instance.TryInstallUI();
+                AbilityCache.Revalidate();
+                Main.Log("Recalcting?");
+                GlobalBubbleBuffer.Instance.SpellbookController.state.RecalculateAvailableBuffs(Bubble.Group);
+            }
+            if (Input.GetKeyDown(KeyCode.R) && (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift))) {
+                Main.Log("RESTING");
+                foreach (var unit in Bubble.Group)
+                    RestController.ApplyRest(unit);
             }
             if (Input.GetKeyDown(KeyCode.B) && (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift))) {
-                BubbleBuffer.Execute();
+                //BubbleBuffer.Execute(BuffGroup.Long);
+                Main.Log("BLOWING UP CURSOR (2)");
+                PCCursor.Instance.m_CanvasScaler.scaleFactor = 4.0f;
+                PCCursor.Instance.Text.outlineWidth = 4.0f;
+                PCCursor.Instance.Text.outlineColor = Color.black;
+                PCCursor.Instance.Text.color = Color.yellow;
             }
+#endif
         }
 
         static bool OnUnload(UnityModManager.ModEntry modEntry) {
-//            harmony.UnpatchAll();
+            harmony.UnpatchAll();
 //            SpeedTweaks.Uninstall();
 //            Crusade.Uninstall();
 //
-            BubbleBuffer.Uninstall();
+            GlobalBubbleBuffer.Uninstall();
 
             return true;
 
@@ -176,6 +177,16 @@ namespace BubbleBuffs {
         public static void Error(string message) {
             Log(message);
             PFLog.Mods.Error(message);
+        }
+
+        static HashSet<string> filtersEnabled = new() {
+        };
+
+        internal static void Verbose(string v, string filter = null) {
+#if false && DEBUG
+            if (filter == null || filtersEnabled.Contains(filter))
+                Main.Log(v);
+#endif
         }
     }
 }

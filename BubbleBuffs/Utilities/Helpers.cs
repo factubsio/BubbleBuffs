@@ -49,9 +49,14 @@ namespace BubbleBuffs.Utilities {
             init?.Invoke(result);
             return result;
         }
+        public static T CreateCopyShallow<T>(T original, Action<T> init = null) {
+            var result = (T)ObjectDeepCopier.Clone(original, true);
+            init?.Invoke(result);
+            return result;
+        }
 
         public static T CreateCopy<T>(T original, Action<T> init = null) {
-            var result = (T)ObjectDeepCopier.Clone(original);
+            var result = (T)ObjectDeepCopier.Clone(original, false);
             init?.Invoke(result);
             return result;
         }
@@ -274,10 +279,12 @@ namespace BubbleBuffs.Utilities {
                 if (type == typeof(String)) return true;
                 return (type.IsValueType & type.IsPrimitive);
             }
-            public static Object Clone(Object originalObject) {
-                return InternalCopy(originalObject, new Dictionary<Object, Object>(new ReferenceEqualityComparer()));
+            public static Object Clone(Object originalObject, bool shallow = false) {
+                return InternalCopy(originalObject, new Dictionary<Object, Object>(new ReferenceEqualityComparer()), shallow);
             }
-            private static Object InternalCopy(Object originalObject, IDictionary<Object, Object> visited) {
+
+
+            private static Object InternalCopy(Object originalObject, IDictionary<Object, Object> visited, bool shallow) {
                 if (originalObject == null) return null;
                 var typeToReflect = originalObject.GetType();
                 if (IsPrimitive(typeToReflect)) return originalObject;
@@ -285,17 +292,19 @@ namespace BubbleBuffs.Utilities {
                 if (visited.ContainsKey(originalObject)) return visited[originalObject];
                 if (typeof(Delegate).IsAssignableFrom(typeToReflect)) return null;
                 var cloneObject = CloneMethod.Invoke(originalObject, null);
-                if (typeToReflect.IsArray) {
-                    var arrayType = typeToReflect.GetElementType();
-                    if (IsPrimitive(arrayType) == false) {
-                        Array clonedArray = (Array)cloneObject;
-                        ForEach(clonedArray, (array, indices) => array.SetValue(InternalCopy(clonedArray.GetValue(indices), visited), indices));
-                    }
+                if (!shallow) {
+                    if (typeToReflect.IsArray) {
+                        var arrayType = typeToReflect.GetElementType();
+                        if (IsPrimitive(arrayType) == false) {
+                            Array clonedArray = (Array)cloneObject;
+                            ForEach(clonedArray, (array, indices) => array.SetValue(InternalCopy(clonedArray.GetValue(indices), visited, shallow), indices));
+                        }
 
+                    }
+                    visited.Add(originalObject, cloneObject);
+                    CopyFields(originalObject, visited, cloneObject, typeToReflect);
+                    RecursiveCopyBaseTypePrivateFields(originalObject, visited, cloneObject, typeToReflect);
                 }
-                visited.Add(originalObject, cloneObject);
-                CopyFields(originalObject, visited, cloneObject, typeToReflect);
-                RecursiveCopyBaseTypePrivateFields(originalObject, visited, cloneObject, typeToReflect);
                 return cloneObject;
 
                 void ForEach(Array array, Action<Array, int[]> action) {
@@ -316,7 +325,7 @@ namespace BubbleBuffs.Utilities {
                     if (filter != null && filter(fieldInfo) == false) continue;
                     if (IsPrimitive(fieldInfo.FieldType)) continue;
                     var originalFieldValue = fieldInfo.GetValue(originalObject);
-                    var clonedFieldValue = InternalCopy(originalFieldValue, visited);
+                    var clonedFieldValue = InternalCopy(originalFieldValue, visited, true);
                     fieldInfo.SetValue(cloneObject, clonedFieldValue);
                 }
             }

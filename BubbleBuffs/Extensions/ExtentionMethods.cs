@@ -18,10 +18,132 @@ using System.Linq;
 using BubbleBuffs.Utilities;
 using UnityEngine;
 using static Kingmaker.Blueprints.Classes.Prerequisites.Prerequisite;
+using Kingmaker.UnitLogic.Buffs.Blueprints;
+using Kingmaker.UnitLogic.Mechanics.Components;
+using Kingmaker.UnitLogic.Abilities;
+using Kingmaker.UnitLogic.Mechanics.Actions;
+using Kingmaker.Designers.EventConditionActionSystem.Actions;
+using Kingmaker.UnitLogic.Mechanics.Conditions;
 
 namespace BubbleBuffs.Extensions {
+    static class AbilityExtensions {
+
+        public static char Initial(this Metamagic flag) {
+            switch (flag) {
+                case Metamagic.Empower:
+                    return 'E';
+                case Metamagic.Maximize:
+                    return 'M';
+                case Metamagic.Quicken:
+                    return 'Q';
+                case Metamagic.Extend:
+                    return 'X';
+                case Metamagic.Heighten:
+                    return 'H';
+                case Metamagic.Reach:
+                    return 'R';
+                case Metamagic.CompletelyNormal:
+                    return 'N';
+                case Metamagic.Persistent:
+                    return 'P';
+                case Metamagic.Selective:
+                    return 'S';
+                case Metamagic.Bolstered:
+                    return 'B';
+                default:
+                    return '?';
+            }
+        }
+
+        public static bool IsMetamagicked(this AbilityData data) => data.MetamagicData?.NotEmpty ?? false;
+
+        public static IEnumerable<Metamagic> GetMetamagicks(this AbilityData data) {
+            foreach (Metamagic maybe in Enum.GetValues(typeof(Metamagic))) {
+                if (data.MetamagicData.Has(maybe)) {
+                    yield return maybe;
+                }
+            }
+
+        }
+    }
+
     static class ExtentionMethods {
-          public static IEnumerable<GameAction> FlattenAllActions(this BlueprintScriptableObject blueprint) {
+
+        private static void LogVerbose(int level, string message) {
+#if false && DEBUG
+            Main.Log($"{level.Indent()} {message}");
+#endif
+
+        }
+
+        public static IEnumerable<BlueprintBuff> GetBeneficialBuffs(this GameAction action, int level = 0) {
+            LogVerbose(level, $"getting beneficial buffs from {action.NameSafe()}");
+            if (action is ContextActionApplyBuff applyBuff && applyBuff.Buff.IsBeneficial(level+1)) {
+                yield return applyBuff.Buff;
+            }
+
+            else if (action is Conditional maybe) {
+                bool takeYes = true;
+                bool takeNo = true;
+                foreach (var c in maybe.ConditionsChecker.Conditions) {
+                    if (c is ContextConditionIsAlly ally) {
+                        if (ally.Not)
+                            takeYes = false;
+                        else
+                            takeNo = false;
+                    }
+                }
+
+                if (takeNo) {
+                    foreach (var b in maybe.IfFalse.Actions.SelectMany(a => a.GetBeneficialBuffs(level + 1)))
+                        yield return b;
+                }
+                if (takeYes) {
+                    foreach (var b in maybe.IfTrue.Actions.SelectMany(a => a.GetBeneficialBuffs(level + 1)))
+                        yield return b;
+                }
+            }
+        }
+
+        private static string[] indents = MakeIndents();
+
+        private static string[] MakeIndents() {
+            string[] ret = new string[100];
+            ret[0] = "";
+            for (int i = 1; i < ret.Length; i++)
+                ret[i] = ret[i - 1] + "   ";
+            return ret;
+        }
+
+        public static string Indent(this int level) {
+            return indents[Math.Min(level, indents.Length - 1)];
+        }
+
+        public static bool IsBeneficial(this BlueprintBuff buff, int level = 0) {
+            LogVerbose(level, $"checking buff {buff.Name} is beneficial?");
+
+            var contextApply = buff.GetComponent<AddFactContextActions>();
+            if (contextApply == null)
+                return true;
+
+            if (contextApply.Activated?.Actions?.Any(action => action is ContextActionSavingThrow) ?? false) {
+                return false;
+            }
+
+            return true;
+        }
+
+        public static IEnumerable<BlueprintBuff> GetBeneficialBuffs(this BlueprintAbility spell) {
+            var touchy = spell.GetComponent<AbilityEffectStickyTouch>();
+
+            if (touchy != null)
+                spell = touchy.TouchDeliveryAbility;
+
+            return spell.GetComponent<AbilityEffectRunAction>()?.Actions?.Actions.SelectMany(a => a.GetBeneficialBuffs());
+        }
+
+
+          public static IEnumerable<GameAction> FlattenAllActions(this BlueprintScriptableObject blueprint, Func<Action, bool> descend = null) {
             List<GameAction> actions = new List<GameAction>();
             foreach (var component in blueprint.ComponentsArray) {
                 Type type = component.GetType();
@@ -32,7 +154,7 @@ namespace BubbleBuffs.Extensions {
             }
             return actions;
         }
-        public static IEnumerable<GameAction> FlattenAllActions(this IEnumerable<GameAction> actions) {
+        public static IEnumerable<GameAction> FlattenAllActions(this IEnumerable<GameAction> actions, Func<Action, bool> descend = null) {
             List<GameAction> newActions = new List<GameAction>();
             foreach (var action in actions) {
                 Type type = action?.GetType();
