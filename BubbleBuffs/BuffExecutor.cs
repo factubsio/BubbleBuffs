@@ -41,8 +41,11 @@ namespace BubbleBuffs {
                     if (index >= tasks.Count)
                         break;
 
+                    var task = tasks[index];
+                    var oldResistance = task.SpellToCast.Blueprint.SpellResistance;
+                    task.SpellToCast.Blueprint.SpellResistance = false;
+
                     try {
-                        var task = tasks[index];
 
                         if (task.ShareTransmutation) {
                             var toggle = AbilityCache.CasterCache[task.Caster.UniqueId].ShareTransmutation;
@@ -66,21 +69,22 @@ namespace BubbleBuffs {
                             }
                         }
 
+
                         if (task.IsSticky) {
-                            var context = new AbilityExecutionContext(task.ModifiedSpell, task.Params, Vector3.zero);
+                            var context = new AbilityExecutionContext(task.SpellToCast, task.Params, Vector3.zero);
                             AbilityExecutionProcess.ApplyEffectImmediate(context, task.Target.Unit);
                         } else {
-                            var context = new AbilityExecutionContext(task.ActualSpell, task.Params, task.Target);
+                            var context = new AbilityExecutionContext(task.SpellToCast, task.Params, task.Target);
                             context.FxSpawners?.Clear();
                             context.DisableFx = true;
-                            task.ModifiedSpell.Cast(context);
+                            task.SpellToCast.Cast(context);
                         }
 
                         task.SlottedSpell.Spend();
                     } catch (Exception ex) {
                         Main.Error(ex, "casting spell");
                     }
-                    //task.ModifiedSpell.Blueprint.SpellResistance = oldResistance;
+                    task.SpellToCast.Blueprint.SpellResistance = oldResistance;
                 }
 
                 yield return new WaitForSeconds(0.05f);
@@ -150,7 +154,7 @@ namespace BubbleBuffs {
 
                         attemptedCasts++;
 
-                        var modifiedSpell = caster.spell;
+                        AbilityData spellToCast;
                         if (!caster.SlottedSpell.IsAvailable) {
                             if (badResult == null)
                                 badResult = tooltip.AddBad(buff);
@@ -160,22 +164,22 @@ namespace BubbleBuffs {
                         }
                         var touching = caster.spell.Blueprint.GetComponent<AbilityEffectStickyTouch>();
                         if (touching) {
-                            modifiedSpell = new AbilityData(touching.TouchDeliveryAbility, caster.who);
+                            spellToCast = new AbilityData(touching.TouchDeliveryAbility, caster.who);
+                            if (caster.spell.MetamagicData != null)
+                                spellToCast.MetamagicData = caster.spell.MetamagicData.Clone();
                         } else {
-                            modifiedSpell = new AbilityData(modifiedSpell.Blueprint, caster.who);
+                            spellToCast = caster.spell;
                         }
-                        var oldResistance = modifiedSpell.Blueprint.SpellResistance;
                         //modifiedSpell.Blueprint.SpellResistance = false;
-                        var spellParams = modifiedSpell.CalculateParams();
+                        var spellParams = spellToCast.CalculateParams();
 
                         var task = new CastTask {
-                            ActualSpell = caster.spell,
                             SlottedSpell = caster.SlottedSpell,
                             Params = spellParams,
                             Target = targets[target],
                             IsSticky = touching,
                             Caster = caster.who,
-                            ModifiedSpell = modifiedSpell,
+                            SpellToCast = spellToCast,
                             PowerfulChange = caster.PowerfulChange,
                             ShareTransmutation = caster.ShareTransmutation,
                         };
@@ -192,7 +196,6 @@ namespace BubbleBuffs {
 
                         //caster.SlottedSpell.Spend();
 
-                        //modifiedSpell.Blueprint.SpellResistance = oldResistance;
                         actuallyCast++;
                         thisBuffGood++;
                     }
@@ -220,8 +223,7 @@ namespace BubbleBuffs {
     }
 
     public class CastTask {
-        public AbilityData ModifiedSpell;
-        public AbilityData ActualSpell;
+        public AbilityData SpellToCast;
         public AbilityData SlottedSpell;
         public AbilityParams Params;
         public bool IsSticky;
