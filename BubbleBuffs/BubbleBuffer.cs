@@ -1197,8 +1197,8 @@ namespace BubbleBuffs {
             Main.Verbose("got static root");
             hudLayout = staticRoot.Find("HUDLayout/").gameObject;
             Main.Verbose("got hud layout");
-            if (hudLayout.GetComponent<SyncBubbleHud>() == null) {
-                hudLayout.AddComponent<SyncBubbleHud>();
+            if (hudLayout.ChildObject("IngameMenuView").GetComponent<SyncBubbleHud>() == null) {
+                hudLayout.ChildObject("IngameMenuView").AddComponent<SyncBubbleHud>();
                 Main.Verbose("installed hud sync");
             }
 
