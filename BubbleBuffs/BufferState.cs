@@ -40,9 +40,9 @@ namespace BubbleBuffs {
                     UnitEntityData dude = Group[characterIndex];
                     Main.Verbose($"Looking at dude: ${dude.CharacterName}", "state");
                     foreach (var book in dude.Spellbooks) {
-                        Main.Verbose($"  Looking at spellbook: {book.Blueprint.DisplayName}");
+                        Main.Verbose($"  Looking at spellbook: {book.Blueprint.DisplayName}", "state");
                         if (book.Blueprint.Spontaneous) {
-                            for (int level = 1; level <= book.LastSpellbookLevel; level++) {
+                            for (int level = 0; level <= book.LastSpellbookLevel; level++) {
                                 Main.Verbose($"    Looking at spont level {level}", "state");
                                 ReactiveProperty<int> credits = new ReactiveProperty<int>(book.GetSpellsPerDay(level));
                                 foreach (var spell in book.GetKnownSpells(level)) {
@@ -58,6 +58,11 @@ namespace BubbleBuffs {
                             foreach (var slot in book.GetAllMemorizedSpells()) {
                                 Main.Verbose($"      Adding prepared buff: {slot.Spell.Name}", "state");
                                 AddBuff(dude, book, slot.Spell, null, new ReactiveProperty<int>(1), true, int.MaxValue, characterIndex);
+                            }
+                            foreach (var spell in book.GetKnownSpells(0)) {
+                                ReactiveProperty<int> credits = new ReactiveProperty<int>(500);
+                                Main.Verbose($"      Adding cantrip: {spell.Name}", "state");
+                                AddBuff(dude, book, spell, null, credits, false, int.MaxValue, characterIndex);
                             }
                         }
                     }
@@ -82,6 +87,11 @@ namespace BubbleBuffs {
                 }
             } catch (Exception ex) {
                 Main.Error(ex, "finding abilities:");
+            }
+
+            foreach (var rejectKey in SpellsWithBeneficialBuffs.Where(kv => kv.Value.EmptyIfNull().Empty()).Select(kv => kv.Key)) {
+                var name = SpellNames[rejectKey];
+                Main.Verbose($"Rejected spell: {name}", "spell-rejection");
             }
 
             var list = new List<BubbleBuff>(BuffsByKey.Values);
@@ -191,7 +201,8 @@ namespace BubbleBuffs {
             }
         }
 
-        private static Dictionary<Guid, bool> SpellsWithBeneficialBuffs = new();
+        private static Dictionary<Guid, List<ContextActionApplyBuff>> SpellsWithBeneficialBuffs = new();
+        private static Dictionary<Guid, string> SpellNames = new();
 
         //private static Dictionary<Guid, List<ContextActionApplyBuff>> CachedBuffEffects;
 
@@ -228,35 +239,24 @@ namespace BubbleBuffs {
             if (BuffsByKey.TryGetValue(key, out var buff)) {
                 buff.AddProvider(dude, book, spell, baseSpell, credits, newCredit, clamp, charIndex);
             } else {
-                BlueprintAbility touchAbility = null;
-                var appliedEffectList = spell.Blueprint.FlattenAllActions().OfType<ContextActionApplyBuff>().ToList();
-                if (appliedEffectList.Empty()) {
-                    touchAbility = spell.Blueprint.GetComponent<AbilityEffectStickyTouch>()?.TouchDeliveryAbility;
-                    if (touchAbility != null)
-                        appliedEffectList = touchAbility.FlattenAllActions().OfType<ContextActionApplyBuff>().ToList();
+                var touchAbility = spell.Blueprint.GetComponent<AbilityEffectStickyTouch>()?.TouchDeliveryAbility;
+
+                if (!SpellsWithBeneficialBuffs.TryGetValue(spell.Blueprint.AssetGuid.m_Guid, out var appliedEffectList)) {
+                    var beneficial = spell.Blueprint.GetBeneficialBuffs();
+                    if (beneficial != null)
+                        appliedEffectList = beneficial.ToList();
+                    else
+                        appliedEffectList = new();
+
+                    SpellsWithBeneficialBuffs[spell.Blueprint.AssetGuid.m_Guid] = appliedEffectList;
+                    SpellNames[spell.Blueprint.AssetGuid.m_Guid] = spell.Name;
                 }
 
-                
 
-                //bool all = true;
-                //if (!SpellsWithBeneficialBuffs.ContainsKey(spell.Blueprint.AssetGuid.m_Guid)) {
-
-                //    if (all || spell.Name == "Heal, Mass") {
-                //        var beneficialBuffs = spell.Blueprint.GetBeneficialBuffs();
-
-                //        bool bubbleRejects = beneficialBuffs.Empty();
-                //        bool vekRejects = appliedEffectList.Empty();
-
-                //        if (bubbleRejects != vekRejects) {
-                //            Main.Log(" *** minority report");
-                //        }
-                //        Main.Log($"[{spell.Name} => Bubble rejects {bubbleRejects} vs vek rejects {vekRejects}");
-                //    }
-                //    SpellsWithBeneficialBuffs[spell.Blueprint.AssetGuid.m_Guid] = true;
-                //}
-
-                if (appliedEffectList.Empty())
+                if (appliedEffectList.Empty()) {
+                    Main.Verbose($"Rejecting {spell.Name} because it has no applied effects", "rejection");
                     return;
+                }
 
 
                 bool isShort = false;
@@ -267,9 +267,7 @@ namespace BubbleBuffs {
                     BuffsApplied = appliedEffectList
                 };
 
-                if (spell.Blueprint.GetComponent<AbilityTargetsAround>() != null || touchAbility?.GetComponent<AbilityTargetsAround>() != null) {
-                    buff.IsMass = true;
-                }
+                buff.IsMass = spell.Blueprint.IsMass();
 
                 buff.Category = category;
 

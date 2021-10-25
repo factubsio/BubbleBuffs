@@ -86,11 +86,12 @@ namespace BubbleBuffs {
                 if (Metamagics == null)
                     return "";
                 if (metaMagicRendered == null) {
-                    metaMagicRendered = "";
+                    metaMagicRendered = "[";
                     foreach (Metamagic flag in Enum.GetValues(typeof(Metamagic))) {
                         if (Spell.MetamagicData.Has(flag))
                             metaMagicRendered += flag.Initial();
                     }
+                    metaMagicRendered += "]";
                 }
                 return metaMagicRendered;
 
@@ -100,7 +101,7 @@ namespace BubbleBuffs {
 
 
         public string Name => Spell.Name;
-        public string NameMeta => $"{Spell.Name} [{MetaMagicFlags}]";
+        public string NameMeta => $"{Spell.Name} {MetaMagicFlags}";
 
         public bool UnitWants(int unit) => wanted[unit] != 0;
         public bool UnitWantsRemoved(int unit) => notWanted[unit] != 0;

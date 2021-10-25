@@ -4,11 +4,12 @@ using Owlcat.Runtime.UI.Utility;
 using System.Linq;
 using UniRx;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace BubbleBuffs {
     static class UIHelpers {
         public static WidgetPaths_1_0 WidgetPaths;
-
+        public static Transform Settings => SceneManager.GetSceneByName("UI_LoadingScreen_Scene").GetRootGameObjects().First(x => x.name.StartsWith("CommonPCView")).ChildTransform("Canvas/SettingsView");
         public static Transform StaticRoot => Game.Instance.UI.Canvas.transform;
         public static Transform ServiceWindow => StaticRoot.Find("ServiceWindowsPCView");
 

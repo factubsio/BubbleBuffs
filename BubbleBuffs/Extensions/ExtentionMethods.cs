@@ -76,12 +76,11 @@ namespace BubbleBuffs.Extensions {
 
         }
 
-        public static IEnumerable<BlueprintBuff> GetBeneficialBuffs(this GameAction action, int level = 0) {
+        public static IEnumerable<ContextActionApplyBuff> GetBeneficialBuffs(this GameAction action, int level = 0) {
             LogVerbose(level, $"getting beneficial buffs from {action.NameSafe()}");
             if (action is ContextActionApplyBuff applyBuff && applyBuff.Buff.IsBeneficial(level+1)) {
-                yield return applyBuff.Buff;
+                yield return applyBuff;
             }
-
             else if (action is Conditional maybe) {
                 bool takeYes = true;
                 bool takeNo = true;
@@ -93,7 +92,6 @@ namespace BubbleBuffs.Extensions {
                             takeNo = false;
                     }
                 }
-
                 if (takeNo) {
                     foreach (var b in maybe.IfFalse.Actions.SelectMany(a => a.GetBeneficialBuffs(level + 1)))
                         yield return b;
@@ -102,6 +100,9 @@ namespace BubbleBuffs.Extensions {
                     foreach (var b in maybe.IfTrue.Actions.SelectMany(a => a.GetBeneficialBuffs(level + 1)))
                         yield return b;
                 }
+            } else if (action is ContextActionCastSpell spellCast) {
+                foreach (var b in spellCast.Spell.GetBeneficialBuffs())
+                    yield return b;
             }
         }
 
@@ -133,15 +134,32 @@ namespace BubbleBuffs.Extensions {
             return true;
         }
 
-        public static IEnumerable<BlueprintBuff> GetBeneficialBuffs(this BlueprintAbility spell) {
-            var touchy = spell.GetComponent<AbilityEffectStickyTouch>();
-
-            if (touchy != null)
-                spell = touchy.TouchDeliveryAbility;
-
-            return spell.GetComponent<AbilityEffectRunAction>()?.Actions?.Actions.SelectMany(a => a.GetBeneficialBuffs());
+        public static BlueprintAbility DeTouchify(this BlueprintAbility spell) {
+            if (spell.TryGetComponent<AbilityEffectStickyTouch>(out var touch))
+                return touch.TouchDeliveryAbility;
+            else
+                return spell;
         }
 
+        public static IEnumerable<ContextActionApplyBuff> GetBeneficialBuffs(this BlueprintAbility spell) {
+            spell = spell.DeTouchify();
+            if (spell.TryGetComponent<AbilityEffectRunAction>(out var runAction)) {
+                return runAction.Actions.Actions.SelectMany(a => a.GetBeneficialBuffs());
+            } else {
+                //Main.Log($"{spell.Name} has no AbilityEffectRunAction");
+                return null;
+            }
+        }
+
+
+        public static bool IsMass(this BlueprintAbility spell) {
+            return spell.DeTouchify().GetComponent<AbilityTargetsAround>() != null;
+        }
+
+        public static bool TryGetComponent<T>(this BlueprintScriptableObject bp, out T component) {
+            component = bp.GetComponent<T>();
+            return component != null;
+        }
 
           public static IEnumerable<GameAction> FlattenAllActions(this BlueprintScriptableObject blueprint, Func<Action, bool> descend = null) {
             List<GameAction> actions = new List<GameAction>();
@@ -154,6 +172,9 @@ namespace BubbleBuffs.Extensions {
             }
             return actions;
         }
+
+
+
         public static IEnumerable<GameAction> FlattenAllActions(this IEnumerable<GameAction> actions, Func<Action, bool> descend = null) {
             List<GameAction> newActions = new List<GameAction>();
             foreach (var action in actions) {

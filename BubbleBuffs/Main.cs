@@ -23,6 +23,8 @@ using Kingmaker.UI.AbilityTarget;
 using Kingmaker.UI;
 using Kingmaker.Blueprints.Root;
 using Kingmaker.Controllers.Rest;
+using System.Reflection;
+using System.IO;
 
 namespace BubbleBuffs {
 
@@ -61,26 +63,26 @@ namespace BubbleBuffs {
     }
 
 
-    [HarmonyPatch(typeof(UISettingsManager), "Initialize")]
-    static class SettingsInjector {
-        static bool Initialized = false;
+    //[HarmonyPatch(typeof(UISettingsManager), "Initialize")]
+    //static class SettingsInjector {
+    //    static bool Initialized = false;
 
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("CodeQuality", "IDE0051:Remove unused private members", Justification = "harmony patch")]
-        static void Postfix() {
-            if (Initialized) return;
-            Initialized = true;
-            Main.LogHeader("Injecting settings");
+    //    [System.Diagnostics.CodeAnalysis.SuppressMessage("CodeQuality", "IDE0051:Remove unused private members", Justification = "harmony patch")]
+    //    static void Postfix() {
+    //        if (Initialized) return;
+    //        Initialized = true;
+    //        Main.LogHeader("Injecting settings");
 
-            BubbleSettings.Instance.Initialize();
+    //        BubbleSettings.Instance.Initialize();
 
-            //Game.Instance.UISettingsManager.m_GameSettingsList.Add(
-            //    BubbleSettings.MakeSettingsGroup("bubble.speed-tweaks", "Bubble speed tweaks",
-            //        BubbleSettings.Instance.GlobalMapSpeedSlider,
-            //        BubbleSettings.Instance.InCombatSpeedSlider,
-            //        BubbleSettings.Instance.OutOfCombatSpeedSlider,
-            //        BubbleSettings.Instance.TacticalCombatSpeedSlider));
-        }
-    }
+    //        //Game.Instance.UISettingsManager.m_GameSettingsList.Add(
+    //        //    BubbleSettings.MakeSettingsGroup("bubble.speed-tweaks", "Bubble speed tweaks",
+    //        //        BubbleSettings.Instance.GlobalMapSpeedSlider,
+    //        //        BubbleSettings.Instance.InCombatSpeedSlider,
+    //        //        BubbleSettings.Instance.OutOfCombatSpeedSlider,
+    //        //        BubbleSettings.Instance.TacticalCombatSpeedSlider));
+    //    }
+    //}
 
 #if DEBUG
     [EnableReloading]
@@ -97,6 +99,8 @@ namespace BubbleBuffs {
 #endif
             modEntry.OnUpdate = OnUpdate;
             ModSettings.ModEntry = modEntry;
+            //bubbleLog = File.CreateText($"{modEntry.Path}/log.txt");
+            Main.Log("LOADING");
 
             if (UnityModManager.gameVersion.Minor == 1)
                 UIHelpers.WidgetPaths = new WidgetPaths_1_1();
@@ -131,15 +135,13 @@ namespace BubbleBuffs {
                     RestController.ApplyRest(unit);
             }
             if (Input.GetKeyDown(KeyCode.B) && (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift))) {
-                //BubbleBuffer.Execute(BuffGroup.Long);
-                Main.Log("BLOWING UP CURSOR (2)");
-                PCCursor.Instance.m_CanvasScaler.scaleFactor = 4.0f;
-                PCCursor.Instance.Text.outlineWidth = 4.0f;
-                PCCursor.Instance.Text.outlineColor = Color.black;
-                PCCursor.Instance.Text.color = Color.yellow;
+
+                modEntry.GetType().GetMethod("Reload", BindingFlags.NonPublic | BindingFlags.Instance).Invoke(modEntry, new object[] {});
             }
 #endif
         }
+
+        static TextWriter bubbleLog;
 
         static bool OnUnload(UnityModManager.ModEntry modEntry) {
             harmony.UnpatchAll();
@@ -148,6 +150,11 @@ namespace BubbleBuffs {
 //
             GlobalBubbleBuffer.Uninstall();
 
+            //if (bubbleLog != null) {
+            //    Main.Log("Closing log...");
+            //    bubbleLog.Close();
+            //    bubbleLog = null;
+            //}
             return true;
 
         }
@@ -157,6 +164,11 @@ namespace BubbleBuffs {
         }
 
         public static void Log(string msg) {
+            //if (bubbleLog != null) {
+            //    bubbleLog.WriteLine(msg);
+            //    bubbleLog.Flush();
+            //}
+
             ModSettings.ModEntry.Logger.Log(msg);
         }
         [System.Diagnostics.Conditional("DEBUG")]
@@ -180,11 +192,16 @@ namespace BubbleBuffs {
         }
 
         static HashSet<string> filtersEnabled = new() {
+            "state",
+            //"minority",
+            //"spell-rejection"
         };
 
+        static bool suppressUnfiltered = true;
+
         internal static void Verbose(string v, string filter = null) {
-#if false && DEBUG
-            if (filter == null || filtersEnabled.Contains(filter))
+#if true && DEBUG
+            if ((filter == null && !suppressUnfiltered) || filtersEnabled.Contains(filter))
                 Main.Log(v);
 #endif
         }

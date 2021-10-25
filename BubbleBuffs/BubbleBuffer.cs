@@ -34,6 +34,8 @@ using UniRx;
 using UnityEngine;
 using UnityEngine.UI;
 using BubbleBuffs.Extensions;
+using UnityEngine.SceneManagement;
+using Kingmaker.UI.SettingsUI;
 
 namespace BubbleBuffs {
 
@@ -293,7 +295,8 @@ namespace BubbleBuffs {
             return handle;
         }
 
-        public ReactiveProperty<bool> ShowOnlyRequested = new ReactiveProperty<bool>(false);
+        public ReactiveProperty<bool> ShowNotRequested = new ReactiveProperty<bool>(true);
+        public ReactiveProperty<bool> ShowRequested = new ReactiveProperty<bool>(true);
         public ReactiveProperty<bool> ShowShort = new ReactiveProperty<bool>(false);
         public ReactiveProperty<bool> ShowHidden = new ReactiveProperty<bool>(false);
         public ReactiveProperty<string> NameFilter = new ReactiveProperty<string>("");
@@ -354,7 +357,10 @@ namespace BubbleBuffs {
             ShowHidden.Subscribe<bool>(show => {
                 RefreshFiltering();
             });
-            ShowOnlyRequested.Subscribe<bool>(show => {
+            ShowNotRequested.Subscribe<bool>(show => {
+                RefreshFiltering();
+            });
+            ShowRequested.Subscribe<bool>(show => {
                 RefreshFiltering();
             });
             ShowShort.Subscribe<bool>(show => {
@@ -473,6 +479,7 @@ namespace BubbleBuffs {
         }
 
         private void MakeFilters(GameObject togglePrefab, Transform content) {
+            Main.Log("MAKING FILTERS???");
 
             var filterRect = MakeVerticalRect("filters", content);
             //filterToggles.AddComponent<Image>().color = Color.green;
@@ -482,13 +489,18 @@ namespace BubbleBuffs {
             search = new SearchBar(filterRect, "...", false, "bubble-search-buff");
             GameObject showHidden = MakeToggle(togglePrefab, filterRect, 0.8f, .5f, "Show Hidden", "bubble-toggle-show-hidden");
             GameObject showShort = MakeToggle(togglePrefab, filterRect, .8f, .5f, "Show Short", "bubble-toggle-show-short");
-            GameObject showOnlyRequested = MakeToggle(togglePrefab, filterRect, .8f, .5f, "Only Requested", "bubble-toggle-show-requested");
+            GameObject showRequested = MakeToggle(togglePrefab, filterRect, .8f, .5f, "Show Requested", "bubble-toggle-show-requested");
+            GameObject showNotRequested = MakeToggle(togglePrefab, filterRect, .8f, .5f, "Show NOT Requested", "bubble-toggle-show-not-requested");
 
             search.InputField.onValueChanged.AddListener(val => {
                 NameFilter.Value = val;
             });
 
-            CurrentCategory = new ButtonGroup<Category>(filterRect);
+            var categoryRect = MakeVerticalRect("categories", content);
+            categoryRect.anchorMin = new Vector2(1 - filterRect.anchorMax.x, 0.1f);
+            categoryRect.anchorMax = new Vector2(1 - filterRect.anchorMin.x, 0.455f);
+
+            CurrentCategory = new ButtonGroup<Category>(categoryRect);
             CurrentCategory.Selected.Subscribe<Category>(_ => RefreshFiltering());
 
             CurrentCategory.Add(Category.Spell, "Spells");
@@ -496,9 +508,11 @@ namespace BubbleBuffs {
             CurrentCategory.Add(Category.Item, "Items");
             CurrentCategory.Add(Category.Consumable, "Consumables");
 
+
             ShowShort.BindToView(showShort);
             ShowHidden.BindToView(showHidden);
-            ShowOnlyRequested.BindToView(showOnlyRequested);
+            ShowRequested.BindToView(showRequested);
+            ShowNotRequested.BindToView(showNotRequested);
 
             CurrentCategory.Selected.Value = Category.Spell;
         }
@@ -517,8 +531,8 @@ namespace BubbleBuffs {
                 if (buff.Category != CurrentCategory.Value)
                     show = false;
 
-
-                if (ShowOnlyRequested.Value && buff.Requested == 0)
+                bool showForRequested = ShowRequested.Value && buff.Requested > 0 || ShowNotRequested.Value && buff.Requested == 0;
+                if (!showForRequested)
                     show = false;
 
                 if (NameFilter.Value.Length > 0) {
@@ -783,7 +797,10 @@ namespace BubbleBuffs {
                 if (SelectedCaster.Value >= 0 && popout.activeSelf) {
                     var who = buff.CasterQueue[SelectedCaster.value];
                     int actualCap = who.CustomCap < 0 ? who.MaxCap : who.CustomCap;
-                    capValueText.text = $"{actualCap}/{who.MaxCap}";
+                    if (who.MaxCap < 100)
+                        capValueText.text = $"{actualCap}/{who.MaxCap}";
+                    else
+                        capValueText.text = $"at will";
 
                     blacklistToggle.isOn = who.Banned;
                     shareTransmutationToggle.isOn = who.ShareTransmutation;
@@ -1020,7 +1037,7 @@ namespace BubbleBuffs {
     }
 
 
-    [HarmonyPatch(typeof(UnitBuffPartPCView), "DrawBuffs")]
+    //[HarmonyPatch(typeof(UnitBuffPartPCView), "DrawBuffs")]
     static class UnitBuffPartView {
 
         private static bool suppress;
@@ -1147,11 +1164,15 @@ namespace BubbleBuffs {
         private GameObject bubbleHud => GlobalBubbleBuffer.Instance.bubbleHud;
 
         private void OnEnable() {
-            bubbleHud?.SetActive(true);
+            if (bubbleHud != null && !bubbleHud.activeSelf)
+                bubbleHud.SetActive(true);
         }
         private void OnDisable() {
+            if (bubbleHud != null && bubbleHud.activeSelf)
             bubbleHud?.SetActive(false);
         }
+
+        public void Destroy() { }
 
     }
 
@@ -1197,10 +1218,6 @@ namespace BubbleBuffs {
             Main.Verbose("got static root");
             hudLayout = staticRoot.Find("HUDLayout/").gameObject;
             Main.Verbose("got hud layout");
-            if (hudLayout.ChildObject("IngameMenuView").GetComponent<SyncBubbleHud>() == null) {
-                hudLayout.ChildObject("IngameMenuView").AddComponent<SyncBubbleHud>();
-                Main.Verbose("installed hud sync");
-            }
 
             Main.Verbose("Removing old bubble root");
             var oldBubble = hudLayout.transform.parent.Find("BUBBLEMODS_ROOT");
@@ -1273,6 +1290,14 @@ namespace BubbleBuffs {
             AddButton("Buff Important!", "Try to cast spells set in the buff window (Important)", applyBuffsImportantSprites, () => GlobalBubbleBuffer.Execute(BuffGroup.Important));
             AddButton("Buff Short!", "Try to cast spells set in the buff window (Short)", applyBuffsShortSprites, () => GlobalBubbleBuffer.Execute(BuffGroup.Short));
 
+            Main.Verbose("remove old bubble?");
+#if debug
+            RemoveOldController<SyncBubbleHud>(hudLayout.ChildObject("IngameMenuView"));
+#endif
+            if (hudLayout.ChildObject("IngameMenuView").GetComponent<SyncBubbleHud>() == null) {
+                hudLayout.ChildObject("IngameMenuView").AddComponent<SyncBubbleHud>();
+                Main.Verbose("installed hud sync");
+            }
 
             Main.Verbose("Finished early ui setup");
         }
@@ -1282,11 +1307,13 @@ namespace BubbleBuffs {
             List<Component> toDelete = new();
 
             foreach (var component in on.GetComponents<Component>()) {
+                Main.Verbose($"checking: {component.name}", null);
                 if (component.GetType().FullName == typeof(T).FullName && component.GetType() != typeof(T)) {
                     var method = component.GetType().GetMethod("Destroy", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public);
                     method.Invoke(component, new object[] { });
                     toDelete.Add(component);
                 }
+                Main.Verbose($"checked: {component.name}", null);
             }
 
             int count = toDelete.Count;
