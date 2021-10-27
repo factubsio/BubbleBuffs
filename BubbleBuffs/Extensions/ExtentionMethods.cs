@@ -24,6 +24,10 @@ using Kingmaker.UnitLogic.Abilities;
 using Kingmaker.UnitLogic.Mechanics.Actions;
 using Kingmaker.Designers.EventConditionActionSystem.Actions;
 using Kingmaker.UnitLogic.Mechanics.Conditions;
+using Kingmaker.UnitLogic.Buffs;
+using Kingmaker.UnitLogic.Mechanics;
+using Kingmaker.EntitySystem;
+using Kingmaker.UnitLogic.Abilities.Components.AreaEffects;
 
 namespace BubbleBuffs.Extensions {
     static class AbilityExtensions {
@@ -65,6 +69,17 @@ namespace BubbleBuffs.Extensions {
             }
 
         }
+
+        public static bool IsLong(this ContextActionApplyBuff action) {
+            return action.Permanent || (action.UseDurationSeconds && action.DurationSeconds >= 60) || action.DurationValue.Rate != DurationRate.Rounds;
+        }
+        public static bool IsLong(this ContextActionEnchantWornItem action) {
+            return action.Permanent || action.DurationValue.Rate != DurationRate.Rounds;
+        }
+
+        public static Guid BGuid(this EntityFact fact) {
+            return fact.Blueprint.AssetGuid.m_Guid;
+        }
     }
 
     static class ExtentionMethods {
@@ -76,33 +91,39 @@ namespace BubbleBuffs.Extensions {
 
         }
 
-        public static IEnumerable<ContextActionApplyBuff> GetBeneficialBuffs(this GameAction action, int level = 0) {
-            LogVerbose(level, $"getting beneficial buffs from {action.NameSafe()}");
-            if (action is ContextActionApplyBuff applyBuff && applyBuff.Buff.IsBeneficial(level+1)) {
-                yield return applyBuff;
-            }
-            else if (action is Conditional maybe) {
-                bool takeYes = true;
-                bool takeNo = true;
-                foreach (var c in maybe.ConditionsChecker.Conditions) {
-                    if (c is ContextConditionIsAlly ally) {
-                        if (ally.Not)
-                            takeYes = false;
-                        else
-                            takeNo = false;
+        public static IEnumerable<IBeneficialEffect> GetBeneficialBuffs(this GameAction action, int level = 0) {
+            if (action != null) {
+                if (action is ContextActionApplyBuff applyBuff && applyBuff.Buff.IsBeneficial(level + 1))
+                    yield return new BuffEffect(applyBuff);
+                else if (action is ContextActionEnchantWornItem enchantItem)
+                    yield return new WornItemEnchantmentEffect(enchantItem);
+                else if (action is ContextActionSpawnAreaEffect spawnArea) {
+                    if (spawnArea.AreaEffect.TryGetComponent<AbilityAreaEffectBuff>(out var areaBuff) && areaBuff.Buff.IsBeneficial(level + 1)) {
+                        yield return new AreaBuffEffect(areaBuff, spawnArea.DurationValue.Rate != DurationRate.Rounds);
                     }
-                }
-                if (takeNo) {
-                    foreach (var b in maybe.IfFalse.Actions.SelectMany(a => a.GetBeneficialBuffs(level + 1)))
+                } else if (action is Conditional maybe) {
+                    bool takeYes = true;
+                    bool takeNo = true;
+                    foreach (var c in maybe.ConditionsChecker.Conditions) {
+                        if (c is ContextConditionIsAlly ally) {
+                            if (ally.Not)
+                                takeYes = false;
+                            else
+                                takeNo = false;
+                        }
+                    }
+                    if (takeNo) {
+                        foreach (var b in maybe.IfFalse.Actions.SelectMany(a => a.GetBeneficialBuffs(level + 1)))
+                            yield return b;
+                    }
+                    if (takeYes) {
+                        foreach (var b in maybe.IfTrue.Actions.SelectMany(a => a.GetBeneficialBuffs(level + 1)))
+                            yield return b;
+                    }
+                } else if (action is ContextActionCastSpell spellCast) {
+                    foreach (var b in spellCast.Spell.GetBeneficialBuffs(level + 1))
                         yield return b;
                 }
-                if (takeYes) {
-                    foreach (var b in maybe.IfTrue.Actions.SelectMany(a => a.GetBeneficialBuffs(level + 1)))
-                        yield return b;
-                }
-            } else if (action is ContextActionCastSpell spellCast) {
-                foreach (var b in spellCast.Spell.GetBeneficialBuffs())
-                    yield return b;
             }
         }
 
@@ -121,8 +142,6 @@ namespace BubbleBuffs.Extensions {
         }
 
         public static bool IsBeneficial(this BlueprintBuff buff, int level = 0) {
-            LogVerbose(level, $"checking buff {buff.Name} is beneficial?");
-
             var contextApply = buff.GetComponent<AddFactContextActions>();
             if (contextApply == null)
                 return true;
@@ -141,20 +160,40 @@ namespace BubbleBuffs.Extensions {
                 return spell;
         }
 
-        public static IEnumerable<ContextActionApplyBuff> GetBeneficialBuffs(this BlueprintAbility spell) {
+        public static IEnumerable<IBeneficialEffect> GetBeneficialBuffs(this BlueprintAbility spell, int level = 0) {
+            LogVerbose(level, $"getting buffs for spell: {spell.Name}");
             spell = spell.DeTouchify();
+            LogVerbose(level, $"detouchified-to: {spell.Name}");
             if (spell.TryGetComponent<AbilityEffectRunAction>(out var runAction)) {
-                return runAction.Actions.Actions.SelectMany(a => a.GetBeneficialBuffs());
+                return runAction.Actions.Actions.SelectMany(a => a.GetBeneficialBuffs(level + 1));
             } else {
-                //Main.Log($"{spell.Name} has no AbilityEffectRunAction");
-                return null;
+                return new IBeneficialEffect[] { };
             }
         }
 
 
         public static bool IsMass(this BlueprintAbility spell) {
-            return spell.DeTouchify().GetComponent<AbilityTargetsAround>() != null;
+            spell = spell.DeTouchify();
+            if (spell.HasComponent<AbilityTargetsAround>())
+                return true;
+
+            if (spell.TryGetComponent<AbilityEffectRunAction>(out var run)) {
+                if (run.Actions.Actions.Any(a => a != null && a is ContextActionSpawnAreaEffect))
+                    return true;
+
+            }
+
+            return false;
+
         }
+
+        public static bool HasComponent<T>(this BlueprintScriptableObject bp) => bp.GetComponent<T>() != null;
+        public static bool HasComponents<T1, T2>(this BlueprintScriptableObject bp) => bp.HasComponent<T1>() && bp.HasComponent<T2>();
+        public static bool HasComponents<T1, T2, T3>(this BlueprintScriptableObject bp) => bp.HasComponent<T1>() && bp.HasComponent<T2>() && bp.HasComponent<T3>();
+        public static bool HasComponents<T1, T2, T3, T4>(this BlueprintScriptableObject bp) => bp.HasComponent<T1>() && bp.HasComponent<T2>() && bp.HasComponent<T3>() && bp.HasComponent<T4>();
+        public static bool HasAnyComponents<T1, T2>(this BlueprintScriptableObject bp) => bp.HasComponent<T1>() || bp.HasComponent<T2>();
+        public static bool HasAnyComponents<T1, T2, T3>(this BlueprintScriptableObject bp) => bp.HasComponent<T1>() || bp.HasComponent<T2>() || bp.HasComponent<T3>();
+        public static bool HasAnyComponents<T1, T2, T3, T4>(this BlueprintScriptableObject bp) => bp.HasComponent<T1>() || bp.HasComponent<T2>() || bp.HasComponent<T3>() || bp.HasComponent<T4>();
 
         public static bool TryGetComponent<T>(this BlueprintScriptableObject bp, out T component) {
             component = bp.GetComponent<T>();

@@ -20,6 +20,7 @@ using Kingmaker.UnitLogic.Mechanics.Components;
 using Kingmaker.UnitLogic.Abilities.Blueprints;
 
 namespace BubbleBuffs {
+
     public class BufferState {
         private readonly Dictionary<BuffKey, BubbleBuff> BuffsByKey = new();
         //public List<Buff> buffList = new();
@@ -89,10 +90,10 @@ namespace BubbleBuffs {
                 Main.Error(ex, "finding abilities:");
             }
 
-            foreach (var rejectKey in SpellsWithBeneficialBuffs.Where(kv => kv.Value.EmptyIfNull().Empty()).Select(kv => kv.Key)) {
-                var name = SpellNames[rejectKey];
-                Main.Verbose($"Rejected spell: {name}", "spell-rejection");
-            }
+            //foreach (var rejectKey in SpellsWithBeneficialBuffs.Where(kv => kv.Value.EmptyIfNull().Empty()).Select(kv => kv.Key)) {
+            //    var name = SpellNames[rejectKey];
+            //    Main.Verbose($"Rejected spell: {name}", "spell-rejection");
+            //}
 
             var list = new List<BubbleBuff>(BuffsByKey.Values);
             //list.Sort((a, b) => {
@@ -201,7 +202,7 @@ namespace BubbleBuffs {
             }
         }
 
-        private static Dictionary<Guid, List<ContextActionApplyBuff>> SpellsWithBeneficialBuffs = new();
+        private static Dictionary<Guid, AbilityCombinedEffects> SpellsWithBeneficialBuffs = new();
         private static Dictionary<Guid, string> SpellNames = new();
 
         //private static Dictionary<Guid, List<ContextActionApplyBuff>> CachedBuffEffects;
@@ -241,37 +242,28 @@ namespace BubbleBuffs {
             } else {
                 var touchAbility = spell.Blueprint.GetComponent<AbilityEffectStickyTouch>()?.TouchDeliveryAbility;
 
-                if (!SpellsWithBeneficialBuffs.TryGetValue(spell.Blueprint.AssetGuid.m_Guid, out var appliedEffectList)) {
+                if (!SpellsWithBeneficialBuffs.TryGetValue(spell.Blueprint.AssetGuid.m_Guid, out var abilityEffect)) {
                     var beneficial = spell.Blueprint.GetBeneficialBuffs();
-                    if (beneficial != null)
-                        appliedEffectList = beneficial.ToList();
-                    else
-                        appliedEffectList = new();
+                    abilityEffect = new AbilityCombinedEffects(beneficial);
 
-                    SpellsWithBeneficialBuffs[spell.Blueprint.AssetGuid.m_Guid] = appliedEffectList;
+                    SpellsWithBeneficialBuffs[spell.Blueprint.AssetGuid.m_Guid] = abilityEffect;
                     SpellNames[spell.Blueprint.AssetGuid.m_Guid] = spell.Name;
                 }
 
-
-                if (appliedEffectList.Empty()) {
+                if (abilityEffect.Empty) {
                     Main.Verbose($"Rejecting {spell.Name} because it has no applied effects", "rejection");
                     return;
                 }
 
-
-                bool isShort = false;
-                isShort = !appliedEffectList.Any(buff => buff.Permanent || (buff.UseDurationSeconds && buff.DurationSeconds >= 60) || buff.DurationValue.Rate != DurationRate.Rounds);
-
-
                 buff = new BubbleBuff(spell) {
-                    BuffsApplied = appliedEffectList
+                    BuffsApplied = abilityEffect
                 };
 
                 buff.IsMass = spell.Blueprint.IsMass();
 
                 buff.Category = category;
 
-                buff.SetHidden(HideReason.Short, isShort);
+                buff.SetHidden(HideReason.Short, !abilityEffect.IsLong);
 
                 if (dude != null) {
                     buff.AddProvider(dude, book, spell, baseSpell, credits, newCredit, clamp, charIndex);

@@ -141,8 +141,6 @@ namespace BubbleBuffs {
 #endif
         }
 
-        static TextWriter bubbleLog;
-
         static bool OnUnload(UnityModManager.ModEntry modEntry) {
             harmony.UnpatchAll();
 //            SpeedTweaks.Uninstall();
@@ -192,9 +190,10 @@ namespace BubbleBuffs {
         }
 
         static HashSet<string> filtersEnabled = new() {
-            "state",
+            //"state",
             //"minority",
-            //"spell-rejection"
+            //"spell-rejection",
+            //"rejection",
         };
 
         static bool suppressUnfiltered = true;

@@ -53,7 +53,7 @@ namespace BubbleBuffs {
 
         public bool Hidden { get { return HiddenBecause != 0; } }
 
-        public List<ContextActionApplyBuff> BuffsApplied;
+        public AbilityCombinedEffects BuffsApplied;
 
         public int Requested {
             get => wanted.Count(b => b != 0);

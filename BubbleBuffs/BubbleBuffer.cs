@@ -1160,7 +1160,6 @@ namespace BubbleBuffs {
     }
 
     class SyncBubbleHud : MonoBehaviour {
-
         private GameObject bubbleHud => GlobalBubbleBuffer.Instance.bubbleHud;
 
         private void OnEnable() {

@@ -127,26 +127,20 @@ namespace BubbleBuffs {
             var tooltip = new TooltipTemplateBuffer();
 
 
+            UnitBuffData[] unitBuffs = Bubble.Group.Select(u => new UnitBuffData(u)).ToArray();
+
             List<CastTask> tasks = new();
 
             foreach (var buff in State.BuffList.Where(b => b.InGroup == buffGroup && b.Fulfilled > 0)) {
 
                 try {
-                    var needed = new HashSet<BlueprintBuff>(buff.BuffsApplied.Select(x => x.Buff));
                     int thisBuffGood = 0;
                     int thisBuffBad = 0;
                     int thisBuffSkip = 0;
                     TooltipTemplateBuffer.BuffResult badResult = null;
 
                     foreach (var (target, caster) in buff.ActualCastQueue) {
-                        bool needsCast = true;
-                        foreach (var effect in Bubble.Group[target].Buffs) {
-                            if (needed.Contains(effect.Blueprint)) {
-                                needsCast = false;
-                                break;
-                            }
-                        }
-                        if (!needsCast) {
+                        if (buff.BuffsApplied.IsPresent(unitBuffs[target])) {
                             thisBuffSkip++;
                             skippedCasts++;
                             continue;

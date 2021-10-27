@@ -159,6 +159,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="IBeneficialEffect.cs" />
     <Compile Include="BubbleBuff.cs" />
     <Compile Include="BubbleBuffer.cs" />
     <Compile Include="BufferState.cs" />
