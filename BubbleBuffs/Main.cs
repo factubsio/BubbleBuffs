@@ -124,6 +124,7 @@ namespace BubbleBuffs {
 
 #if DEBUG
             if (Input.GetKeyDown(KeyCode.I) && (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift))) {
+                Main.Log("installing ui...");
                 GlobalBubbleBuffer.Instance.TryInstallUI();
                 AbilityCache.Revalidate();
                 Main.Log("Recalcting?");
@@ -192,11 +193,10 @@ namespace BubbleBuffs {
         static HashSet<string> filtersEnabled = new() {
             //"state",
             //"minority",
-            //"spell-rejection",
-            //"rejection",
+            "rejection",
         };
 
-        static bool suppressUnfiltered = true;
+        static bool suppressUnfiltered = false;
 
         internal static void Verbose(string v, string filter = null) {
 #if true && DEBUG

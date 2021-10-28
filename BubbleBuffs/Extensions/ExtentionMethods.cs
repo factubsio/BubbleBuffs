@@ -85,7 +85,7 @@ namespace BubbleBuffs.Extensions {
     static class ExtentionMethods {
 
         private static void LogVerbose(int level, string message) {
-#if false && DEBUG
+#if true && DEBUG
             Main.Log($"{level.Indent()} {message}");
 #endif
 
@@ -93,17 +93,27 @@ namespace BubbleBuffs.Extensions {
 
         public static IEnumerable<IBeneficialEffect> GetBeneficialBuffs(this GameAction action, int level = 0) {
             if (action != null) {
-                if (action is ContextActionApplyBuff applyBuff && applyBuff.Buff.IsBeneficial(level + 1))
+                LogVerbose(level, $"Extracting buffs from: {action.name}");
+                if (action is ContextActionApplyBuff applyBuff && applyBuff.Buff.IsBeneficial(level + 1)) {
                     yield return new BuffEffect(applyBuff);
-                else if (action is ContextActionEnchantWornItem enchantItem)
+                    LogVerbose(level + 1, $"FOUND: applyBuff {action.name}");
+                } else if (action is ContextActionEnchantWornItem enchantItem) {
+                    LogVerbose(level + 1, $"FOUND: enchantItem {action.name}");
                     yield return new WornItemEnchantmentEffect(enchantItem);
-                else if (action is ContextActionSpawnAreaEffect spawnArea) {
+                } else if (action is ContextActionPartyMembers applyParty) {
+                    LogVerbose(level, $"recursing into partyMembers");
+                    foreach (var subEffect in applyParty.Action.Actions.Where(a => a != null).SelectMany(a => a.GetBeneficialBuffs(level + 1)))
+                        yield return subEffect;
+                } else if (action is ContextActionSpawnAreaEffect spawnArea) {
+                    LogVerbose(level, $"recursing into spawnArea");
                     if (spawnArea.AreaEffect.TryGetComponent<AbilityAreaEffectBuff>(out var areaBuff) && areaBuff.Buff.IsBeneficial(level + 1)) {
+                        LogVerbose(level, $"FOUND: areaBuff {areaBuff.name}");
                         yield return new AreaBuffEffect(areaBuff, spawnArea.DurationValue.Rate != DurationRate.Rounds);
                     }
                 } else if (action is Conditional maybe) {
                     bool takeYes = true;
                     bool takeNo = true;
+                    LogVerbose(level, $"recursing into Conditional");
                     foreach (var c in maybe.ConditionsChecker.Conditions) {
                         if (c is ContextConditionIsAlly ally) {
                             if (ally.Not)
@@ -113,14 +123,17 @@ namespace BubbleBuffs.Extensions {
                         }
                     }
                     if (takeNo) {
+                        LogVerbose(level, $"recursing into ifFalse");
                         foreach (var b in maybe.IfFalse.Actions.SelectMany(a => a.GetBeneficialBuffs(level + 1)))
                             yield return b;
                     }
                     if (takeYes) {
+                        LogVerbose(level, $"recursing into ifTrue");
                         foreach (var b in maybe.IfTrue.Actions.SelectMany(a => a.GetBeneficialBuffs(level + 1)))
                             yield return b;
                     }
                 } else if (action is ContextActionCastSpell spellCast) {
+                    LogVerbose(level, $"recursing into spellCast");
                     foreach (var b in spellCast.Spell.GetBeneficialBuffs(level + 1))
                         yield return b;
                 }

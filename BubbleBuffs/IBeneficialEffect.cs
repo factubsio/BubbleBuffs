@@ -6,6 +6,7 @@ using Kingmaker.UnitLogic.Buffs;
 using Kingmaker.UnitLogic.Mechanics.Actions;
 using Kingmaker.Utility;
 using System;
+using System.Linq;
 using System.Collections.Generic;
 
 namespace BubbleBuffs {
@@ -16,6 +17,7 @@ namespace BubbleBuffs {
 
         public UnitBuffData(UnitEntityData u) {
             Unit = u;
+            Buffs = new(u.Buffs.RawFacts.Select(b => b.BGuid()));
         }
     }
 
@@ -52,8 +54,11 @@ namespace BubbleBuffs {
 
 
         internal bool IsPresent(UnitBuffData unitBuffData) {
-            if (AppliedBuffs != null && unitBuffData.Buffs.Overlaps(AppliedBuffs))
-                return true;
+            if (AppliedBuffs != null) {
+                if (unitBuffData.Buffs.Overlaps(AppliedBuffs))
+                    return true;
+            }
+
             if (PrimaryWeaponEnchants != null) {
                 foreach (var enchant in unitBuffData.Unit.Body.PrimaryHand.MaybeWeapon.Enchantments) {
                     if (PrimaryWeaponEnchants.Contains(enchant.BGuid()))
@@ -93,15 +98,17 @@ namespace BubbleBuffs {
 
     public class BuffEffect : IBeneficialEffect {
 
-        public readonly Guid Applied;
+        public readonly Guid Applied = Guid.Empty;
         public readonly bool IsLong;
         public  BuffEffect(ContextActionApplyBuff action) {
+            if (action.Buff == null) return;
             Applied = action.Buff.AssetGuid.m_Guid;
             IsLong = action.IsLong();
         }
 
         public void AppendTo(AbilityCombinedEffects effect) {
-            effect.AddBuff(Applied, IsLong);
+            if (Applied != Guid.Empty)
+                effect.AddBuff(Applied, IsLong);
         }
     }
 

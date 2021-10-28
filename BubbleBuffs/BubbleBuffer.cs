@@ -122,7 +122,7 @@ namespace BubbleBuffs {
             }
 
             foreach (SavedBuffState s in save.Buffs.Values) {
-                HashSet<string> newWanted = new(s.Wanted.Select(name => nameToId[name]));
+                HashSet<string> newWanted = new(s.Wanted.Where(name => nameToId.ContainsKey(name)).Select(name => nameToId[name]));
                 s.Wanted = newWanted;
 
                 Dictionary<CasterKey, SavedCasterState> casters = new();
@@ -1185,120 +1185,126 @@ namespace BubbleBuffs {
         public GameObject hudLayout;
 
         internal void TryInstallUI() {
-            Main.Verbose("Installing ui");
-            Main.Verbose($"spellscreennull: {UIHelpers.SpellbookScreen == null}");
-            var spellScreen = UIHelpers.SpellbookScreen.gameObject;
-            Main.Verbose("got spell screen");
+            try {
+                Main.Verbose("Installing ui");
+                Main.Verbose($"spellscreennull: {UIHelpers.SpellbookScreen == null}");
+                var spellScreen = UIHelpers.SpellbookScreen.gameObject;
+                Main.Verbose("got spell screen");
 
 #if DEBUG
-            RemoveOldController(spellScreen);
+                RemoveOldController(spellScreen);
 #endif
 
-            if (spellScreen.transform.root.GetComponent<BubbleBuffGlobalController>() == null) {
-                Main.Verbose("Creating new global controller");
-                spellScreen.transform.root.gameObject.AddComponent<BubbleBuffGlobalController>();
-            }
+                if (spellScreen.transform.root.GetComponent<BubbleBuffGlobalController>() == null) {
+                    Main.Verbose("Creating new global controller");
+                    spellScreen.transform.root.gameObject.AddComponent<BubbleBuffGlobalController>();
+                }
 
-            if (spellScreen.GetComponent<BubbleBuffSpellbookController>() == null) {
-                Main.Verbose("Creating new controller");
-                SpellbookController = spellScreen.AddComponent<BubbleBuffSpellbookController>();
-                SpellbookController.CreateBuffstate();
-            } 
+                if (spellScreen.GetComponent<BubbleBuffSpellbookController>() == null) {
+                    Main.Verbose("Creating new controller");
+                    SpellbookController = spellScreen.AddComponent<BubbleBuffSpellbookController>();
+                    SpellbookController.CreateBuffstate();
+                }
 
-            Main.Verbose("loading sprites");
-            if (applyBuffsSprites == null)
-                applyBuffsSprites = ButtonSprites.Load("apply_buffs", new Vector2Int(95, 95));
-            if (applyBuffsShortSprites == null)
-                applyBuffsShortSprites = ButtonSprites.Load("apply_buffs_short", new Vector2Int(95, 95));
-            if (applyBuffsImportantSprites == null)
-                applyBuffsImportantSprites = ButtonSprites.Load("apply_buffs_important", new Vector2Int(95, 95));
+                Main.Verbose("loading sprites");
+                if (applyBuffsSprites == null)
+                    applyBuffsSprites = ButtonSprites.Load("apply_buffs", new Vector2Int(95, 95));
+                if (applyBuffsShortSprites == null)
+                    applyBuffsShortSprites = ButtonSprites.Load("apply_buffs_short", new Vector2Int(95, 95));
+                if (applyBuffsImportantSprites == null)
+                    applyBuffsImportantSprites = ButtonSprites.Load("apply_buffs_important", new Vector2Int(95, 95));
 
-            var staticRoot = Game.Instance.UI.Canvas.transform;
-            Main.Verbose("got static root");
-            hudLayout = staticRoot.Find("HUDLayout/").gameObject;
-            Main.Verbose("got hud layout");
+                var staticRoot = Game.Instance.UI.Canvas.transform;
+                Main.Verbose("got static root");
+                hudLayout = staticRoot.Find("HUDLayout/").gameObject;
+                Main.Verbose("got hud layout");
 
-            Main.Verbose("Removing old bubble root");
-            var oldBubble = hudLayout.transform.parent.Find("BUBBLEMODS_ROOT");
-            if (oldBubble != null) {
-                GameObject.Destroy(oldBubble.gameObject);
-            }
+                Main.Verbose("Removing old bubble root");
+                var oldBubble = hudLayout.transform.parent.Find("BUBBLEMODS_ROOT");
+                if (oldBubble != null) {
+                    GameObject.Destroy(oldBubble.gameObject);
+                }
 
-            bubbleHud = GameObject.Instantiate(hudLayout, hudLayout.transform.parent);
-            Main.Verbose("instantiated root");
-            bubbleHud.name = "BUBBLEMODS_ROOT";
-            var rect = bubbleHud.transform as RectTransform;
-            rect.anchoredPosition = new Vector2(0, 96);
-            rect.SetSiblingIndex(hudLayout.transform.GetSiblingIndex() + 1);
-            Main.Verbose("set sibling index");
+                bubbleHud = GameObject.Instantiate(hudLayout, hudLayout.transform.parent);
+                Main.Verbose("instantiated root");
+                bubbleHud.name = "BUBBLEMODS_ROOT";
+                var rect = bubbleHud.transform as RectTransform;
+                rect.anchoredPosition = new Vector2(0, 96);
+                rect.SetSiblingIndex(hudLayout.transform.GetSiblingIndex() + 1);
+                Main.Verbose("set sibling index");
 
-            bubbleHud.DestroyComponents<HUDLayout>();
-            bubbleHud.DestroyComponents<UISectionHUDController>();
+                bubbleHud.DestroyComponents<HUDLayout>();
+                bubbleHud.DestroyComponents<UISectionHUDController>();
 
-            GameObject.Destroy(rect.Find("CombatLog_New").gameObject);
-            GameObject.Destroy(rect.Find("Console_InitiativeTrackerHorizontalPC").gameObject);
-            GameObject.Destroy(rect.Find("IngameMenuView/CompassPart").gameObject);
+                GameObject.Destroy(rect.Find("CombatLog_New").gameObject);
+                GameObject.Destroy(rect.Find("Console_InitiativeTrackerHorizontalPC").gameObject);
+                GameObject.Destroy(rect.Find("IngameMenuView/CompassPart").gameObject);
 
-            bubbleHud.ChildObject("IngameMenuView").DestroyComponents<IngameMenuPCView>();
+                bubbleHud.ChildObject("IngameMenuView").DestroyComponents<IngameMenuPCView>();
 
-            Main.Verbose("destroyed old stuff");
+                Main.Verbose("destroyed old stuff");
 
-            var buttonPanelRect = rect.Find("IngameMenuView/ButtonsPart");
-            Main.Verbose("got button panel");
-            GameObject.Destroy(buttonPanelRect.Find("TBMMultiButton").gameObject);
-            GameObject.Destroy(buttonPanelRect.Find("InventoryButton").gameObject);
-            GameObject.Destroy(buttonPanelRect.Find("Background").gameObject);
+                var buttonPanelRect = rect.Find("IngameMenuView/ButtonsPart");
+                Main.Verbose("got button panel");
+                GameObject.Destroy(buttonPanelRect.Find("TBMMultiButton").gameObject);
+                GameObject.Destroy(buttonPanelRect.Find("InventoryButton").gameObject);
+                GameObject.Destroy(buttonPanelRect.Find("Background").gameObject);
 
-            Main.Verbose("destroyed more old stuff");
+                Main.Verbose("destroyed more old stuff");
 
-            buttonsContainer = buttonPanelRect.Find("Container").gameObject;
-            var buttonsRect = buttonsContainer.transform as RectTransform;
-            buttonsRect.anchoredPosition = Vector2.zero;
-            buttonsRect.sizeDelta = new Vector2(47.7f * 8, buttonsRect.sizeDelta.y);
-            Main.Verbose("set buttons rect");
+                buttonsContainer = buttonPanelRect.Find("Container").gameObject;
+                var buttonsRect = buttonsContainer.transform as RectTransform;
+                buttonsRect.anchoredPosition = Vector2.zero;
+                buttonsRect.sizeDelta = new Vector2(47.7f * 8, buttonsRect.sizeDelta.y);
+                Main.Verbose("set buttons rect");
 
-            buttonsContainer.GetComponent<GridLayoutGroup>().startCorner = GridLayoutGroup.Corner.LowerLeft;
+                buttonsContainer.GetComponent<GridLayoutGroup>().startCorner = GridLayoutGroup.Corner.LowerLeft;
 
-            var prefab = buttonsContainer.transform.GetChild(0).gameObject;
-            prefab.SetActive(false);
+                var prefab = buttonsContainer.transform.GetChild(0).gameObject;
+                prefab.SetActive(false);
 
-            int toRemove = buttonsContainer.transform.childCount;
+                int toRemove = buttonsContainer.transform.childCount;
 
-            //Loop from 1 and destroy child[1] since we want to keep child[0] as our prefab, which is super hacky but.
-            for (int i = 1; i < toRemove; i++) {
-                GameObject.DestroyImmediate(buttonsContainer.transform.GetChild(1).gameObject);
-            }
+                //Loop from 1 and destroy child[1] since we want to keep child[0] as our prefab, which is super hacky but.
+                for (int i = 1; i < toRemove; i++) {
+                    GameObject.DestroyImmediate(buttonsContainer.transform.GetChild(1).gameObject);
+                }
 
-            void AddButton(string text, string tooltip, ButtonSprites sprites, Action act) {
-                var applyBuffsButton = GameObject.Instantiate(prefab, buttonsContainer.transform);
-                applyBuffsButton.SetActive(true);
-                applyBuffsButton.GetComponentInChildren<OwlcatButton>().m_CommonLayer[0].SpriteState = new SpriteState {
-                    pressedSprite = sprites.down,
-                    highlightedSprite = sprites.hover,
-                };
-                applyBuffsButton.GetComponentInChildren<OwlcatButton>().OnLeftClick.AddListener(() => {
-                    act();
-                });
-                applyBuffsButton.GetComponentInChildren<OwlcatButton>().SetTooltip(new TooltipTemplateSimple(text, tooltip), InfoCallMethod.None);
+                void AddButton(string text, string tooltip, ButtonSprites sprites, Action act) {
+                    var applyBuffsButton = GameObject.Instantiate(prefab, buttonsContainer.transform);
+                    applyBuffsButton.SetActive(true);
+                    applyBuffsButton.GetComponentInChildren<OwlcatButton>().m_CommonLayer[0].SpriteState = new SpriteState {
+                        pressedSprite = sprites.down,
+                        highlightedSprite = sprites.hover,
+                    };
+                    applyBuffsButton.GetComponentInChildren<OwlcatButton>().OnLeftClick.AddListener(() => {
+                        act();
+                    });
+                    applyBuffsButton.GetComponentInChildren<OwlcatButton>().SetTooltip(new TooltipTemplateSimple(text, tooltip), new TooltipConfig {
+                        InfoCallMethod = InfoCallMethod.None
+                    });
 
-                applyBuffsButton.GetComponentInChildren<Image>().sprite = sprites.normal;
+                    applyBuffsButton.GetComponentInChildren<Image>().sprite = sprites.normal;
 
-            }
+                }
 
-            AddButton("Buff Normal!", "Try to cast spells set in the buff window (Normal)", applyBuffsSprites, () => GlobalBubbleBuffer.Execute(BuffGroup.Long));
-            AddButton("Buff Important!", "Try to cast spells set in the buff window (Important)", applyBuffsImportantSprites, () => GlobalBubbleBuffer.Execute(BuffGroup.Important));
-            AddButton("Buff Short!", "Try to cast spells set in the buff window (Short)", applyBuffsShortSprites, () => GlobalBubbleBuffer.Execute(BuffGroup.Short));
+                AddButton("Buff Normal!", "Try to cast spells set in the buff window (Normal)", applyBuffsSprites, () => GlobalBubbleBuffer.Execute(BuffGroup.Long));
+                AddButton("Buff Important!", "Try to cast spells set in the buff window (Important)", applyBuffsImportantSprites, () => GlobalBubbleBuffer.Execute(BuffGroup.Important));
+                AddButton("Buff Short!", "Try to cast spells set in the buff window (Short)", applyBuffsShortSprites, () => GlobalBubbleBuffer.Execute(BuffGroup.Short));
 
-            Main.Verbose("remove old bubble?");
+                Main.Verbose("remove old bubble?");
 #if debug
-            RemoveOldController<SyncBubbleHud>(hudLayout.ChildObject("IngameMenuView"));
+                RemoveOldController<SyncBubbleHud>(hudLayout.ChildObject("IngameMenuView"));
 #endif
-            if (hudLayout.ChildObject("IngameMenuView").GetComponent<SyncBubbleHud>() == null) {
-                hudLayout.ChildObject("IngameMenuView").AddComponent<SyncBubbleHud>();
-                Main.Verbose("installed hud sync");
-            }
+                if (hudLayout.ChildObject("IngameMenuView").GetComponent<SyncBubbleHud>() == null) {
+                    hudLayout.ChildObject("IngameMenuView").AddComponent<SyncBubbleHud>();
+                    Main.Verbose("installed hud sync");
+                }
 
-            Main.Verbose("Finished early ui setup");
+                Main.Verbose("Finished early ui setup");
+            } catch (Exception ex) {
+                Main.Error(ex, "installing");
+            }
         }
 
 #if DEBUG
