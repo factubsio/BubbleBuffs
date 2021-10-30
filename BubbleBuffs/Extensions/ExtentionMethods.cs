@@ -85,7 +85,7 @@ namespace BubbleBuffs.Extensions {
     static class ExtentionMethods {
 
         private static void LogVerbose(int level, string message) {
-#if true && DEBUG
+#if false && DEBUG
             Main.Log($"{level.Indent()} {message}");
 #endif
 

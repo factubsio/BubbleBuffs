@@ -18,6 +18,8 @@ using Kingmaker.Designers.Mechanics.Buffs;
 using Kingmaker.UnitLogic.FactLogic;
 using Kingmaker.UnitLogic.Mechanics.Components;
 using Kingmaker.UnitLogic.Abilities.Blueprints;
+using Kingmaker.UnitLogic;
+using Kingmaker.Blueprints.Classes;
 
 namespace BubbleBuffs {
 
@@ -82,7 +84,7 @@ namespace BubbleBuffs {
                             if (ability.Data.Resource != null) {
                                 credits.Value = ability.Data.Resource.GetMaxAmount(dude);
                             }
-                            AddBuff(dude, null, ability.Data, null, credits, true, int.MaxValue, characterIndex, Category.Ability);
+                            AddBuff(dude, null, ability.Data, null, credits, true, int.MaxValue, characterIndex, false, Category.Ability);
                         }
                     }
                 }
@@ -204,10 +206,12 @@ namespace BubbleBuffs {
 
         private static Dictionary<Guid, AbilityCombinedEffects> SpellsWithBeneficialBuffs = new();
         private static Dictionary<Guid, string> SpellNames = new();
+        private static Guid MageArmorGuid = Guid.Parse("9e1ad5d6f87d19e4d8883d63a6e35568");
+        private static BlueprintFeature ArchmageArmorFeature => Resources.GetBlueprint<BlueprintFeature>("c3ef5076c0feb3c4f90c229714e62cd0");
 
         //private static Dictionary<Guid, List<ContextActionApplyBuff>> CachedBuffEffects;
 
-        public void AddBuff(UnitEntityData dude, Kingmaker.UnitLogic.Spellbook book, AbilityData spell, AbilityData baseSpell, IReactiveProperty<int> credits, bool newCredit, int creditClamp, int charIndex, Category category = Category.Spell) {
+        public void AddBuff(UnitEntityData dude, Kingmaker.UnitLogic.Spellbook book, AbilityData spell, AbilityData baseSpell, IReactiveProperty<int> credits, bool newCredit, int creditClamp, int charIndex, bool archmageArmor = false, Category category = Category.Spell) {
             //if (spell.TargetAnchor == Kingmaker.UnitLogic.Abilities.Blueprints.AbilityTargetAnchor.Point)
             //    Main.Log($"Rejecting {spell.Name} due to being cast-at-point");
 
@@ -215,6 +219,10 @@ namespace BubbleBuffs {
             //if (!anyTargets) {
             //    return;
             //} 
+
+            if (spell.Blueprint.AssetGuid.m_Guid == MageArmorGuid && !archmageArmor && dude.HasFact(ArchmageArmorFeature)) {
+                AddBuff(dude, book, spell, null, credits, false, creditClamp, charIndex, true, category);
+            }
 
 
             if (spell.Blueprint.HasVariants) {
@@ -225,18 +233,18 @@ namespace BubbleBuffs {
                         data = new AbilityData(variant, dude);
                     } else
                         data = new AbilityData(variant, book, spell.SpellLevel);
-                    AddBuff(dude, book, data, spell, credits, false, creditClamp, charIndex, category);
+                    AddBuff(dude, book, data, spell, credits, false, creditClamp, charIndex, archmageArmor, category);
                 }
                 return;
             }
             
 
             int clamp = int.MaxValue;
-            if (spell.TargetAnchor == Kingmaker.UnitLogic.Abilities.Blueprints.AbilityTargetAnchor.Owner) {
+            if (archmageArmor || spell.TargetAnchor == Kingmaker.UnitLogic.Abilities.Blueprints.AbilityTargetAnchor.Owner) {
                 clamp = 1;
             }
 
-            var key = new BuffKey(spell);
+            var key = new BuffKey(spell, archmageArmor);
             if (BuffsByKey.TryGetValue(key, out var buff)) {
                 buff.AddProvider(dude, book, spell, baseSpell, credits, newCredit, clamp, charIndex);
             } else {
@@ -255,7 +263,7 @@ namespace BubbleBuffs {
                     return;
                 }
 
-                buff = new BubbleBuff(spell) {
+                buff = new BubbleBuff(spell, archmageArmor) {
                     BuffsApplied = abilityEffect
                 };
 

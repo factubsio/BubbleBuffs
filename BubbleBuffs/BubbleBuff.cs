@@ -16,25 +16,30 @@ namespace BubbleBuffs {
         public readonly Guid Guid;
         [JsonProperty]
         public readonly Metamagic MetamagicMask;
+        [JsonProperty]
+        public readonly bool Archmage;
 
-        public BuffKey(AbilityData ability) {
+        public BuffKey(AbilityData ability, bool archmage) {
             Guid = ability.Blueprint.AssetGuid.m_Guid;
             if (ability.IsMetamagicked())
                 MetamagicMask = ability.MetamagicData.MetamagicMask;
             else
                 MetamagicMask = 0;
+            Archmage = archmage;
         }
 
         public override bool Equals(object obj) {
             return obj is BuffKey key &&
                    Guid.Equals(key.Guid) &&
-                   MetamagicMask == key.MetamagicMask;
+                   MetamagicMask == key.MetamagicMask &&
+                   Archmage == key.Archmage;
         }
 
         public override int GetHashCode() {
             int hashCode = 1282151259;
             hashCode = hashCode * -1521134295 + Guid.GetHashCode();
             hashCode = hashCode * -1521134295 + MetamagicMask.GetHashCode();
+            hashCode = hashCode * -1521134295 + Archmage.GetHashCode();
             return hashCode;
         }
     }
@@ -100,7 +105,7 @@ namespace BubbleBuffs {
         }
 
 
-        public string Name => Spell.Name;
+        public string Name => Key.Archmage ? "Archmage Armor" : Spell.Name;
         public string NameMeta => $"{Spell.Name} {MetaMagicFlags}";
 
         public bool UnitWants(int unit) => wanted[unit] != 0;
@@ -112,10 +117,10 @@ namespace BubbleBuffs {
 
         public Metamagic[] Metamagics;
 
-        public BubbleBuff(AbilityData spell) {
+        public BubbleBuff(AbilityData spell, bool archmageArmor) {
             this.Spell = spell;
             this.NameLower = spell.Name.ToLower();
-            this.Key = new BuffKey(spell);
+            this.Key = new BuffKey(spell, archmageArmor);
 
             if (Spell.IsMetamagicked()) {
                 Metamagics = spell.GetMetamagicks().ToArray();
@@ -133,11 +138,12 @@ namespace BubbleBuffs {
                 this.book = book;
             foreach (var buffer in CasterQueue) {
                 if (buffer.who == provider && buffer.book?.Blueprint.AssetGuid == book?.Blueprint.AssetGuid) {
-                    buffer.AddCredits(1);
+                    if (!Key.Archmage)
+                        buffer.AddCredits(1);
                     return;
                 }
             }
-            var providerHandle = new BuffProvider(credits) { who = provider, spent = 0, clamp = creditClamp, book = book, spell = spell, baseSpell = baseSpell, CharacterIndex = u };
+            var providerHandle = new BuffProvider(credits) { who = provider, spent = 0, clamp = creditClamp, book = book, spell = spell, baseSpell = baseSpell, CharacterIndex = u, ArchmageArmor = this.Key.Archmage };
             //providerHandle.InstallDebugListeners();
             CasterQueue.Add(providerHandle);
         }
@@ -154,6 +160,7 @@ namespace BubbleBuffs {
                 if (state.Wanted.Contains(u.UniqueId))
                     SetUnitWants(i, true);
             }
+            SetHidden(HideReason.Blacklisted, state.Blacklisted);
             foreach (var caster in CasterQueue) {
                 if (state.Casters.TryGetValue(caster.Key, out var casterState)) {
                     caster.Banned = casterState.Banned;
@@ -253,6 +260,7 @@ namespace BubbleBuffs {
             Spellbook = book?.Blueprint.AssetGuid.m_Guid ?? Guid.Empty
         };
 
+        public bool ArchmageArmor = false;
         public bool ShareTransmutation;
         public bool PowerfulChange;
         public UnitEntityData who;
@@ -330,6 +338,9 @@ namespace BubbleBuffs {
         }
 
         public bool CanTarget(int dude) {
+            if (ArchmageArmor)
+                return dude == CharacterIndex;
+
             using (new ForceShareTransmutation(this)) {
                 if (!spell.CanTarget(new TargetWrapper(Bubble.Group[dude])))
                     return false;

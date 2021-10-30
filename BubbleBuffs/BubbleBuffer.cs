@@ -36,6 +36,7 @@ using UnityEngine.UI;
 using BubbleBuffs.Extensions;
 using UnityEngine.SceneManagement;
 using Kingmaker.UI.SettingsUI;
+using Kingmaker.Blueprints.Classes;
 
 namespace BubbleBuffs {
 
@@ -108,7 +109,7 @@ namespace BubbleBuffs {
                 var spellRoot = GameObject.Instantiate(spellPrefab.gameObject);
                 spellRoot.name = "BubbleSpellView";
                 spellRoot.DestroyComponents<SpellbookKnownSpellPCView>();
-                spellRoot.DestroyChildrenImmediate("Icon/Decoration", "Icon/MythicArtFrame", "Icon/Domain", "Icon/ArtArrowImage", "RemoveButton", "Level");
+                spellRoot.DestroyChildrenImmediate("Icon/Decoration", "Icon/Domain", "Icon/MythicArtFrame", "Icon/ArtArrowImage", "RemoveButton", "Level");
 
                 return spellRoot;
 
@@ -195,6 +196,8 @@ namespace BubbleBuffs {
             rect.anchorMin = Vector2.zero;
             rect.anchorMax = Vector2.one;
             rect.localPosition = Vector3.zero;
+            rect.localScale = Vector3.one;
+            rect.localRotation = Quaternion.identity;
             var group = Root.AddComponent<CanvasGroup>();
             var fader = Root.AddComponent<FadeAnimator>();
         }
@@ -204,7 +207,7 @@ namespace BubbleBuffs {
             Root.SetActive(false);
         }
 
-        private static GameObject MakeToggle(GameObject togglePrefab, Transform parent, float x, float y, string text, string name) {
+        private static GameObject MakeToggle(GameObject togglePrefab, Transform parent, float x, float y, string text, string name, float scale = 1) {
             var toggle = GameObject.Instantiate(togglePrefab, parent);
             toggle.name = name;
             var blacklistRect = toggle.transform as RectTransform;
@@ -213,6 +216,7 @@ namespace BubbleBuffs {
             blacklistRect.anchorMin = new Vector2(x, y);
             blacklistRect.anchorMax = new Vector2(x, y);
             blacklistRect.pivot = new Vector2(0.5f, 0.5f);
+            blacklistRect.localScale = new Vector3(scale, scale, scale);
             toggle.GetComponentInChildren<TextMeshProUGUI>().text = text;
             toggle.SetActive(true);
             return toggle;
@@ -321,6 +325,8 @@ namespace BubbleBuffs {
             var toggleTransform = UIHelpers.SpellbookScreen.Find("MainContainer/KnownSpells/Toggle");
             if (toggleTransform == null)
                 toggleTransform = UIHelpers.SpellbookScreen.Find("MainContainer/KnownSpells/TogglePossibleSpells");
+
+
             var togglePrefab = toggleTransform.gameObject;
             Main.Verbose("Got toggle prefab: ");
             buttonPrefab = UIHelpers.SpellbookScreen.Find("MainContainer/MetamagicContainer/Metamagic/Button").gameObject;
@@ -339,9 +345,7 @@ namespace BubbleBuffs {
             view.content = content;
             Main.Verbose("set view prefabs");
 
-            MakeAddRemoveAllButtons(buttonPrefab, content);
-            Main.Verbose("made add/remove all");
-
+            view.MakeSummary();
 
             view.MakeBuffsList();
 
@@ -484,13 +488,20 @@ namespace BubbleBuffs {
             var filterRect = MakeVerticalRect("filters", content);
             //filterToggles.AddComponent<Image>().color = Color.green;
             filterRect.anchorMin = new Vector2(0.13f, 0.1f);
-            filterRect.anchorMax = new Vector2(0.215f, .455f);
+            filterRect.anchorMax = new Vector2(0.215f, .4f);
+            filterRect.gameObject.EditComponent<VerticalLayoutGroup>(v => {
+                v.childScaleHeight = true;
+                v.childScaleWidth = true;
+
+            });
 
             search = new SearchBar(filterRect, "...", false, "bubble-search-buff");
-            GameObject showHidden = MakeToggle(togglePrefab, filterRect, 0.8f, .5f, "Show Hidden", "bubble-toggle-show-hidden");
-            GameObject showShort = MakeToggle(togglePrefab, filterRect, .8f, .5f, "Show Short", "bubble-toggle-show-short");
-            GameObject showRequested = MakeToggle(togglePrefab, filterRect, .8f, .5f, "Show Requested", "bubble-toggle-show-requested");
-            GameObject showNotRequested = MakeToggle(togglePrefab, filterRect, .8f, .5f, "Show NOT Requested", "bubble-toggle-show-not-requested");
+
+            const float scale = 1.0f;
+            GameObject showHidden = MakeToggle(togglePrefab, filterRect, 0.8f, .5f, "Show hidden", "bubble-toggle-show-hidden", scale);
+            GameObject showShort = MakeToggle(togglePrefab, filterRect, .8f, .5f, "Show short", "bubble-toggle-show-short", scale);
+            GameObject showRequested = MakeToggle(togglePrefab, filterRect, .8f, .5f, "Show requested", "bubble-toggle-show-requested", scale);
+            GameObject showNotRequested = MakeToggle(togglePrefab, filterRect, .8f, .5f, "Show NOT requested", "bubble-toggle-show-not-requested", scale);
 
             search.InputField.onValueChanged.AddListener(val => {
                 NameFilter.Value = val;
@@ -498,7 +509,7 @@ namespace BubbleBuffs {
 
             var categoryRect = MakeVerticalRect("categories", content);
             categoryRect.anchorMin = new Vector2(1 - filterRect.anchorMax.x, 0.1f);
-            categoryRect.anchorMax = new Vector2(1 - filterRect.anchorMin.x, 0.455f);
+            categoryRect.anchorMax = new Vector2(1 - filterRect.anchorMin.x, 0.4f);
 
             CurrentCategory = new ButtonGroup<Category>(categoryRect);
             CurrentCategory.Selected.Subscribe<Category>(_ => RefreshFiltering());
@@ -553,22 +564,24 @@ namespace BubbleBuffs {
         private Action HideCasterPopout;
         private Action UpdateDetailsView;
 
+        private static BlueprintFeature PowerfulChangeFeature => Resources.GetBlueprint<BlueprintFeature>("5e01e267021bffe4e99ebee3fdc872d1");
+        private static BlueprintFeature ShareTransmutationFeature => Resources.GetBlueprint<BlueprintFeature>("c4ed8d1a90c93754eacea361653a7d56");
+
         private void MakeDetailsView(GameObject portraitPrefab, GameObject framePrefab, GameObject nextPrefab, GameObject prevPrefab, GameObject togglePrefab, GameObject expandButtonPrefab, Transform content) {
             var detailsHolder = GameObject.Instantiate(framePrefab, content);
             var detailsRect = detailsHolder.GetComponent<RectTransform>();
             GameObject.Destroy(detailsHolder.transform.Find("FrameDecor").gameObject);
             detailsRect.localPosition = Vector2.zero;
             detailsRect.sizeDelta = Vector2.zero;
-            detailsRect.anchorMin = new Vector2(0.25f, 0.30f);
-            detailsRect.anchorMax = new Vector2(0.75f, 0.51f);
+            detailsRect.anchorMin = new Vector2(0.25f, 0.225f);
+            detailsRect.anchorMax = new Vector2(0.75f, 0.475f);
 
             currentSpellView = view.widgetCache.Get(detailsRect);
 
             currentSpellView.GetComponentInChildren<OwlcatButton>().Interactable = false;
             currentSpellView.SetActive(false);
             var currentSpellRect = currentSpellView.transform as RectTransform;
-            currentSpellRect.anchorMin = new Vector2(.5f, .78f);
-            currentSpellRect.anchorMax = new Vector2(.5f, .78f);
+            currentSpellRect.SetAnchor(.5, .8);
 
             castersHolder = new GameObject("CastersHolder", typeof(RectTransform));
             var castersRect = castersHolder.GetComponent<RectTransform>();
@@ -582,29 +595,9 @@ namespace BubbleBuffs {
 
 
             var castersHorizontalGroup = castersHolder.AddComponent<HorizontalLayoutGroup>();
-            castersHorizontalGroup.spacing = 70;
+            castersHorizontalGroup.spacing = 76;
             castersHorizontalGroup.childControlHeight = true;
             castersHorizontalGroup.childForceExpandHeight = true;
-
-            //var promoteCaster = GameObject.Instantiate(prevPrefab, detailsRect);
-            //var promoteRect = promoteCaster.transform as RectTransform;
-            //promoteCaster.SetActive(true);
-            //promoteRect.localPosition = Vector2.zero;
-            //promoteRect.anchoredPosition = Vector2.zero;
-            //promoteRect.anchorMin = new Vector2(0.5f, 0.2f);
-            //promoteRect.anchorMax = new Vector2(0.5f, 0.2f);
-            //promoteRect.pivot = new Vector2(0.5f, 0.5f);
-            //promoteRect.anchoredPosition = new Vector2(castersRect.anchoredPosition.x + 30, 0);
-
-            //var demoteCaster = GameObject.Instantiate(nextPrefab, detailsRect);
-            //var demoteRect = demoteCaster.transform as RectTransform;
-            //demoteCaster.SetActive(true);
-            //demoteRect.localPosition = Vector2.zero;
-            //demoteRect.anchoredPosition = Vector2.zero;
-            //demoteRect.anchorMin = new Vector2(0.5f, 0.2f);
-            //demoteRect.anchorMax = new Vector2(0.5f, 0.2f);
-            //demoteRect.pivot = new Vector2(0.5f, 0.5f);
-            //demoteRect.anchoredPosition = new Vector2(castersRect.anchoredPosition.x + 60, 0);
 
             ReactiveProperty<int> SelectedCaster = new ReactiveProperty<int>(-1);
 
@@ -616,8 +609,6 @@ namespace BubbleBuffs {
                 popout.SetActive(false);
             };
             popout.DestroyComponents<ActionBarConvertedPCView>();
-            //var popoutGrid = popout.GetComponent<GridLayoutGroup>();
-            //popoutGrid.cellSize = new Vector2(90, 40);
             popout.DestroyComponents<GridLayoutGroup>();
             popout.Rect().anchoredPosition3D = Vector3.zero;
             popout.Rect().localPosition = Vector3.zero;
@@ -626,7 +617,7 @@ namespace BubbleBuffs {
             popout.ChildObject("Background").GetComponent<Image>().raycastTarget = true;
 
             var popLayout = popout.AddComponent<LayoutElement>();
-            popLayout.preferredWidth = 400;
+            popLayout.preferredWidth = 450;
 
             var popVert = popout.AddComponent<VerticalLayoutGroup>();
             popVert.childControlWidth = false;
@@ -643,29 +634,71 @@ namespace BubbleBuffs {
                 return labelRoot;
             }
 
+            var hideSpell = MakeToggle(togglePrefab, detailsRect.transform, 0.03f, 0.8f, "Hide Ability", "hide-spell");
+            hideSpell.transform.SetSiblingIndex(0);
+            hideSpell.SetActive(false);
+            hideSpell.Rect().pivot = new Vector2(0, 0.5f);
+            var hideSpellToggle = hideSpell.GetComponentInChildren<ToggleWorkaround>();
+
+            view.addToAll = GameObject.Instantiate(buttonPrefab, detailsRect);
+            view.addToAll.GetComponentInChildren<TextMeshProUGUI>().text = "Add To All";
+            var addToAllRect = view.addToAll.transform as RectTransform;
+            addToAllRect.localPosition = Vector3.zero;
+            addToAllRect.anchoredPosition = Vector3.zero;
+            addToAllRect.pivot = new Vector2(0, 0);
+            addToAllRect.sizeDelta = new Vector2(180, 50);
+            addToAllRect.SetAnchor(0.03f, 0.1f);
+
+            view.removeFromAll = GameObject.Instantiate(view.addToAll, detailsRect);
+            view.removeFromAll.GetComponentInChildren<TextMeshProUGUI>().text = "Remove From All";
+            var removeFromAllRect = view.removeFromAll.transform as RectTransform;
+            removeFromAllRect.SetAnchor(0.03f, 0.3f);
+
+            view.addToAll.GetComponentInChildren<OwlcatButton>().OnLeftClick.AddListener(() => {
+                var buff = view.Selected;
+                if (buff == null) return;
+
+                for (int i = 0; i < Group.Count; i++) {
+                    if (view.targets[i].Button.Interactable && !buff.UnitWants(i)) {
+                        buff.SetUnitWants(i, true);
+                    }
+                }
+                state.Recalculate(true);
+
+            });
+            view.removeFromAll.GetComponentInChildren<OwlcatButton>().OnLeftClick.AddListener(() => {
+                var buff = view.Selected;
+                if (buff == null) return;
+
+                for (int i = 0; i < Group.Count; i++) {
+                    if (buff.UnitWants(i)) {
+                        buff.SetUnitWants(i, false);
+                    }
+                }
+                state.Recalculate(true);
+            });
+
+
+
+
+
             var capLabel = MakeLabel("  Limit casts to");
 
-            var blacklist = GameObject.Instantiate(togglePrefab, ToggleRect(popout).transform);
-            blacklist.SetActive(true);
-            blacklist.Rect().localPosition = Vector3.zero;
-            blacklist.GetComponent<HorizontalLayoutGroup>().childControlWidth = true;
-            blacklist.GetComponentInChildren<TextMeshProUGUI>().text = "Ban from casting";
-            var blacklistToggle = blacklist.GetComponentInChildren<ToggleWorkaround>();
+            var (blacklistToggle, _) = MakePopoutToggle("Ban from casting");
+            var (powerfulChangeToggle, powerfulChangeLabel) = MakePopoutToggle("Use 'Powerful Change'");
+            var (shareTransmutationToggle, shareTransmutationLabel) = MakePopoutToggle("Allow 'Share Transmutation'");
+            var defaultLabelColor = shareTransmutationLabel.color;
 
-            var powerfulChange = GameObject.Instantiate(togglePrefab, ToggleRect(popout).transform);
-            powerfulChange.SetActive(true);
-            powerfulChange.Rect().localPosition = Vector3.zero;
-            powerfulChange.GetComponent<HorizontalLayoutGroup>().childControlWidth = true;
-            powerfulChange.GetComponentInChildren<TextMeshProUGUI>().text = "Use 'Powerful Change'";
-            var powerfulChangeToggle = powerfulChange.GetComponentInChildren<ToggleWorkaround>();
+            (ToggleWorkaround, TextMeshProUGUI) MakePopoutToggle(string text) {
+                var toggleObj = GameObject.Instantiate(togglePrefab, ToggleRect(popout).transform);
+                toggleObj.SetActive(true);
+                toggleObj.Rect().localPosition = Vector3.zero;
+                toggleObj.GetComponent<HorizontalLayoutGroup>().childControlWidth = true;
+                var label = toggleObj.GetComponentInChildren<TextMeshProUGUI>();
+                label.text = text;
+                return (toggleObj.GetComponentInChildren<ToggleWorkaround>(), label);
 
-            var shareTransmutation = GameObject.Instantiate(togglePrefab, ToggleRect(popout).transform);
-            shareTransmutation.SetActive(true);
-            shareTransmutation.Rect().localPosition = Vector3.zero;
-            shareTransmutation.GetComponent<HorizontalLayoutGroup>().childControlWidth = true;
-            shareTransmutation.GetComponentInChildren<TextMeshProUGUI>().text = "Allow 'Share Transmutation'";
-            var shareTransmutationToggle = shareTransmutation.GetComponentInChildren<ToggleWorkaround>();
-
+            }
             MakeLabel("  <i>Arcane Resevoir resource is <b>not</b> tracked</i>");
 
             float capChangeScale = 0.7f;
@@ -766,6 +799,9 @@ namespace BubbleBuffs {
                 });
             }
 
+
+
+
             var groupRect = MakeVerticalRect("buff-group", detailsRect);
             groupRect.gameObject.SetActive(false);
             groupRect.SetAnchor(0.9f, 0.6f);
@@ -783,16 +819,25 @@ namespace BubbleBuffs {
                 }
             });
 
+            hideSpellToggle.onValueChanged.AddListener(shouldHide => {
+                if (view.Get(out var buff)) {
+                    buff.SetHidden(HideReason.Blacklisted, shouldHide);
+                    state.Save();
+                    RefreshFiltering();
+                }
+            });
+
             UpdateDetailsView = () => {
                 bool hasBuff = view.Get(out var buff);
 
                 groupRect.gameObject.SetActive(hasBuff);
+                hideSpell.SetActive(hasBuff);
 
                 if (!hasBuff)
                     return;
 
                 buffGroup.Selected.Value = buff.InGroup;
-
+                hideSpellToggle.isOn = buff.HideBecause(HideReason.Blacklisted);
 
                 if (SelectedCaster.Value >= 0 && popout.activeSelf) {
                     var who = buff.CasterQueue[SelectedCaster.value];
@@ -806,9 +851,13 @@ namespace BubbleBuffs {
                     shareTransmutationToggle.isOn = who.ShareTransmutation;
                     powerfulChangeToggle.isOn = who.PowerfulChange;
 
+
                     var skidmarkable = who.spell.IsArcanistSpell && who.spell.Blueprint.School == Kingmaker.Blueprints.Classes.Spells.SpellSchool.Transmutation;
-                    shareTransmutationToggle.interactable = skidmarkable;
-                    powerfulChangeToggle.interactable = skidmarkable;
+                    shareTransmutationToggle.interactable = skidmarkable && who.who.HasFact(ShareTransmutationFeature);
+                    powerfulChangeToggle.interactable = skidmarkable && who.who.HasFact(PowerfulChangeFeature);
+
+                    shareTransmutationLabel.color = shareTransmutationToggle.interactable ? defaultLabelColor : Color.gray;
+                    powerfulChangeLabel.color = powerfulChangeToggle.interactable ? defaultLabelColor : Color.gray;
 
                     increaseCustomCapButton.Interactable = who.AvailableCredits < 100 && who.CustomCap != -1;
                     decreaseCustomCapButton.Interactable = who.AvailableCredits < 100 && who.CustomCap != 0;
@@ -831,49 +880,6 @@ namespace BubbleBuffs {
             }
         }
 
-        private void MakeAddRemoveAllButtons(GameObject buttonPrefab, Transform content) {
-            view.addToAll = GameObject.Instantiate(buttonPrefab, content);
-            view.addToAll.GetComponentInChildren<TextMeshProUGUI>().text = "Add To All";
-            var addToAllRect = view.addToAll.transform as RectTransform;
-            addToAllRect.anchorMin = new Vector2(0.48f, 0.308f);
-            addToAllRect.anchorMax = new Vector2(0.48f, 0.31f);
-            addToAllRect.pivot = new Vector2(1, 1);
-            addToAllRect.localPosition = Vector3.zero;
-            addToAllRect.anchoredPosition = Vector2.zero;
-
-            view.removeFromAll = GameObject.Instantiate(buttonPrefab, content);
-            view.removeFromAll.GetComponentInChildren<TextMeshProUGUI>().text = "Remove From All";
-            var removeFromAllRect = view.removeFromAll.transform as RectTransform;
-            removeFromAllRect.anchorMin = new Vector2(0.52f, 0.308f);
-            removeFromAllRect.anchorMax = new Vector2(0.52f, 0.31f);
-            removeFromAllRect.pivot = new Vector2(0, 1);
-            removeFromAllRect.localPosition = Vector3.zero;
-            removeFromAllRect.anchoredPosition = Vector2.zero;
-
-            view.addToAll.GetComponentInChildren<OwlcatButton>().OnLeftClick.AddListener(() => {
-                var buff = view.Selected;
-                if (buff == null) return;
-
-                for (int i = 0; i < Group.Count; i++) {
-                    if (view.targets[i].Button.Interactable && !buff.UnitWants(i)) {
-                        buff.SetUnitWants(i, true);
-                    }
-                }
-                state.Recalculate(true);
-
-            });
-            view.removeFromAll.GetComponentInChildren<OwlcatButton>().OnLeftClick.AddListener(() => {
-                var buff = view.Selected;
-                if (buff == null) return;
-
-                for (int i = 0; i < Group.Count; i++) {
-                    if (buff.UnitWants(i)) {
-                        buff.SetUnitWants(i, false);
-                    }
-                }
-                state.Recalculate(true);
-            });
-        }
 
         private int totalCasters = 0;
         private GameObject currentSpellView;
@@ -882,26 +888,19 @@ namespace BubbleBuffs {
         private void MakeGroupHolder(GameObject portraitPrefab, GameObject expandButtonPrefab, GameObject buttonPrefab, Transform content) {
             var groupHolder = new GameObject("GroupHolder", typeof(RectTransform));
             var groupRect = groupHolder.GetComponent<RectTransform>();
-            groupRect.SetParent(content);
-            groupRect.localPosition = Vector2.zero;
-            groupRect.sizeDelta = Vector2.zero;
+            groupRect.AddTo(content);
+            groupHolder.MakeComponent<ContentSizeFitter>(f => {
+                f.horizontalFit = ContentSizeFitter.FitMode.MinSize;
+            });
 
             float requiredWidthHalf = Group.Count * 0.033f;
-            //groupRect.anchoredPosition = new Vector2(-(120 * Group.Count) / 2.0f, 0);
 
             var horizontalGroup = groupHolder.AddComponent<HorizontalLayoutGroup>();
-            horizontalGroup.spacing = 124;
+            horizontalGroup.spacing = 136;
             horizontalGroup.childControlHeight = true;
             horizontalGroup.childForceExpandHeight = true;
 
             view.targets = new Portrait[Group.Count];
-
-
-            //foreach (var dude in Group) {
-            //    var copyFrom = GameObject.Instantiate(buttonPrefab, popout.transform);
-            //    copyFrom.GetComponentInChildren<TextMeshProUGUI>().text = dude.CharacterName;
-            //    copyFrom.GetComponent<OwlcatButton>().Interactable = true;
-            //}
 
 
             for (int i = 0; i < Group.Count; i++) {
@@ -957,7 +956,7 @@ namespace BubbleBuffs {
                 totalCasters += Group[i].Spellbooks?.Count() ?? 0;
             }
             groupRect.anchorMin = new Vector2(0.5f, 0.115f);
-            groupRect.anchorMax = new Vector2(0.5f, 0.255f);
+            groupRect.anchorMax = new Vector2(0.5f, 0.18f);
             groupRect.pivot = new Vector2(0f, 0.5f);
 
             float actualWidth = (Group.Count - 1) * horizontalGroup.spacing;
@@ -1301,6 +1300,27 @@ namespace BubbleBuffs {
                     Main.Verbose("installed hud sync");
                 }
 
+
+                Transform eiToggle0 = null; // UIHelpers.SpellbookScreen.Find("MainContainer/KnownSpells/ToggleAllSpells");
+
+                if (eiToggle0 != null) {
+                    Main.Log("Tweaking stuff");
+                    var eiToggle2 = UIHelpers.SpellbookScreen.Find("MainContainer/KnownSpells/ToggleMetamagic");
+                    var eiToggle1 = UIHelpers.SpellbookScreen.Find("MainContainer/KnownSpells/TogglePossibleSpells");
+
+                    RectTransform[] eiToggles = { (RectTransform)eiToggle0, (RectTransform)eiToggle1, (RectTransform)eiToggle2 };
+
+                    for (int i = 0; i < eiToggles.Length; i++) {
+                        eiToggles[i].localPosition = new Vector2(430.0f, -392.0f - 30f * i);
+                        eiToggles[i].localScale = new Vector3(0.8f, 0.8f, .8f);
+                    }
+
+                    var eiLearnAll = UIHelpers.SpellbookScreen.Find("MainContainer/LearnAllSpells").transform as RectTransform;
+
+                    eiLearnAll.localPosition = new Vector2(800.0f, -400.0f);
+
+                } 
+
                 Main.Verbose("Finished early ui setup");
             } catch (Exception ex) {
                 Main.Error(ex, "installing");
@@ -1312,13 +1332,13 @@ namespace BubbleBuffs {
             List<Component> toDelete = new();
 
             foreach (var component in on.GetComponents<Component>()) {
-                Main.Verbose($"checking: {component.name}", null);
+                Main.Verbose($"checking: {component.name}", "remove-old");
                 if (component.GetType().FullName == typeof(T).FullName && component.GetType() != typeof(T)) {
                     var method = component.GetType().GetMethod("Destroy", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public);
                     method.Invoke(component, new object[] { });
                     toDelete.Add(component);
                 }
-                Main.Verbose($"checked: {component.name}", null);
+                Main.Verbose($"checked: {component.name}", "remove-old");
             }
 
             int count = toDelete.Count;
@@ -1466,10 +1486,27 @@ namespace BubbleBuffs {
         public RectTransform Transform { get { return GameObject.transform as RectTransform; } }
     }
 
+    class BubbleCleanup : IDisposable {
+
+        private readonly List<IDisposable> Trash = new();
+        public void AddTrash(IDisposable trash) {
+            Trash.Add(trash);
+        }
+
+        public void Dispose() {
+            foreach (var trash in Trash)
+                trash.Dispose();
+        }
+
+    }
+
     class BubbleSpellView {
         public static void BindBuffToView(BubbleBuff buff, GameObject view) {
+            var button = view.GetComponent<OwlcatButton>();
             view.ChildObject("Name/NameLabel").GetComponent<TextMeshProUGUI>().text = buff.Name;
             view.ChildObject("Icon/IconImage").GetComponent<Image>().sprite = buff.Spell.Blueprint.Icon;
+            view.ChildObject("Icon/IconImage").GetComponent<Image>().color = buff.Key.Archmage ? Color.yellow : Color.white;
+            view.ChildObject("Icon/FrameImage").GetComponent<Image>().color = buff.Key.Archmage ? Color.yellow : Color.white;
             var metamagicContainer = view.ChildObject("Metamagic");
             if (buff.Spell.IsMetamagicked()) {
                 for (int i = 0; i < metamagicContainer.transform.childCount; i++) {
@@ -1564,6 +1601,8 @@ namespace BubbleBuffs {
             state.OnRecalculated = Update;
         }
 
+        private static GameObject BigLabelPrefab => UIHelpers.CharacterScreen.Find("NamePortrait/CharName/CharacterName").gameObject;
+
         public void MakeBuffsList() {
             Main.Verbose("here");
             if (!state.Dirty)
@@ -1582,18 +1621,19 @@ namespace BubbleBuffs {
             availableBuffs.transform.SetAsFirstSibling();
             Main.Verbose("made new buff list");
             availableBuffs.name = "AvailableBuffList";
-            availableBuffs.GetComponentInChildren<GridLayoutGroupWorkaround>().constraintCount = 4;
+            availableBuffs.GetComponentInChildren<GridLayoutGroupWorkaround>().constraintCount = 5;
             Main.Verbose("set constraint count");
             var listRect = availableBuffs.transform as RectTransform;
             listRect.localPosition = Vector2.zero;
             listRect.sizeDelta = Vector2.zero;
-            listRect.anchorMin = new Vector2(0.125f, 0.5f);
-            listRect.anchorMax = new Vector2(0.875f, 0.9f);
+            listRect.anchorMin = new Vector2(0.125f, 0.47f);
+            listRect.anchorMax = new Vector2(0.875f, 0.87f);
             GameObject.Destroy(listRect.Find("Toggle")?.gameObject);
             GameObject.Destroy(listRect.Find("TogglePossibleSpells")?.gameObject);
             GameObject.Destroy(listRect.Find("ToggleAllSpells")?.gameObject);
             GameObject.Destroy(listRect.Find("ToggleMetamagic")?.gameObject);
             var scrollContent = availableBuffs.transform.Find("StandardScrollView/Viewport/Content");
+            scrollContent.localScale = new Vector3(0.8f, 0.8f, 0.8f);
             Main.Verbose("got scroll content");
             Main.Verbose($"destroying old stuff: {scrollContent.childCount}");
             int toDestroy = scrollContent.childCount;
@@ -1664,6 +1704,23 @@ namespace BubbleBuffs {
                 }
             }
 
+            foreach (BuffGroup group in Enum.GetValues(typeof(BuffGroup))) {
+                try {
+                    if (groupSummaryLabels.TryGetValue(group, out var label)) {
+                        var list = state.BuffList.Where(b => b.InGroup == group)
+                                                                   .Select(b => (b.Requested, b.Fulfilled));
+                        if (!list.Empty()) {
+                            var (requested, fulfilled) = list.Aggregate((a, b) => (a.Requested + b.Requested, a.Fulfilled + b.Fulfilled));
+                            label.text = MakeSummaryLabel(group, requested, fulfilled);
+                        } else {
+                            label.text = MakeSummaryLabel(group, 0, 0);
+                        }
+                    }
+                } catch (Exception e) {
+                    Main.Error(e, "");
+                }
+            }
+
             if (currentSelectedSpell.Value == null)
                 return;
 
@@ -1671,6 +1728,11 @@ namespace BubbleBuffs {
             UpdateCasterDetails(Selected);
             OnUpdate?.Invoke();
         }
+
+        private string MakeSummaryLabel(BuffGroup group, int requested, int fulfilled) {
+             return $"{group.ToString().MakeTitle()}\n{fulfilled}/{requested}";
+        }
+
 
         public Action OnUpdate;
 
@@ -1755,6 +1817,32 @@ namespace BubbleBuffs {
             if (currentSelectedSpell.Value == null)
                 return false;
             return true;
+        }
+
+        private Dictionary<BuffGroup, TextMeshProUGUI> groupSummaryLabels = new();
+
+        internal void MakeSummary() {
+            groupSummaryLabels.Clear();
+            var rect = new GameObject("summary", typeof(RectTransform));
+            rect.AddTo(content);
+            rect.Rect().sizeDelta = Vector3.zero;
+
+            rect.MakeComponent<GridLayoutGroupWorkaround>(h => {
+                h.constraint = GridLayoutGroup.Constraint.FixedRowCount;
+                h.constraintCount = 1;
+                h.childAlignment = TextAnchor.MiddleCenter;
+                h.cellSize = new Vector2(400, 100);
+            });
+
+            foreach (BuffGroup group in Enum.GetValues(typeof(BuffGroup))) {
+                var l = GameObject.Instantiate(BigLabelPrefab, rect.transform);
+                var label = l.GetComponent<TextMeshProUGUI>();
+                label.text = MakeSummaryLabel(group, 0, 0);
+                l.SetActive(true);
+                groupSummaryLabels[group] = label;
+            }
+            rect.Rect().SetAnchor(0.15, 0.85, 0.88, 0.93);
+
         }
 
         public BubbleBuff Selected {

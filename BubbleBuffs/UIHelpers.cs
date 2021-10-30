@@ -1,6 +1,7 @@
 ﻿using Kingmaker;
 using Kingmaker.Utility;
 using Owlcat.Runtime.UI.Utility;
+using System;
 using System.Linq;
 using UniRx;
 using UnityEngine;
@@ -63,6 +64,44 @@ namespace BubbleBuffs {
             foreach (var c in componentList)
                 GameObject.DestroyImmediate(c);
         }
+        public static T EditComponent<T>(this GameObject obj, Action<T> build) where T : Component {
+            var component = obj.GetComponent<T>();
+            build(component);
+            return component;
+        }
+        public static T MakeComponent<T>(this GameObject obj, Action<T> build) where T : Component {
+            var component = obj.AddComponent<T>();
+            build(component);
+            return component;
+        }
+        public static void AddTo(this Transform obj, Transform parent) {
+            obj.SetParent(parent);
+            obj.localPosition = Vector3.zero;
+            obj.localScale = Vector3.one;
+            obj.localRotation = Quaternion.identity;
+        }
+
+        public static void AddTo(this Transform obj, GameObject parent) { obj.AddTo(parent.transform); }
+        public static void AddTo(this GameObject obj, Transform parent) { obj.transform.AddTo(parent); }
+        public static void AddTo(this GameObject obj, GameObject parent) { obj.transform.AddTo(parent.transform); }
+
+        private static string MakeTitleCharacter(this char ch) {
+            string voffset = "0.1";
+            if (ch == 'F' || ch == 'f')
+                voffset = "0.2";
+
+            return $"<voffset={voffset}em><font=\"Saber_Dist32\"><color=#672B31><size=130%>{ch}</size></color></font></voffset>";
+        }
+
+        public static string MakeTitle(this string str) {
+            if (str.Length == 0)
+                return "";
+
+            var ret = str[0].MakeTitleCharacter();
+            if (str.Length > 1)
+                ret += str.Substring(1);
+            return ret;
+    }
     }
     class WidgetPaths_1_0 {
         public virtual string SpellScreen => "SpellbookView/SpellbookScreen";
