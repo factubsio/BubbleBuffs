@@ -45,6 +45,25 @@ namespace BubbleBuffs {
         public OwlcatButton down;
     }
 
+    public class BubbleAnimator : MonoBehaviour {
+        private static int NextId = 0;
+
+        public Material Target;
+        private float Start = UnityEngine.Random.Range(0, 20.0f);
+        private float Warmup = 0;
+        private double TimeAtDisable;
+        private int Id = NextId++;
+        private bool WasDisabled = true;
+
+        void Awake() {
+            Target.SetFloat("_Warmup", 1);
+        }
+
+        void Update() {
+            Target.SetFloat("_BubbleTime", Start + Time.unscaledTime);
+        }
+    }
+
 
     public class BubbleBuffSpellbookController : MonoBehaviour {
         private GameObject ToggleButton;
@@ -145,6 +164,12 @@ namespace BubbleBuffs {
             obj.GetComponent<FadeAnimator>().AppearAnimation();
         }
 
+        private List<Material> _ToAnimate = new();
+
+        void Update() {
+            foreach (var mat in _ToAnimate)
+                mat.SetFloat("_BubbleTime", Time.unscaledTime);
+        }
 
         private void Awake() {
             MainContainer = transform.Find("MainContainer").gameObject;
@@ -222,7 +247,7 @@ namespace BubbleBuffs {
             return toggle;
         }
 
-        private static Portrait MakePortrait(GameObject portraitPrefab, RectTransform groupRect, bool destroyHealth, GameObject expandButtonPrefab, Portrait[] portraitGroup, GameObject popout) {
+        private Portrait MakePortrait(GameObject portraitPrefab, RectTransform groupRect, bool destroyHealth, GameObject expandButtonPrefab, Portrait[] portraitGroup, GameObject popout) {
             var portrait = GameObject.Instantiate(portraitPrefab, groupRect);
             var handle = new Portrait {
                 GameObject = portrait
@@ -287,15 +312,23 @@ namespace BubbleBuffs {
             }
 
             handle.Image = portraitRect.Find("LifePortrait").gameObject.GetComponent<Image>();
+
+            var fullOverlay = GameObject.Instantiate(portraitRect.gameObject.ChildObject("LifePortrait"), portraitRect);
+            handle.FullOverlay = fullOverlay.GetComponent<Image>();
+            handle.FullOverlay.material = AssetLoader.Materials["bubble_overlay_full"];
+            handle.FullOverlay.gameObject.SetActive(false);
+            handle.FullOverlay.color = new Color(1, 1, 1, UnityEngine.Random.Range(0f, 1.0f));
+            handle.FullOverlay.sprite = null;
+
             var overlay = GameObject.Instantiate(portraitRect.gameObject.ChildObject("LifePortrait"), portraitRect);
             handle.Overlay = overlay.GetComponent<Image>();
-            //overlay.AddComponent<AnimatedOverlay>().target = handle.Overlay;
+            handle.Overlay.material = AssetLoader.Materials["bubbly_overlay"];
             handle.Overlay.gameObject.SetActive(false);
-            handle.Overlay.rectTransform.anchorMax = new Vector2(1, 0.3f);
+            handle.Overlay.rectTransform.anchorMax = new Vector2(1, 0.4f);
+            handle.Overlay.color = new Color(0, 1, 0, UnityEngine.Random.Range(0f, 1.0f));
             handle.Overlay.sprite = null;
-            handle.Overlay.color = new Color(0, 1, 0, 0.4f);
-            handle.Button = frameRect.gameObject.GetComponent<OwlcatMultiButton>();
 
+            handle.Button = frameRect.gameObject.GetComponent<OwlcatMultiButton>();
             return handle;
         }
 
@@ -357,6 +390,14 @@ namespace BubbleBuffs {
             MakeDetailsView(portraitPrefab, framePrefab, nextPrefab, prevPrefab, togglePrefab, expandButtonPrefab, content);
             Main.Verbose("made details view");
 
+            var partialOverlay = AssetLoader.Materials["bubbly_overlay"];
+            partialOverlay.SetFloat("_Speed", 0.3f);
+            partialOverlay.SetFloat("_Warmup", 1);
+            _ToAnimate.Add(partialOverlay);
+            var fullOverlay = AssetLoader.Materials["bubble_overlay_full"];
+            fullOverlay.SetFloat("_Speed", 0.3f);
+            fullOverlay.SetFloat("_Warmup", 1);
+            _ToAnimate.Add(fullOverlay);
 
             ShowHidden.Subscribe<bool>(show => {
                 RefreshFiltering();
@@ -409,7 +450,7 @@ namespace BubbleBuffs {
                             caster.GameObject.SetActive(false);
 
                         foreach (var portrait in view.targets) {
-                            portrait.Image.color = Color.white;
+                            portrait.FullOverlay.gameObject.SetActive(false);
                             portrait.Button.Interactable = true;
                         }
                     }
@@ -483,8 +524,6 @@ namespace BubbleBuffs {
         }
 
         private void MakeFilters(GameObject togglePrefab, Transform content) {
-            Main.Log("MAKING FILTERS???");
-
             var filterRect = MakeVerticalRect("filters", content);
             //filterToggles.AddComponent<Image>().color = Color.green;
             filterRect.anchorMin = new Vector2(0.13f, 0.1f);
@@ -499,7 +538,7 @@ namespace BubbleBuffs {
 
             const float scale = 1.0f;
             GameObject showHidden = MakeToggle(togglePrefab, filterRect, 0.8f, .5f, "Show hidden", "bubble-toggle-show-hidden", scale);
-            GameObject showShort = MakeToggle(togglePrefab, filterRect, .8f, .5f, "Show short", "bubble-toggle-show-short", scale);
+            GameObject showShort = MakeToggle(togglePrefab, filterRect, .8f, .5f, "Show round/level", "bubble-toggle-show-short", scale);
             GameObject showRequested = MakeToggle(togglePrefab, filterRect, .8f, .5f, "Show requested", "bubble-toggle-show-requested", scale);
             GameObject showNotRequested = MakeToggle(togglePrefab, filterRect, .8f, .5f, "Show NOT requested", "bubble-toggle-show-not-requested", scale);
 
@@ -992,7 +1031,6 @@ namespace BubbleBuffs {
 
         internal void Execute(BuffGroup group) {
             UnitBuffPartView.StartSuppression();
-            Main.Log("Executing?");
             Executor.Execute(group);
             Invoke("EndBuffPartViewSuppression", 1.0f);
         }
@@ -1183,6 +1221,7 @@ namespace BubbleBuffs {
         public GameObject bubbleHud;
         public GameObject hudLayout;
 
+
         internal void TryInstallUI() {
             try {
                 Main.Verbose("Installing ui");
@@ -1301,10 +1340,10 @@ namespace BubbleBuffs {
                 }
 
 
-                Transform eiToggle0 = null; // UIHelpers.SpellbookScreen.Find("MainContainer/KnownSpells/ToggleAllSpells");
+                Transform eiToggle0 = UIHelpers.SpellbookScreen.Find("MainContainer/KnownSpells/ToggleAllSpells");
 
                 if (eiToggle0 != null) {
-                    Main.Log("Tweaking stuff");
+                    Main.Verbose("Tweaking stuff", "interop");
                     var eiToggle2 = UIHelpers.SpellbookScreen.Find("MainContainer/KnownSpells/ToggleMetamagic");
                     var eiToggle1 = UIHelpers.SpellbookScreen.Find("MainContainer/KnownSpells/TogglePossibleSpells");
 
@@ -1473,6 +1512,7 @@ namespace BubbleBuffs {
         public TextMeshProUGUI Text;
         public OwlcatButton Expand;
         public Image Overlay;
+        public Image FullOverlay;
 
         public void ExpandOff() {
             Expand.IsSelected = false;
@@ -1644,6 +1684,8 @@ namespace BubbleBuffs {
             Main.Verbose($"destroyed old stuff: {scrollContent.childCount}");
             //widgetListDrawHandle = buffWidgetList.DrawEntries<IWidgetView>(models, new List<IWidgetView> { spellPrefab });
 
+            Color goodSpellColor = new Color(0.2f, 0.7f, 0.2f);
+
             OwlcatButton previousSelection = null;
             widgetCache.ResetStats();
             using (new BubbleProfiler("making widgets")) {
@@ -1674,8 +1716,13 @@ namespace BubbleBuffs {
                             label.text = $"casting: {buff.Fulfilled}/{buff.Requested} + available: {availNormal}+{availSelf}";
                         else
                             label.text = $"casting: {buff.Fulfilled}/{buff.Requested} + available: at will";
-                        if (buff.Requested > 0 && buff.Fulfilled != buff.Requested) {
-                            textImage.color = Color.red;
+                        if (buff.Requested > 0) {
+                            if (buff.Fulfilled != buff.Requested) {
+                                textImage.color = Color.red;
+                            } else {
+                                textImage.color = goodSpellColor;
+                            }
+
                         } else {
                             textImage.color = Color.white;
                         }
@@ -1748,10 +1795,10 @@ namespace BubbleBuffs {
         }
 
         private void UpdateTargetBuffColor(BubbleBuff buff, int i) {
-            var portrait = targets[i].Image;
+            var fullOverlay = targets[i].FullOverlay;
             targets[i].Button.Interactable = true;
             if (buff == null) {
-                portrait.color = Color.white;
+                fullOverlay.gameObject.SetActive(false);
                 return;
             }
             bool isMass = false;
@@ -1765,28 +1812,32 @@ namespace BubbleBuffs {
 
 
             if (isMass && !buff.UnitWants(i)) {
+                var target = massGood ? massGoodColor : massBadColor;
                 targets[i].Overlay.gameObject.SetActive(true);
-                targets[i].Overlay.color = massGood ? massGoodColor : massBadColor;
+                var current = targets[i].Overlay.color;
+                Main.Log($"current alpha: {current.a}");
+                targets[i].Overlay.color = new Color(target.r, target.g, target.b, current.a);
             } else {
                 targets[i].Overlay.gameObject.SetActive(false);
             }
 
+            fullOverlay.gameObject.SetActive(true);
 
             if (!buff.CanTarget(i)) {
-                portrait.color = Color.red;
+                fullOverlay.color = Color.red;
                 targets[i].Button.Interactable = false;
                 targets[i].SelectedMark.SetActive(false);
 
             } else if (buff.UnitWants(i)) {
                 targets[i].SelectedMark.SetActive(true);
                 if (buff.UnitGiven(i)) {
-                    portrait.color = Color.green;
+                    fullOverlay.color = Color.green;
                 } else {
-                    portrait.color = Color.yellow;
+                    fullOverlay.color = Color.yellow;
                 }
             } else {
                 targets[i].SelectedMark.SetActive(false);
-                portrait.color = Color.gray;
+                fullOverlay.color = Color.gray;
             }
         }
 

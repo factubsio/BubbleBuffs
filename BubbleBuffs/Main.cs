@@ -88,6 +88,7 @@ namespace BubbleBuffs {
     [EnableReloading]
 #endif
     static class Main {
+        public static string ModPath;
         private static Harmony harmony;
         public static bool Enabled;
 
@@ -99,20 +100,16 @@ namespace BubbleBuffs {
 #endif
             modEntry.OnUpdate = OnUpdate;
             ModSettings.ModEntry = modEntry;
-            //bubbleLog = File.CreateText($"{modEntry.Path}/log.txt");
+            ModPath = modEntry.Path;
             Main.Log("LOADING");
+
+            AssetLoader.AddBundle("tutorialcanvas");
 
             if (UnityModManager.gameVersion.Minor == 1)
                 UIHelpers.WidgetPaths = new WidgetPaths_1_1();
             else
                 UIHelpers.WidgetPaths = new WidgetPaths_1_0();
             harmony.PatchAll();
-
-            //ModSettings.LoadAllSettings();
-            //Enabled = true;
-            //SpeedTweaks.Install();
-
-            //Crusade.Install();
 
             GlobalBubbleBuffer.Install();
 
@@ -195,7 +192,7 @@ namespace BubbleBuffs {
             //"rejection",
         };
 
-        static bool suppressUnfiltered = false;
+        static bool suppressUnfiltered = true;
 
         internal static void Verbose(string v, string filter = null) {
 #if true && DEBUG
