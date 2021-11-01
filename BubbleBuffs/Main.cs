@@ -25,6 +25,7 @@ using Kingmaker.Blueprints.Root;
 using Kingmaker.Controllers.Rest;
 using System.Reflection;
 using System.IO;
+using Kingmaker.Cheats;
 
 namespace BubbleBuffs {
 
@@ -98,6 +99,7 @@ namespace BubbleBuffs {
 #if DEBUG
             modEntry.OnUnload = OnUnload;
 #endif
+            CheatsCommon.SendAnalyticEvents?.Set(false);
             modEntry.OnUpdate = OnUpdate;
             ModSettings.ModEntry = modEntry;
             ModPath = modEntry.Path;
@@ -128,7 +130,6 @@ namespace BubbleBuffs {
                 GlobalBubbleBuffer.Instance.SpellbookController.state.RecalculateAvailableBuffs(Bubble.Group);
             }
             if (Input.GetKeyDown(KeyCode.R) && (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift))) {
-                Main.Log("RESTING");
                 foreach (var unit in Bubble.Group)
                     RestController.ApplyRest(unit);
             }
@@ -140,18 +141,9 @@ namespace BubbleBuffs {
 
         static bool OnUnload(UnityModManager.ModEntry modEntry) {
             harmony.UnpatchAll();
-//            SpeedTweaks.Uninstall();
-//            Crusade.Uninstall();
-//
             GlobalBubbleBuffer.Uninstall();
 
-            //if (bubbleLog != null) {
-            //    Main.Log("Closing log...");
-            //    bubbleLog.Close();
-            //    bubbleLog = null;
-            //}
             return true;
-
         }
 
         internal static void LogPatch(string v, object coupDeGraceAbility) {
@@ -190,6 +182,7 @@ namespace BubbleBuffs {
             //"state",
             //"minority",
             //"rejection",
+            "interop",
         };
 
         static bool suppressUnfiltered = true;

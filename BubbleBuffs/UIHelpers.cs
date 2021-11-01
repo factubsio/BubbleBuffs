@@ -6,6 +6,7 @@ using System.Linq;
 using UniRx;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
 namespace BubbleBuffs {
     static class UIHelpers {
@@ -69,6 +70,19 @@ namespace BubbleBuffs {
             build(component);
             return component;
         }
+
+        public static string NullStr(this object obj) {
+            return obj == null ? "<null>" : $"<good:{obj}>";
+        }
+
+        public static Image AddChildImage(this GameObject obj, Sprite sprite) {
+            var (child, _) = Create("child-image", obj.transform);
+            child.FillParent();
+            var img = child.AddComponent<Image>();
+            img.sprite = sprite;
+            return img;
+        }
+
         public static T MakeComponent<T>(this GameObject obj, Action<T> build) where T : Component {
             var component = obj.AddComponent<T>();
             build(component);
@@ -79,6 +93,22 @@ namespace BubbleBuffs {
             obj.localPosition = Vector3.zero;
             obj.localScale = Vector3.one;
             obj.localRotation = Quaternion.identity;
+        }
+
+        public static void FillParent(this RectTransform rect) {
+            rect.SetAnchor(0, 1, 0, 1);
+            rect.sizeDelta = Vector2.zero;
+        }
+
+        public static void FillParent(this GameObject obj) {
+            obj.Rect().FillParent();
+        }
+
+        public static (GameObject, RectTransform) Create(string name, Transform parent = null) {
+            var obj = new GameObject(name, typeof(RectTransform));
+            if (parent != null)
+                obj.AddTo(parent);
+            return (obj, obj.Rect());
         }
 
         public static void AddTo(this Transform obj, GameObject parent) { obj.AddTo(parent.transform); }

@@ -85,6 +85,27 @@ namespace BubbleBuffs {
 
         public static string SettingsPath => $"{ModSettings.ModEntry.Path}UserSettings/bubblebuff-{Game.Instance.Player.GameId}.json";
 
+        public void TryFixEILayout() {
+            Transform eiToggle0 = UIHelpers.SpellbookScreen.Find("MainContainer/KnownSpells/ToggleAllSpells");
+
+            if (eiToggle0 != null) {
+                Main.Verbose("Tweaking stuff", "interop");
+                var eiToggle2 = UIHelpers.SpellbookScreen.Find("MainContainer/KnownSpells/ToggleMetamagic");
+                var eiToggle1 = UIHelpers.SpellbookScreen.Find("MainContainer/KnownSpells/TogglePossibleSpells");
+
+                RectTransform[] eiToggles = { (RectTransform)eiToggle0, (RectTransform)eiToggle1, (RectTransform)eiToggle2 };
+
+                for (int i = 0; i < eiToggles.Length; i++) {
+                    eiToggles[i].localPosition = new Vector2(430.0f, -392.0f - 30f * i);
+                    eiToggles[i].localScale = new Vector3(0.8f, 0.8f, .8f);
+                }
+
+                var eiLearnAll = UIHelpers.SpellbookScreen.Find("MainContainer/LearnAllSpells").transform as RectTransform;
+
+                eiLearnAll.localPosition = new Vector2(800.0f, -400.0f);
+            }
+        }
+
         public void CreateBuffstate() {
             if (File.Exists(SettingsPath)) {
                 using (var settingsReader = File.OpenText(SettingsPath))
@@ -172,6 +193,8 @@ namespace BubbleBuffs {
         }
 
         private void Awake() {
+            TryFixEILayout();
+
             MainContainer = transform.Find("MainContainer").gameObject;
             NoSpellbooksContainer = transform.Find("NoSpellbooksContainer").gameObject;
 
@@ -247,59 +270,79 @@ namespace BubbleBuffs {
             return toggle;
         }
 
-        private Portrait MakePortrait(GameObject portraitPrefab, RectTransform groupRect, bool destroyHealth, GameObject expandButtonPrefab, Portrait[] portraitGroup, GameObject popout) {
-            var portrait = GameObject.Instantiate(portraitPrefab, groupRect);
-            var handle = new Portrait {
-                GameObject = portrait
-            };
-            GameObject.Destroy(portrait.transform.Find("Health").gameObject);
-            GameObject.Destroy(portrait.transform.Find("PartBuffView").gameObject);
-            GameObject.Destroy(portrait.transform.Find("BuffMain").gameObject);
-            GameObject.Destroy(portrait.transform.Find("EncumbranceIndicator").gameObject);
-            GameObject.Destroy(portrait.transform.Find("Levelups").gameObject);
-            GameObject.Destroy(portrait.transform.Find("Bark").gameObject);
+        private Portrait CreatePortrait(float groupHeight, Transform groupRect, bool createLabel, bool createPopout, Portrait[] group = null, GameObject popout = null) {
+            var portrait = new Portrait();
+            float width = groupHeight * .75f;
+            float height = groupHeight;
 
-            GameObject.Destroy(portrait.transform.Find("HitPoint").gameObject);
-            if (!destroyHealth) {
+            var (p, pRect) = UIHelpers.Create($"bubblebuff-portrait", groupRect);
+
+            portrait.GameObject = p;
+            portrait.Image = p.AddComponent<Image>();
+            p.MakeComponent<LayoutElement>(l => {
+                l.preferredWidth = width;
+                l.preferredHeight = height;
+            });
+
+            var normalBorder = AssetLoader.Sprites["UI_HudCharacterFrameBorder_Default"];
+            var hoverBorder = AssetLoader.Sprites["UI_HudCharacterFrameBorder_Hover"];
+
+            var (fullOverlay, fullOverlayRect) = UIHelpers.Create("full-overlay", pRect);
+            fullOverlayRect.FillParent();
+            portrait.FullOverlay = fullOverlay.MakeComponent<Image>(img => {
+                img.material = AssetLoader.Materials["bubble_overlay_full"];
+                img.gameObject.SetActive(false);
+                img.color = new Color(1, 1, 1, UnityEngine.Random.Range(0f, 1.0f));
+            });
+
+            var (aoeOverlay, aoeOverlayRect) = UIHelpers.Create("aoe-overlay", pRect);
+            aoeOverlayRect.FillParent();
+            //aoeOverlayRect.anchorMax = new Vector2(1, 0.4f);
+            portrait.Overlay = aoeOverlay.MakeComponent<Image>(img => {
+                img.material = AssetLoader.Materials["bubbly_overlay"];
+                img.gameObject.SetActive(false);
+                img.color = new Color(0, 1, 0, UnityEngine.Random.Range(0f, 1.0f));
+            });
+
+            var (frameObj, _) = UIHelpers.Create("child-image", pRect);
+            var frame = frameObj.AddComponent<Image>();
+            frame.type = Image.Type.Sliced;
+            frameObj.FillParent();
+            frame.sprite = normalBorder;
+
+            portrait.Button = p.AddComponent<OwlcatButton>();
+            portrait.Button.OnHover.AddListener(h => {
+                frame.sprite = h ? hoverBorder : normalBorder;
+            });
+
+
+            if (createLabel) {
                 var labelPrefab = UIHelpers.SpellbookScreen.Find("MainContainer/MemorizingPanelContainer/MemorizingPanel/SubstituteContainer/Label").gameObject;
-                var label = GameObject.Instantiate(labelPrefab, portrait.transform);
+                var label = GameObject.Instantiate(labelPrefab, pRect);
+                label.Rect().SetAnchor(0.5, 0.5, -.15, -.15);
+                label.Rect().sizeDelta = new Vector2(width, 1);
                 label.SetActive(true);
-                handle.Text = label.GetComponentInChildren<TextMeshProUGUI>();
-                handle.Text.richText = true;
-                handle.Text.lineSpacing = -15.0f;
-                label.Rect().SetAnchor(0.5, 0.5, -.18, -.18);
-                label.Rect().sizeDelta = new Vector2(50, 1);
+                portrait.Text = label.GetComponentInChildren<TextMeshProUGUI>();
+                portrait.Text.richText = true;
+                portrait.Text.lineSpacing = -15.0f;
+                portrait.Text.text = "HELLO";
             }
 
-            GameObject.Destroy(portrait.transform.Find("Portrait").GetComponent<UnitPortraitPartView>());
-            GameObject.Destroy(portrait.GetComponent<PartyCharacterPCView>());
-
-            var portraitRect = portrait.transform.Find("Portrait") as RectTransform;
-            var frameRect = portrait.transform.Find("Frame") as RectTransform;
-            portraitRect.anchorMin = frameRect.anchorMin;
-            portraitRect.anchorMax = frameRect.anchorMax;
-            portraitRect.anchoredPosition = frameRect.anchoredPosition;
-            portraitRect.sizeDelta = frameRect.sizeDelta;
-            portrait.transform.localPosition = Vector3.zero;
-
-            handle.SelectedMark = frameRect.Find("Selected").gameObject;
-            handle.SelectedMark.DestroyComponents<Image>();
-            handle.SelectedMark.ChildRect("Mark").anchoredPosition = new Vector2(0, 84);
-
-            if (expandButtonPrefab != null) {
-                var expand = GameObject.Instantiate(expandButtonPrefab, portrait.transform);
+            if (createPopout) {
+                var expand = GameObject.Instantiate(expandButtonPrefab, pRect);
                 expand.Rect().pivot = new Vector2(0.5f, 0.5f);
                 expand.Rect().SetAnchor(0.5, 1);
                 expand.GetComponent<OwlcatButton>().Interactable = true;
-                handle.Expand = expand.GetComponent<OwlcatButton>();
-                handle.Expand.OnLeftClick.AddListener(() => {
-                    handle.SetExpanded(!handle.Expand.IsSelected);
-                    if (handle.Expand.IsSelected) {
-                        foreach (var p in portraitGroup)
-                            if (p != handle)
+                expand.SetActive(true);
+                portrait.Expand = expand.GetComponent<OwlcatButton>();
+                portrait.Expand.OnLeftClick.AddListener(() => {
+                    portrait.SetExpanded(!portrait.Expand.IsSelected);
+                    if (portrait.Expand.IsSelected) {
+                        foreach (var p in group)
+                            if (p != portrait)
                                 p.SetExpanded(false);
 
-                        popout.transform.SetParent(portraitRect);
+                        popout.transform.SetParent(pRect);
                         popout.Rect().anchoredPosition = new Vector2(0, 18);
                         popout.Rect().pivot = new Vector2(0.5f, 0);
                         popout.Rect().SetAnchor(0.5, 1);
@@ -308,28 +351,10 @@ namespace BubbleBuffs {
                         popout.SetActive(false);
                     }
                 });
-                handle.SetExpanded(false);
+                portrait.SetExpanded(false);
             }
 
-            handle.Image = portraitRect.Find("LifePortrait").gameObject.GetComponent<Image>();
-
-            var fullOverlay = GameObject.Instantiate(portraitRect.gameObject.ChildObject("LifePortrait"), portraitRect);
-            handle.FullOverlay = fullOverlay.GetComponent<Image>();
-            handle.FullOverlay.material = AssetLoader.Materials["bubble_overlay_full"];
-            handle.FullOverlay.gameObject.SetActive(false);
-            handle.FullOverlay.color = new Color(1, 1, 1, UnityEngine.Random.Range(0f, 1.0f));
-            handle.FullOverlay.sprite = null;
-
-            var overlay = GameObject.Instantiate(portraitRect.gameObject.ChildObject("LifePortrait"), portraitRect);
-            handle.Overlay = overlay.GetComponent<Image>();
-            handle.Overlay.material = AssetLoader.Materials["bubbly_overlay"];
-            handle.Overlay.gameObject.SetActive(false);
-            handle.Overlay.rectTransform.anchorMax = new Vector2(1, 0.4f);
-            handle.Overlay.color = new Color(0, 1, 0, UnityEngine.Random.Range(0f, 1.0f));
-            handle.Overlay.sprite = null;
-
-            handle.Button = frameRect.gameObject.GetComponent<OwlcatMultiButton>();
-            return handle;
+            return portrait;
         }
 
         public ReactiveProperty<bool> ShowNotRequested = new ReactiveProperty<bool>(true);
@@ -340,6 +365,8 @@ namespace BubbleBuffs {
         public ButtonGroup<Category> CurrentCategory;
 
         private List<UnitEntityData> Group => Game.Instance.SelectionCharacter.ActualGroup;
+
+        public GameObject expandButtonPrefab;
 
         private void CreateWindow() {
             var staticRoot = UIHelpers.StaticRoot;
@@ -353,7 +380,7 @@ namespace BubbleBuffs {
             Main.Verbose("Got spell prefab");
             var framePrefab = UIHelpers.MythicInfoView.Find("Window/MainContainer/MythicInfoProgressionView/Progression/Frame").gameObject;
             Main.Verbose("Got frame prefab");
-            var expandButtonPrefab = UIHelpers.EncyclopediaView.Find("EncyclopediaPageView/HistoryManagerGroup/HistoryGroup/PreviousButton").gameObject;
+            expandButtonPrefab = UIHelpers.EncyclopediaView.Find("EncyclopediaPageView/HistoryManagerGroup/HistoryGroup/PreviousButton").gameObject;
             Main.Verbose("Got expandButton prefab");
             var toggleTransform = UIHelpers.SpellbookScreen.Find("MainContainer/KnownSpells/Toggle");
             if (toggleTransform == null)
@@ -436,9 +463,8 @@ namespace BubbleBuffs {
                         view.addToAll.SetActive(true);
                         view.removeFromAll.SetActive(true);
 
-                        float actualWidth = (buff.CasterQueue.Count - 1) * castersHolder.GetComponent<HorizontalLayoutGroup>().spacing;
-                        (castersHolder.transform as RectTransform).anchoredPosition = new Vector2(-actualWidth / 2.0f, 0);
-
+                        //float actualWidth = (buff.CasterQueue.Count - 1) * castersHolder.GetComponent<HorizontalLayoutGroup>().spacing;
+                        //(castersHolder.transform as RectTransform).anchoredPosition = new Vector2(-actualWidth / 2.0f, 0);
                         view.Update();
                     } else {
                         currentSpellView.SetActive(false);
@@ -622,21 +648,6 @@ namespace BubbleBuffs {
             var currentSpellRect = currentSpellView.transform as RectTransform;
             currentSpellRect.SetAnchor(.5, .8);
 
-            castersHolder = new GameObject("CastersHolder", typeof(RectTransform));
-            var castersRect = castersHolder.GetComponent<RectTransform>();
-            castersRect.SetParent(detailsRect);
-            castersRect.localPosition = Vector2.zero;
-            castersRect.sizeDelta = Vector2.zero;
-            castersRect.anchorMin = new Vector2(0.5f, 0.22f);
-            castersRect.anchorMax = new Vector2(0.5f, 0.57f);
-            castersRect.pivot = new Vector2(0.5f, 0.4f);
-            castersRect.anchoredPosition = new Vector2(-(60 * totalCasters) / 2.0f, 0.0f);
-
-
-            var castersHorizontalGroup = castersHolder.AddComponent<HorizontalLayoutGroup>();
-            castersHorizontalGroup.spacing = 76;
-            castersHorizontalGroup.childControlHeight = true;
-            castersHorizontalGroup.childForceExpandHeight = true;
 
             ReactiveProperty<int> SelectedCaster = new ReactiveProperty<int>(-1);
 
@@ -812,24 +823,38 @@ namespace BubbleBuffs {
                 }
             });
 
+            const float groupHeight = 90f;
+            var (groupHolder, castersRect) = UIHelpers.Create("CastersHolder", detailsRect);
+            castersHolder = groupHolder;
+            groupHolder.MakeComponent<ContentSizeFitter>(f => {
+                f.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
+            });
+            castersRect.anchorMin = new Vector2(0.5f, 0.22f);
+            castersRect.anchorMax = new Vector2(0.5f, 0.57f);
+            castersRect.SetAnchor(0.5f, 0.2f);
+            castersRect.sizeDelta = new Vector2(300, groupHeight);
+            castersRect.pivot = new Vector2(0.5f, 0);
+
+            var horizontalGroup = groupHolder.AddComponent<HorizontalLayoutGroup>();
+            horizontalGroup.spacing = 6;
+            horizontalGroup.childControlHeight = true;
+            horizontalGroup.childForceExpandHeight = true;
+
             for (int i = 0; i < totalCasters; i++) {
-                var casterPortrait = MakePortrait(portraitPrefab, castersRect, false, expandButtonPrefab, view.casterPortraits, popout);
-                view.casterPortraits[i] = casterPortrait;
-                var textRoot = casterPortrait.Text.gameObject.transform.parent as RectTransform;
-                textRoot.anchoredPosition = new Vector2(0, -200);
-                casterPortrait.Text.fontSizeMax = 18;
-                casterPortrait.Text.fontSize = 18;
-                casterPortrait.Text.color = Color.black;
-                casterPortrait.Text.gameObject.transform.parent.gameObject.SetActive(true);
-                casterPortrait.Text.text = "12/12";
-                var aspect = casterPortrait.GameObject.AddComponent<AspectRatioFitter>();
-                aspect.aspectMode = AspectRatioFitter.AspectMode.HeightControlsWidth;
-                aspect.aspectRatio = 0.75f;
-                //casterPortrait.Button.m_CommonLayer.RemoveAt(1);
+                var portrait = CreatePortrait(groupHeight, castersRect, true, true, view.casterPortraits, popout);
+                view.casterPortraits[i] = portrait;
+                portrait.Image.color = Color.yellow;
+
+                portrait.Text.fontSizeMax = 18;
+                portrait.Text.alignment = TextAlignmentOptions.Center;
+                portrait.Text.fontSize = 18;
+                portrait.Text.color = Color.black;
+                portrait.Text.gameObject.transform.parent.gameObject.SetActive(true);
+                portrait.Text.text = "12/12";
                 int casterIndex = i;
 
-                casterPortrait.Expand.OnLeftClick.AddListener(() => {
-                    if (casterPortrait.Expand.IsSelected) {
+                portrait.Expand?.OnLeftClick.AddListener(() => {
+                    if (portrait.Expand?.IsSelected ?? false) {
                         SelectedCaster.Value = casterIndex;
                         UpdateDetailsView();
                     } else {
@@ -837,9 +862,6 @@ namespace BubbleBuffs {
                     }
                 });
             }
-
-
-
 
             var groupRect = MakeVerticalRect("buff-group", detailsRect);
             groupRect.gameObject.SetActive(false);
@@ -890,7 +912,6 @@ namespace BubbleBuffs {
                     shareTransmutationToggle.isOn = who.ShareTransmutation;
                     powerfulChangeToggle.isOn = who.PowerfulChange;
 
-
                     var skidmarkable = who.spell.IsArcanistSpell && who.spell.Blueprint.School == Kingmaker.Blueprints.Classes.Spells.SpellSchool.Transmutation;
                     shareTransmutationToggle.interactable = skidmarkable && who.who.HasFact(ShareTransmutationFeature);
                     powerfulChangeToggle.interactable = skidmarkable && who.who.HasFact(PowerfulChangeFeature);
@@ -929,22 +950,29 @@ namespace BubbleBuffs {
             var groupRect = groupHolder.GetComponent<RectTransform>();
             groupRect.AddTo(content);
             groupHolder.MakeComponent<ContentSizeFitter>(f => {
-                f.horizontalFit = ContentSizeFitter.FitMode.MinSize;
+                f.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
             });
 
             float requiredWidthHalf = Group.Count * 0.033f;
 
+            const float groupHeight = 166.25f;
+
+            groupRect.SetAnchor(0.5f, 0.08f);
+            groupRect.sizeDelta = new Vector2(300, groupHeight);
+            groupRect.pivot = new Vector2(0.5f, 0);
+
             var horizontalGroup = groupHolder.AddComponent<HorizontalLayoutGroup>();
-            horizontalGroup.spacing = 136;
+            horizontalGroup.spacing = 6;
             horizontalGroup.childControlHeight = true;
             horizontalGroup.childForceExpandHeight = true;
 
             view.targets = new Portrait[Group.Count];
 
-
             for (int i = 0; i < Group.Count; i++) {
-                Portrait portrait = MakePortrait(portraitPrefab, groupRect, true, null, view.targets, null); //expandButtonPrefab);
+                //Portrait portrait = MakePortrait(portraitPrefab, groupRect, true, null, view.targets, null); //expandButtonPrefab);
+                Portrait portrait = CreatePortrait(groupHeight, groupRect, false, false);
 
+                portrait.GameObject.SetActive(true);
                 var aspect = portrait.GameObject.AddComponent<AspectRatioFitter>();
                 aspect.aspectMode = AspectRatioFitter.AspectMode.HeightControlsWidth;
                 aspect.aspectRatio = 0.75f;
@@ -994,12 +1022,9 @@ namespace BubbleBuffs {
 
                 totalCasters += Group[i].Spellbooks?.Count() ?? 0;
             }
-            groupRect.anchorMin = new Vector2(0.5f, 0.115f);
-            groupRect.anchorMax = new Vector2(0.5f, 0.18f);
-            groupRect.pivot = new Vector2(0f, 0.5f);
 
-            float actualWidth = (Group.Count - 1) * horizontalGroup.spacing;
-            groupRect.anchoredPosition = new Vector2(-actualWidth / 2.0f, 0);
+            //float actualWidth = (Group.Count - 1) * horizontalGroup.spacing;
+            //groupRect.anchoredPosition = new Vector2(-actualWidth / 2.0f, 0);
         }
 
         private void ShowBuffWindow() {
@@ -1221,6 +1246,8 @@ namespace BubbleBuffs {
         public GameObject bubbleHud;
         public GameObject hudLayout;
 
+        public static Sprite[] UnitFrameSprites = new Sprite[2];
+
 
         internal void TryInstallUI() {
             try {
@@ -1228,6 +1255,9 @@ namespace BubbleBuffs {
                 Main.Verbose($"spellscreennull: {UIHelpers.SpellbookScreen == null}");
                 var spellScreen = UIHelpers.SpellbookScreen.gameObject;
                 Main.Verbose("got spell screen");
+
+                UnitFrameSprites[0] = AssetLoader.LoadInternal("icons", "UI_HudCharacterFrameBorder_Default.png", new Vector2Int(31, 80));
+                UnitFrameSprites[1] = AssetLoader.LoadInternal("icons", "UI_HudCharacterFrameBorder_Hover.png", new Vector2Int(31, 80));
 
 #if DEBUG
                 RemoveOldController(spellScreen);
@@ -1340,25 +1370,6 @@ namespace BubbleBuffs {
                 }
 
 
-                Transform eiToggle0 = UIHelpers.SpellbookScreen.Find("MainContainer/KnownSpells/ToggleAllSpells");
-
-                if (eiToggle0 != null) {
-                    Main.Verbose("Tweaking stuff", "interop");
-                    var eiToggle2 = UIHelpers.SpellbookScreen.Find("MainContainer/KnownSpells/ToggleMetamagic");
-                    var eiToggle1 = UIHelpers.SpellbookScreen.Find("MainContainer/KnownSpells/TogglePossibleSpells");
-
-                    RectTransform[] eiToggles = { (RectTransform)eiToggle0, (RectTransform)eiToggle1, (RectTransform)eiToggle2 };
-
-                    for (int i = 0; i < eiToggles.Length; i++) {
-                        eiToggles[i].localPosition = new Vector2(430.0f, -392.0f - 30f * i);
-                        eiToggles[i].localScale = new Vector3(0.8f, 0.8f, .8f);
-                    }
-
-                    var eiLearnAll = UIHelpers.SpellbookScreen.Find("MainContainer/LearnAllSpells").transform as RectTransform;
-
-                    eiLearnAll.localPosition = new Vector2(800.0f, -400.0f);
-
-                } 
 
                 Main.Verbose("Finished early ui setup");
             } catch (Exception ex) {
@@ -1506,9 +1517,8 @@ namespace BubbleBuffs {
     }
     class Portrait {
         public Image Image;
-        public OwlcatMultiButton Button;
+        public OwlcatButton Button;
         public GameObject GameObject;
-        public GameObject SelectedMark;
         public TextMeshProUGUI Text;
         public OwlcatButton Expand;
         public Image Overlay;
@@ -1815,7 +1825,6 @@ namespace BubbleBuffs {
                 var target = massGood ? massGoodColor : massBadColor;
                 targets[i].Overlay.gameObject.SetActive(true);
                 var current = targets[i].Overlay.color;
-                Main.Log($"current alpha: {current.a}");
                 targets[i].Overlay.color = new Color(target.r, target.g, target.b, current.a);
             } else {
                 targets[i].Overlay.gameObject.SetActive(false);
@@ -1826,17 +1835,14 @@ namespace BubbleBuffs {
             if (!buff.CanTarget(i)) {
                 fullOverlay.color = Color.red;
                 targets[i].Button.Interactable = false;
-                targets[i].SelectedMark.SetActive(false);
 
             } else if (buff.UnitWants(i)) {
-                targets[i].SelectedMark.SetActive(true);
                 if (buff.UnitGiven(i)) {
                     fullOverlay.color = Color.green;
                 } else {
                     fullOverlay.color = Color.yellow;
                 }
             } else {
-                targets[i].SelectedMark.SetActive(false);
                 fullOverlay.color = Color.gray;
             }
         }

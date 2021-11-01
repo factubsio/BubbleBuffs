@@ -23,7 +23,7 @@ namespace BubbleBuffs.Utilities {
         }
 
         private static Dictionary<string, GameObject> Objects = new();
-        private static Dictionary<string, Sprite> Sprites = new();
+        public static Dictionary<string, Sprite> Sprites = new();
         public static Dictionary<string, Mesh> Meshes = new();
         public static Dictionary<string, Material> Materials = new();
 
