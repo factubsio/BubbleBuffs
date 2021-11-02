@@ -44,6 +44,12 @@ namespace BubbleBuffs {
                     Main.Verbose($"Looking at dude: ${dude.CharacterName}", "state");
                     foreach (var book in dude.Spellbooks) {
                         Main.Verbose($"  Looking at spellbook: {book.Blueprint.DisplayName}", "state");
+                        foreach (var spell in book.GetCustomSpells(0)) {
+                            ReactiveProperty<int> credits = new ReactiveProperty<int>(500);
+                            Main.Verbose($"      Adding cantrip: {spell.Name}", "state");
+                            AddBuff(dude, book, spell, null, credits, false, int.MaxValue, characterIndex);
+                        }
+
                         if (book.Blueprint.Spontaneous) {
                             for (int level = 0; level <= book.LastSpellbookLevel; level++) {
                                 Main.Verbose($"    Looking at spont level {level}", "state");
