@@ -1557,6 +1557,11 @@ namespace BubbleBuffs {
             view.ChildObject("Icon/IconImage").GetComponent<Image>().sprite = buff.Spell.Blueprint.Icon;
             view.ChildObject("Icon/IconImage").GetComponent<Image>().color = buff.Key.Archmage ? Color.yellow : Color.white;
             view.ChildObject("Icon/FrameImage").GetComponent<Image>().color = buff.Key.Archmage ? Color.yellow : Color.white;
+
+            if (buff.Spell.Blueprint.School != Kingmaker.Blueprints.Classes.Spells.SpellSchool.None)
+                view.ChildObject("School/SchoolLabel").GetComponent<TextMeshProUGUI>().text = buff.Spell.Blueprint.School.ToString();
+            else
+                view.ChildObject("School/SchoolLabel").GetComponent<TextMeshProUGUI>().text = "";
             var metamagicContainer = view.ChildObject("Metamagic");
             if (buff.Spell.IsMetamagicked()) {
                 for (int i = 0; i < metamagicContainer.transform.childCount; i++) {
