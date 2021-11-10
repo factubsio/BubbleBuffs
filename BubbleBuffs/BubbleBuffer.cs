@@ -1916,7 +1916,7 @@ namespace BubbleBuffs {
     }
 
 
-    internal class SpellbookWatcher : ISpellBookUIHandler, IAreaHandler, ILevelUpCompleteUIHandler, IPartyChangedUIHandler {
+    internal class SpellbookWatcher : ISpellBookUIHandler, IAreaHandler, ILevelUpCompleteUIHandler, IPartyChangedUIHandler, ISpellBookCustomSpell {
         public static void Safely(Action a) {
             try {
                 a.Invoke();
@@ -1937,7 +1937,6 @@ namespace BubbleBuffs {
         }
 
         public void HandlePartyChanged() {
-            Main.Verbose("Hello?");
             Safely(() => GlobalBubbleBuffer.Instance.SpellbookController?.RevalidateSpells());
         }
 
@@ -1949,6 +1948,13 @@ namespace BubbleBuffs {
 
         public void OnAreaBeginUnloading() { }
 
+        void ISpellBookCustomSpell.AddSpellHandler(AbilityData ability) {
+            Safely(() => GlobalBubbleBuffer.Instance.SpellbookController?.RevalidateSpells());
+        }
+
+        void ISpellBookCustomSpell.RemoveSpellHandler(AbilityData ability) {
+            Safely(() => GlobalBubbleBuffer.Instance.SpellbookController?.RevalidateSpells());
+        }
     }
     internal class HideBubbleButtonsWatcher : ICutsceneHandler, IPartyCombatHandler {
         public void HandleCutscenePaused(CutscenePlayerData cutscene, CutscenePauseReason reason) { }
