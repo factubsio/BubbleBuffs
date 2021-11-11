@@ -1553,7 +1553,12 @@ namespace BubbleBuffs {
     class BubbleSpellView {
         public static void BindBuffToView(BubbleBuff buff, GameObject view) {
             var button = view.GetComponent<OwlcatButton>();
-            view.ChildObject("Name/NameLabel").GetComponent<TextMeshProUGUI>().text = buff.Name;
+            string text = buff.Name;
+            //if (buff.Spell.Blueprint.LocalizedDuration.TryGetString(out var duration)) {
+            //    text += $"\n<size=70%>{duration}</size>";
+            //}
+            view.ChildObject("Name/NameLabel").GetComponent<TextMeshProUGUI>().text = text;
+
             view.ChildObject("Icon/IconImage").GetComponent<Image>().sprite = buff.Spell.Blueprint.Icon;
             view.ChildObject("Icon/IconImage").GetComponent<Image>().color = buff.Key.Archmage ? Color.yellow : Color.white;
             view.ChildObject("Icon/FrameImage").GetComponent<Image>().color = buff.Key.Archmage ? Color.yellow : Color.white;

@@ -681,5 +681,15 @@ namespace BubbleBuffs.Extensions {
                 blueprint.AddComponent(newComponent);
             }
         }
+
+        public static bool TryGetString(this LocalizedString lstring, out string str) {
+            if (!lstring?.IsEmpty() ?? false) {
+                str = lstring;
+                return true;
+            } else {
+                str = "<null>";
+                return false;
+            }
+        }
     }
 }
