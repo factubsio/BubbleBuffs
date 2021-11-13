@@ -1,0 +1,45 @@
+﻿{
+  "buffsetup": "Бафы",
+  "casting": "каст",
+  "available": "доступно",
+  "available.atwill": "по желанию",
+  "showhidden": "Скрытые",
+  "showshort": "Короткие",
+  "showreq": "Выбранные",
+  "showNOTreq": "НЕ выбранные",
+  "group.normal": "Нормальные",
+  "group.important": "Важные",
+  "group.short": "Короткие",
+  "cat.spells": "Заклинания",
+  "cat.Abilities": "Способности",
+  "cat.Items": "Вещи",
+  "cat.Consumables": "Используемые",
+  "group.normal.tooltip.header": "Нормальные бафы",
+  "group.normal.tooltip.desc": "Попробовать бафнуть группой (Нормальные)",
+  "group.important.tooltip.header": "Важные бафы",
+  "group.important.tooltip.desc": "Попробовать бафнуть группой (Важные)",
+  "group.short.tooltip.header": "Короткие бафы",
+  "group.short.tooltip.desc": "Попробовать бафнуть группой (Короткие)",
+
+  "group.normal.log": "Нормальные бафы",
+  "group.important.log": "Важные бафы",
+  "group.short.log": "Короткие бафы",
+  "log.skipped": "Пропущено",
+  "log.applied": "Применено",
+
+  "hideability": "Скрыть способность",
+
+  "tooltip.results": "Итоги",
+  "tooltip.applied": "Применено бафов",
+  "tooltip.skipped": "Пропущено бафов",
+  "tooltip.failed": "Не удалось бафнуть",
+  "noslot": "нет свободного слота заклинания",
+
+  "warn.arcanepool": "  <i>Резерв Арканиста <b>НЕ</b> отслеживается</i>",
+
+  "limitcasts": "Макс. бафов",
+  "bancasts": "Не бафать",
+  "use.powerfulchange": "Использовать Мощный Заряд",
+  "use.sharetransmutation": "Разрешить Общую Трансмутацию",
+  "nolimit": "без ограничений"
+}

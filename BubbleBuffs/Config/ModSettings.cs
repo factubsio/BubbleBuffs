@@ -39,6 +39,7 @@ namespace BubbleBuffs.Config {
         public static void Initialise() {
             AddLanguage(Locale.zhCN, "zh_CN.json");
             AddLanguage(Locale.enGB, "en_GB.json");
+            AddLanguage(Locale.ruRU, "ru_RU.json");
         }
 
         public static string i8(this string str) {
