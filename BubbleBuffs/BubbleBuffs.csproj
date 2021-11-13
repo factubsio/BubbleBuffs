@@ -200,6 +200,7 @@
       <Link>.editorconfig</Link>
     </None>
     <None Include="app.config" />
+    <EmbeddedResource Include="Config\en_GB.json" />
     <None Include="Info.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
@@ -212,6 +213,9 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Assets\icons\" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Config\zh_CN.json" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Target Name="EnsureNuGetPackageBuildImports" AfterTargets="BeforeClean">

@@ -206,7 +206,7 @@ namespace BubbleBuffs {
             ToggleButton = GameObject.Instantiate(transform.Find("MainContainer/MetamagicButton").gameObject, transform);
             (ToggleButton.transform as RectTransform).anchoredPosition = new Vector2(1400, 0);
             ToggleButton.name = "bubblebuff-toggle";
-            ToggleButton.GetComponentInChildren<TextMeshProUGUI>().text = "Buff Setup";
+            ToggleButton.GetComponentInChildren<TextMeshProUGUI>().text = "buffsetup".i8();
 
             {
                 var button = ToggleButton.GetComponentInChildren<OwlcatButton>();
@@ -563,10 +563,10 @@ namespace BubbleBuffs {
             search = new SearchBar(filterRect, "...", false, "bubble-search-buff");
 
             const float scale = 1.0f;
-            GameObject showHidden = MakeToggle(togglePrefab, filterRect, 0.8f, .5f, "Show hidden", "bubble-toggle-show-hidden", scale);
-            GameObject showShort = MakeToggle(togglePrefab, filterRect, .8f, .5f, "Show round/level", "bubble-toggle-show-short", scale);
-            GameObject showRequested = MakeToggle(togglePrefab, filterRect, .8f, .5f, "Show requested", "bubble-toggle-show-requested", scale);
-            GameObject showNotRequested = MakeToggle(togglePrefab, filterRect, .8f, .5f, "Show NOT requested", "bubble-toggle-show-not-requested", scale);
+            GameObject showHidden = MakeToggle(togglePrefab, filterRect, 0.8f, .5f, "showhidden".i8(), "bubble-toggle-show-hidden", scale);
+            GameObject showShort = MakeToggle(togglePrefab, filterRect, .8f, .5f, "showshort".i8(), "bubble-toggle-show-short", scale);
+            GameObject showRequested = MakeToggle(togglePrefab, filterRect, .8f, .5f, "showreq".i8(), "bubble-toggle-show-requested", scale);
+            GameObject showNotRequested = MakeToggle(togglePrefab, filterRect, .8f, .5f, "showNOTreq".i8(), "bubble-toggle-show-not-requested", scale);
 
             search.InputField.onValueChanged.AddListener(val => {
                 NameFilter.Value = val;
@@ -579,10 +579,10 @@ namespace BubbleBuffs {
             CurrentCategory = new ButtonGroup<Category>(categoryRect);
             CurrentCategory.Selected.Subscribe<Category>(_ => RefreshFiltering());
 
-            CurrentCategory.Add(Category.Spell, "Spells");
-            CurrentCategory.Add(Category.Ability, "Abilities");
-            CurrentCategory.Add(Category.Item, "Items");
-            CurrentCategory.Add(Category.Consumable, "Consumables");
+            CurrentCategory.Add(Category.Spell, "cat.spells".i8());
+            CurrentCategory.Add(Category.Ability, "cat.Abilities".i8());
+            CurrentCategory.Add(Category.Item, "cat.Items".i8());
+            CurrentCategory.Add(Category.Consumable, "cat.Consumables".i8());
 
 
             ShowShort.BindToView(showShort);
@@ -667,7 +667,7 @@ namespace BubbleBuffs {
             popout.ChildObject("Background").GetComponent<Image>().raycastTarget = true;
 
             var popLayout = popout.AddComponent<LayoutElement>();
-            popLayout.preferredWidth = 450;
+            popLayout.preferredWidth = 525;
 
             var popVert = popout.AddComponent<VerticalLayoutGroup>();
             popVert.childControlWidth = false;
@@ -684,7 +684,7 @@ namespace BubbleBuffs {
                 return labelRoot;
             }
 
-            var hideSpell = MakeToggle(togglePrefab, detailsRect.transform, 0.03f, 0.8f, "Hide Ability", "hide-spell");
+            var hideSpell = MakeToggle(togglePrefab, detailsRect.transform, 0.03f, 0.8f, "hideability".i8(), "hide-spell");
             hideSpell.transform.SetSiblingIndex(0);
             hideSpell.SetActive(false);
             hideSpell.Rect().pivot = new Vector2(0, 0.5f);
@@ -732,11 +732,11 @@ namespace BubbleBuffs {
 
 
 
-            var capLabel = MakeLabel("  Limit casts to");
+            var capLabel = MakeLabel("  " + "limitcasts".i8());
 
-            var (blacklistToggle, _) = MakePopoutToggle("Ban from casting");
-            var (powerfulChangeToggle, powerfulChangeLabel) = MakePopoutToggle("Use 'Powerful Change'");
-            var (shareTransmutationToggle, shareTransmutationLabel) = MakePopoutToggle("Allow 'Share Transmutation'");
+            var (blacklistToggle, _) = MakePopoutToggle("bancasts".i8());
+            var (powerfulChangeToggle, powerfulChangeLabel) = MakePopoutToggle("use.powerfulchange".i8());
+            var (shareTransmutationToggle, shareTransmutationLabel) = MakePopoutToggle("use.sharetransmutation".i8());
             var defaultLabelColor = shareTransmutationLabel.color;
 
             (ToggleWorkaround, TextMeshProUGUI) MakePopoutToggle(string text) {
@@ -749,7 +749,7 @@ namespace BubbleBuffs {
                 return (toggleObj.GetComponentInChildren<ToggleWorkaround>(), label);
 
             }
-            MakeLabel("  <i>Arcane Resevoir resource is <b>not</b> tracked</i>");
+            MakeLabel("warn.arcanepool".i8());
 
             float capChangeScale = 0.7f;
             var decreaseCustomCap = GameObject.Instantiate(expandButtonPrefab, capLabel.transform);
@@ -762,7 +762,7 @@ namespace BubbleBuffs {
 
             var capValueLabel = GameObject.Instantiate(togglePrefab.GetComponentInChildren<TextMeshProUGUI>().gameObject, capLabel.transform);
             var capValueText = capValueLabel.GetComponent<TextMeshProUGUI>();
-            capValueText.text = "no limit";
+            capValueText.text = "nolimit".i8();
             capValueLabel.AddComponent<LayoutElement>().preferredWidth = 80;
 
             var increaseCustomCap = GameObject.Instantiate(expandButtonPrefab, capLabel.transform);
@@ -866,12 +866,14 @@ namespace BubbleBuffs {
             var groupRect = MakeVerticalRect("buff-group", detailsRect);
             groupRect.gameObject.SetActive(false);
             groupRect.SetAnchor(0.9f, 0.6f);
+            groupRect.anchoredPosition = new Vector2(-20, 0);
+            groupRect.sizeDelta = new Vector2(140, 100);
 
             var buffGroup = new ButtonGroup<BuffGroup>(groupRect);
 
-            buffGroup.Add(BuffGroup.Long, "Normal");
-            buffGroup.Add(BuffGroup.Important, "Important");
-            buffGroup.Add(BuffGroup.Short, "Short");
+            buffGroup.Add(BuffGroup.Long, "group.normal".i8());
+            buffGroup.Add(BuffGroup.Important, "group.important".i8());
+            buffGroup.Add(BuffGroup.Short, "group.short".i8());
 
             buffGroup.Selected.Subscribe<BuffGroup>(g => {
                 if (view.Get(out var buff)) {
@@ -906,7 +908,7 @@ namespace BubbleBuffs {
                     if (who.MaxCap < 100)
                         capValueText.text = $"{actualCap}/{who.MaxCap}";
                     else
-                        capValueText.text = $"at will";
+                        capValueText.text = $"available.atwill".i8();
 
                     blacklistToggle.isOn = who.Banned;
                     shareTransmutationToggle.isOn = who.ShareTransmutation;
@@ -930,6 +932,7 @@ namespace BubbleBuffs {
                 var toggleRect = new GameObject("caster-toggle", typeof(RectTransform));
                 var toggleSize = toggleRect.AddComponent<LayoutElement>();
                 toggleSize.preferredHeight = 40;
+                toggleSize.preferredWidth = 525;
                 var toggleHori = toggleRect.AddComponent<HorizontalLayoutGroup>();
                 toggleHori.childAlignment = TextAnchor.MiddleCenter;
                 toggleHori.childControlHeight = false;
@@ -1181,16 +1184,16 @@ namespace BubbleBuffs {
         }
 
         public override IEnumerable<ITooltipBrick> GetHeader(TooltipTemplateType type) {
-            yield return new TooltipBrickEntityHeader("BubbleBuff results", null);
+            yield return new TooltipBrickEntityHeader($"BubbleBuff {"tooltip.results".i8()}", null);
             yield break;
         }
         public override IEnumerable<ITooltipBrick> GetBody(TooltipTemplateType type) {
             List<ITooltipBrick> elements = new();
-            AddResultsNoMessages("Buffs Applied", elements, good);
-            AddResultsNoMessages("Buffs Skipped", elements, skipped);
+            AddResultsNoMessages("tooltip.applied".i8(), elements, good);
+            AddResultsNoMessages("tooltip.skipped".i8(), elements, skipped);
 
             if (!bad.Empty()) {
-                elements.Add(new TooltipBrickTitle("Buffs Failed"));
+                elements.Add(new TooltipBrickTitle("tooltip.failed".i8()));
                 elements.Add(new TooltipBrickSeparator());
 
                 foreach (var r in bad) {
@@ -1248,6 +1251,7 @@ namespace BubbleBuffs {
 
         public static Sprite[] UnitFrameSprites = new Sprite[2];
 
+        public List<OwlcatButton> Buttons = new();
 
         internal void TryInstallUI() {
             try {
@@ -1341,24 +1345,27 @@ namespace BubbleBuffs {
                 void AddButton(string text, string tooltip, ButtonSprites sprites, Action act) {
                     var applyBuffsButton = GameObject.Instantiate(prefab, buttonsContainer.transform);
                     applyBuffsButton.SetActive(true);
-                    applyBuffsButton.GetComponentInChildren<OwlcatButton>().m_CommonLayer[0].SpriteState = new SpriteState {
+                    OwlcatButton button = applyBuffsButton.GetComponentInChildren<OwlcatButton>();
+                    button.m_CommonLayer[0].SpriteState = new SpriteState {
                         pressedSprite = sprites.down,
                         highlightedSprite = sprites.hover,
                     };
-                    applyBuffsButton.GetComponentInChildren<OwlcatButton>().OnLeftClick.AddListener(() => {
+                    button.OnLeftClick.AddListener(() => {
                         act();
                     });
-                    applyBuffsButton.GetComponentInChildren<OwlcatButton>().SetTooltip(new TooltipTemplateSimple(text, tooltip), new TooltipConfig {
+                    button.SetTooltip(new TooltipTemplateSimple(text, tooltip), new TooltipConfig {
                         InfoCallMethod = InfoCallMethod.None
                     });
+
+                    Buttons.Add(button);
 
                     applyBuffsButton.GetComponentInChildren<Image>().sprite = sprites.normal;
 
                 }
 
-                AddButton("Buff Normal!", "Try to cast spells set in the buff window (Normal)", applyBuffsSprites, () => GlobalBubbleBuffer.Execute(BuffGroup.Long));
-                AddButton("Buff Important!", "Try to cast spells set in the buff window (Important)", applyBuffsImportantSprites, () => GlobalBubbleBuffer.Execute(BuffGroup.Important));
-                AddButton("Buff Short!", "Try to cast spells set in the buff window (Short)", applyBuffsShortSprites, () => GlobalBubbleBuffer.Execute(BuffGroup.Short));
+                AddButton("group.normal.tooltip.header".i8(), "group.normal.tooltip.desc".i8(), applyBuffsSprites, () => GlobalBubbleBuffer.Execute(BuffGroup.Long));
+                AddButton("group.important.tooltip.header".i8(), "group.important.tooltip.desc".i8(), applyBuffsImportantSprites, () => GlobalBubbleBuffer.Execute(BuffGroup.Important));
+                AddButton("group.short.tooltip.header".i8(), "group.short.tooltip.desc".i8(), applyBuffsShortSprites, () => GlobalBubbleBuffer.Execute(BuffGroup.Short));
 
                 Main.Verbose("remove old bubble?");
 #if debug
@@ -1733,9 +1740,9 @@ namespace BubbleBuffs {
                             return;
                         var (availNormal, availSelf) = buff.AvailableAndSelfOnly;
                         if (availNormal < 100)
-                            label.text = $"casting: {buff.Fulfilled}/{buff.Requested} + available: {availNormal}+{availSelf}";
+                            label.text = $"{"casting".i8()}: {buff.Fulfilled}/{buff.Requested} + {"available".i8()}: {availNormal}+{availSelf}";
                         else
-                            label.text = $"casting: {buff.Fulfilled}/{buff.Requested} + available: at will";
+                            label.text = $"{"casting".i8()}: {buff.Fulfilled}/{buff.Requested} + {"available".i8()}: {"available.atwill".i8()}";
                         if (buff.Requested > 0) {
                             if (buff.Fulfilled != buff.Requested) {
                                 textImage.color = Color.red;
@@ -1797,7 +1804,7 @@ namespace BubbleBuffs {
         }
 
         private string MakeSummaryLabel(BuffGroup group, int requested, int fulfilled) {
-             return $"{group.ToString().MakeTitle()}\n{fulfilled}/{requested}";
+             return $"{group.i8().MakeTitle()}\n{fulfilled}/{requested}";
         }
 
 
@@ -1867,7 +1874,7 @@ namespace BubbleBuffs {
                     if (who.AvailableCredits < 100)
                         casterPortraits[i].Text.text = $"{who.spent}+{who.AvailableCredits}\n<i>{bookName}</i>";
                     else
-                        casterPortraits[i].Text.text = $"at will\n<i>{bookName}</i>";
+                        casterPortraits[i].Text.text = $"{"available.atwill".i8()}\n<i>{bookName}</i>";
                     casterPortraits[i].Text.fontSize = 12;
                     casterPortraits[i].Text.outlineWidth = 0;
                     casterPortraits[i].Image.color = who.Banned ? Color.red : Color.white;
@@ -1977,7 +1984,9 @@ namespace BubbleBuffs {
 
         public void HandleCutsceneStopped(CutscenePlayerData cutscene) { }
 
-        public void HandlePartyCombatStateChanged(bool inCombat) { }
+        public void HandlePartyCombatStateChanged(bool inCombat) {
+            GlobalBubbleBuffer.Instance.Buttons.ForEach(b => b.Interactable = !inCombat);
+        }
     }
 
     static class BubbleBlueprints {

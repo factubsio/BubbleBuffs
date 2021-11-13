@@ -104,6 +104,7 @@ namespace BubbleBuffs {
             ModSettings.ModEntry = modEntry;
             ModPath = modEntry.Path;
             Main.Log("LOADING");
+            Language.Initialise();
 
             AssetLoader.AddBundle("tutorialcanvas");
 

@@ -1,0 +1,45 @@
+﻿{
+  "buffsetup": "Buff Setup",
+  "casting": "casting",
+  "available": "available",
+  "available.atwill": "at will",
+  "showhidden": "Show hidden",
+  "showshort": "Show round/level",
+  "showreq": "Show requested",
+  "showNOTreq": "Show NOT requested",
+  "group.normal": "Normal",
+  "group.important": "Important",
+  "group.short": "Short",
+  "cat.spells": "Spells",
+  "cat.Abilities": "Abilities",
+  "cat.Items": "Items",
+  "cat.Consumables": "Consumables",
+  "group.normal.tooltip.header": "Buff Normal!",
+  "group.normal.tooltip.desc": "Try to cast spells set in the buff window (Normal)",
+  "group.important.tooltip.header": "Buff Important!",
+  "group.important.tooltip.desc": "Try to cast spells set in the buff window (Important)",
+  "group.short.tooltip.header": "Buff Short!",
+  "group.short.tooltip.desc": "Try to cast spells set in the buff window (Short)",
+
+  "group.normal.log": "Buffed Norma!",
+  "group.important.log": "Buffed Important!",
+  "group.short.log": "Buffed Short!",
+  "log.skipped": "Skipped",
+  "log.applied": "Applied",
+
+  "hideability": "Hide ability",
+
+  "tooltip.results": "Results",
+  "tooltip.applied": "Buffs Applied",
+  "tooltip.skipped": "Buffs Skipped",
+  "tooltip.failed": "Buffs Failed",
+  "noslot": "no free spell-slot",
+  
+  "warn.arcanepool":  "  <i>Arcane Resevoir resource is <b>not</b> tracked</i>",
+
+  "limitcasts": "Limit casts to",
+  "bancasts": "Ban from casting",
+  "use.powerfulchange": "Use Powerful Change",
+  "use.sharetransmutation": "Allow Share Transmutation",
+  "nolimit": "no limit"
+}

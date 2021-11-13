@@ -1,4 +1,6 @@
-﻿using Kingmaker.Blueprints;
+﻿using BubbleBuffs.Config;
+using Kingmaker;
+using Kingmaker.Blueprints;
 using Kingmaker.Controllers;
 using Kingmaker.EntitySystem.Entities;
 using Kingmaker.UI.Log.CombatLog_ThreadSystem;
@@ -107,6 +109,9 @@ namespace BubbleBuffs {
         };
 
         public void Execute(BuffGroup buffGroup) {
+            if (Game.Instance.Player.IsInCombat)
+                return;
+
             var lastExecuted = lastExecutedForGroup[buffGroup];
             if (lastExecuted > 0 && (Time.realtimeSinceStartup - lastExecuted) < .5f) {
                 return;
@@ -152,7 +157,7 @@ namespace BubbleBuffs {
                         if (!caster.SlottedSpell.IsAvailable) {
                             if (badResult == null)
                                 badResult = tooltip.AddBad(buff);
-                            badResult.messages.Add($"  [{caster.who.CharacterName}] => [{Bubble.Group[target].CharacterName}], no free spell-slot");
+                            badResult.messages.Add($"  [{caster.who.CharacterName}] => [{Bubble.Group[target].CharacterName}], {"noslot".i8()}");
                             thisBuffBad++;
                             continue;
                         }
@@ -206,7 +211,8 @@ namespace BubbleBuffs {
 
             BubbleBuffGlobalController.Instance.CastSpells(tasks);
 
-            var messageString = $"Buffed {buffGroup}! Applied {actuallyCast}/{attemptedCasts} (skipped: {skippedCasts})";
+            string title = buffGroup.i8();
+            var messageString = $"{title} {"log.applied".i8()} {actuallyCast}/{attemptedCasts} ({"log.skipped".i8()} {skippedCasts})";
             Main.Verbose(messageString);
 
             var message = new CombatLogMessage(messageString, Color.blue, PrefixIcon.RightArrow, tooltip, true);

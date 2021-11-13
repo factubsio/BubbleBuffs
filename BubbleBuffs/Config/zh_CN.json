@@ -1,0 +1,45 @@
+﻿{
+  "buffsetup": "设置施法序列",
+  "casting": "已设置",
+  "available": "剩余可用法术位",
+  "available.atwill": "无限",
+  "showhidden": "显示隐藏项",
+  "showshort": "显示 轮级法术",
+  "showreq": "显示已设置法术",
+  "showNOTreq": "显示未设置法术",
+  "group.normal": "标准施法序列",
+  "group.important": "重要施法序列",
+  "group.short": "临时施法序列",
+  "cat.spells": "法术",
+  "cat.Abilities": "能力",
+  "cat.Items": "物品",
+  "cat.Consumables": "消耗品",
+  "group.normal.tooltip.header": "执行标准施法!",
+  "group.normal.tooltip.desc": "尝试释放所有标准施法列表中的法术",
+  "group.important.tooltip.header": "执行重要施法!",
+  "group.important.tooltip.desc": "尝试释放所有重要施法列表中的法术",
+  "group.short.tooltip.header": "执行临时施法!",
+  "group.short.tooltip.desc": "尝试释放所有临时施法列表中的法术",
+
+  "group.normal.log": "标准施法成功!",
+  "group.important.log": "重要施法成功!",
+  "group.short.log": "临时施法成功!",
+  "log.skipped": "对应效果已存在",
+  "log.applied": "已释放",
+
+  "hideability": "不显示能力",
+
+  "tooltip.results": "施法结果",
+  "tooltip.applied": "施法成功",
+  "tooltip.skipped": "因为相同效果已存在而跳过",
+  "tooltip.failed": "施法失败，法术位不足",
+  "noslot": "没有剩余法术位",
+
+  "warn.arcanepool":  "  注意，剩余的奥能点数量没有记录",
+
+  "limitcasts": "限制施法次数为",
+  "bancasts": "禁止使用此法术",
+  "use.powerfulchange": "使用强力变形",
+  "use.sharetransmutation": "允许分享变化",
+  "nolimit": "不限制"
+}

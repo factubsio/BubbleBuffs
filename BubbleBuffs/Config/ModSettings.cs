@@ -1,9 +1,62 @@
-﻿using Newtonsoft.Json;
+﻿using Kingmaker;
+using Kingmaker.Localization;
+using Kingmaker.Localization.Shared;
+using Newtonsoft.Json;
+using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using static UnityModManagerNet.UnityModManager;
 
 namespace BubbleBuffs.Config {
+    public static class Language {
+
+        private static Dictionary<Locale, Dictionary<string, string>> Languages = new();
+
+
+        public static string Get(string key, string defaultValue) {
+            var locale = LocalizationManager.CurrentLocale;
+            if (!Languages.TryGetValue(locale, out var pack))
+                return defaultValue;
+
+            if (!pack.TryGetValue(key, out var value))
+                return defaultValue;
+
+            return value;
+        }
+
+        private static void AddLanguage(Locale locale, string path) {
+            var assembly = Assembly.GetExecutingAssembly();
+            using Stream stream = assembly.GetManifestResourceStream($"BubbleBuffs.Config.{path}");
+            using StreamReader reader = new StreamReader(stream);
+            using JsonReader jsonReader = new JsonTextReader(reader);
+
+            var json = new JsonSerializer();
+            Languages[locale] = json.Deserialize<Dictionary<string, string>>(jsonReader);
+
+            Main.Log($"Added language pack for: {locale}");
+
+        }
+
+        public static void Initialise() {
+            AddLanguage(Locale.zhCN, "zh_CN.json");
+            AddLanguage(Locale.enGB, "en_GB.json");
+        }
+
+        public static string i8(this string str) {
+            return Get(str, $"<help:{str}>");
+        }
+        public static string i8(this BuffGroup buffGroup) {
+            return buffGroup switch {
+                BuffGroup.Long => "group.normal.log".i8(),
+                BuffGroup.Short => "group.short.log".i8(),
+                BuffGroup.Important => "group.important.log".i8(),
+                _ => "<unknown>"
+            };
+
+        }
+
+    }
+
     static class ModSettings {
         public static ModEntry ModEntry;
         public static Fixes Fixes;
@@ -14,6 +67,7 @@ namespace BubbleBuffs.Config {
             LoadSettings("Fixes.json", ref Fixes);
             LoadSettings("AddedContent.json", ref AddedContent);
             LoadSettings("Blueprints.json", ref Blueprints);
+            Language.Initialise();
         }
         private static void LoadSettings<T>(string fileName, ref T setting) where T : IUpdatableSettings {
             var assembly = Assembly.GetExecutingAssembly();
