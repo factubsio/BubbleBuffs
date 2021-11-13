@@ -21,7 +21,7 @@
   "group.short.tooltip.header": "Buff Short!",
   "group.short.tooltip.desc": "Try to cast spells set in the buff window (Short)",
 
-  "group.normal.log": "Buffed Norma!",
+  "group.normal.log": "Buffed Normal!",
   "group.important.log": "Buffed Important!",
   "group.short.log": "Buffed Short!",
   "log.skipped": "Skipped",

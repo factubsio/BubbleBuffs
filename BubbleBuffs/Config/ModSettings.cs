@@ -13,13 +13,12 @@ namespace BubbleBuffs.Config {
         private static Dictionary<Locale, Dictionary<string, string>> Languages = new();
 
 
-        public static string Get(string key, string defaultValue) {
-            var locale = LocalizationManager.CurrentLocale;
+        public static string Get(string key, Locale locale) {
             if (!Languages.TryGetValue(locale, out var pack))
-                return defaultValue;
+                return Get(key, Locale.enGB);
 
             if (!pack.TryGetValue(key, out var value))
-                return defaultValue;
+                return Get(key, Locale.enGB);
 
             return value;
         }
@@ -43,7 +42,7 @@ namespace BubbleBuffs.Config {
         }
 
         public static string i8(this string str) {
-            return Get(str, $"<help:{str}>");
+            return Get(str, LocalizationManager.CurrentLocale);
         }
         public static string i8(this BuffGroup buffGroup) {
             return buffGroup switch {
