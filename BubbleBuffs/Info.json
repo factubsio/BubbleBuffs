@@ -4,11 +4,11 @@
     "DisplayName": "Bubble Buffs",
     "EntryMethod": "BubbleBuffs.Main.Load",
     "GameVersion": "1.1.0",
-    "HomePage": "https://github.com/factubsio/BubbleBuffs/releases",
+    "HomePage": "https://www.nexusmods.com/pathfinderwrathoftherighteous/mods/195",
     "Id": "BubbleBuffs",
     "ManagerVersion": "0.23.0",
     "Repository": "https://raw.githubusercontent.com/factubsio/BubbleBuffs/master/Repository.json",
     "Requirements": [],
     "LoadAfter": ["EnhancedInventory"],
-    "Version": "2.3.1"
+    "Version": "2.3.2"
 }

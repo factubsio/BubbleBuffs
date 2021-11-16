@@ -43,8 +43,8 @@ namespace BubbleBuffs.Config {
             AddLanguage(Locale.ruRU, "ru_RU.json");
         }
 
-        public static Locale Locale => Locale.deDE;
-        //public static Locale Locale => LocalizationManager.CurrentLocale;
+        //public static Locale Locale => Locale.ruRU;
+        public static Locale Locale => LocalizationManager.CurrentLocale;
 
         public static string i8(this string str) {
             return Get(str, Locale);
