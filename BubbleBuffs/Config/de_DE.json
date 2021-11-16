@@ -1,0 +1,49 @@
+﻿{
+  "buffsetup": "Buffs konfigurieren",
+  "casting": "eingesetzt",
+  "available": "verfügbar",
+  "available.atwill": "(beliebig)",
+  "showhidden": "Ausgeblendete",
+  "showshort": "Mit kurzer Dauer",
+  "showreq": "Bereits konfigurierte",
+  "showNOTreq": "Nicht konfigurierte",
+  "group.normal": "Normal",
+  "group.important": "Wichtig",
+  "group.short": "Kurz",
+  "cat.spells": "Zaubersprüche",
+  "cat.Abilities": "Fähigkeiten",
+  "cat.Items": "Gegenstände",
+  "cat.Consumables": "Verbrauchsgegenstände",
+  "group.normal.tooltip.header": "Normale Buffs!",
+  "group.normal.tooltip.desc": "Als <b>Normal<b> konfigurierte Buffs einsetzen.",
+  "group.important.tooltip.header": "Wichtige Buffs!",
+  "group.important.tooltip.desc": "Als <b>Wichtig<b> konfigurierte Buffs einsetzen.",
+  "group.short.tooltip.header": "Kurze Buffs!",
+  "group.short.tooltip.desc": "Als <b>Kurz<b> konfigurierte Buffs einsetzen.",
+
+  "group.normal.log": "Normale Buffs!",
+  "group.important.log": "Wichtige Buffs!",
+  "group.short.log": "Kurze Buffs!",
+  "log.skipped": "Übersprungen",
+  "log.applied": "Erfolgreich eingesetzt",
+
+
+  "hideability": "Ausblenden",
+
+  "tooltip.results": "Resultat",
+  "tooltip.applied": "Eingesetzte Buffs",
+  "tooltip.skipped": "Übersprungene Buffs",
+  "tooltip.failed": "Fehlgeschlagene Buffs",
+  "noslot": "Keine freien Zauberplätze mehr",
+  
+  "warn.arcanepool":  "  <i>Ressourcen aus dem arkanen Reservoir werden <b>nicht</b> beachtet</i>",
+
+  "limitcasts": "Ausführung begrenzen auf",
+  "bancasts": "Von der Ausführung verbieten",
+  "use.powerfulchange": "Machtvolle Verwandlung (Gestaltwandelnder Arkanist) benutzen",
+  "use.sharetransmutation": "Verwandlung teilen (Gestaltwandelnder Arkanist) benutzen",
+  "nolimit": "Keine Begrenzung",
+
+  "remove-all": "Buff überall entfernen",
+  "add-all":  "Buff überall einsetzen"
+}

@@ -201,6 +201,7 @@
     </None>
     <None Include="app.config" />
     <EmbeddedResource Include="Config\en_GB.json" />
+    <EmbeddedResource Include="Config\de_DE.json" />
     <None Include="Info.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

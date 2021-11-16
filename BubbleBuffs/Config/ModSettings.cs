@@ -39,10 +39,14 @@ namespace BubbleBuffs.Config {
         public static void Initialise() {
             AddLanguage(Locale.zhCN, "zh_CN.json");
             AddLanguage(Locale.enGB, "en_GB.json");
+            AddLanguage(Locale.deDE, "de_DE.json");
         }
 
+        public static Locale Locale => Locale.deDE;
+        //public static Locale Locale => LocalizationManager.CurrentLocale;
+
         public static string i8(this string str) {
-            return Get(str, LocalizationManager.CurrentLocale);
+            return Get(str, Locale);
         }
         public static string i8(this BuffGroup buffGroup) {
             return buffGroup switch {

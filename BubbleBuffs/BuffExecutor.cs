@@ -21,6 +21,9 @@ namespace BubbleBuffs {
 
         public static BubbleBuffGlobalController Instance { get; private set; }
 
+        public const int BATCH_SIZE = 8;
+        public const float DELAY = 0.05f;
+
         private void Awake() {
             Instance = this;
         }
@@ -34,8 +37,54 @@ namespace BubbleBuffs {
             StartCoroutine(castingCoroutine);
         }
 
+        private void Cast(CastTask task) {
+            var oldResistance = task.SpellToCast.Blueprint.SpellResistance;
+            task.SpellToCast.Blueprint.SpellResistance = false;
+
+            try {
+
+                if (task.ShareTransmutation) {
+                    var toggle = AbilityCache.CasterCache[task.Caster.UniqueId].ShareTransmutation;
+                    if (toggle == null || !toggle.Data.IsAvailableForCast) {
+                        return;
+                    }
+
+                    var toggleParams = toggle.Data.CalculateParams();
+                    var context = new AbilityExecutionContext(toggle.Data, toggleParams, new TargetWrapper(task.Caster));
+                    toggle.Data.Cast(context);
+                    toggle.Data.Spend();
+                }
+
+                if (task.PowerfulChange) {
+                    var toggle = AbilityCache.CasterCache[task.Caster.UniqueId].PowerfulChange;
+                    if (toggle != null && toggle.Data.IsAvailableForCast) {
+                        var toggleParams = toggle.Data.CalculateParams();
+                        var context = new AbilityExecutionContext(toggle.Data, toggleParams, new TargetWrapper(task.Caster));
+                        toggle.Data.Cast(context);
+                        toggle.Data.Spend();
+                    }
+                }
+
+
+                if (task.IsSticky) {
+                    var context = new AbilityExecutionContext(task.SpellToCast, task.Params, Vector3.zero);
+                    AbilityExecutionProcess.ApplyEffectImmediate(context, task.Target.Unit);
+                } else {
+                    var context = new AbilityExecutionContext(task.SpellToCast, task.Params, task.Target);
+                    context.FxSpawners?.Clear();
+                    context.DisableFx = true;
+                    task.SpellToCast.Cast(context);
+                }
+
+                task.SlottedSpell.Spend();
+            } catch (Exception ex) {
+                Main.Error(ex, "casting spell");
+            }
+            task.SpellToCast.Blueprint.SpellResistance = oldResistance;
+
+        }
+
         private IEnumerator CastSpellsInternal(List<CastTask> tasks) {
-            const int BATCH_SIZE = 8;
             var batchCount = (tasks.Count + BATCH_SIZE - 1) / BATCH_SIZE;
             for (int batch = 0; batch < batchCount; batch++) {
                 for (int item = 0; item < BATCH_SIZE; item++) {
@@ -43,53 +92,10 @@ namespace BubbleBuffs {
                     if (index >= tasks.Count)
                         break;
 
-                    var task = tasks[index];
-                    var oldResistance = task.SpellToCast.Blueprint.SpellResistance;
-                    task.SpellToCast.Blueprint.SpellResistance = false;
-
-                    try {
-
-                        if (task.ShareTransmutation) {
-                            var toggle = AbilityCache.CasterCache[task.Caster.UniqueId].ShareTransmutation;
-                            if (toggle == null || !toggle.Data.IsAvailableForCast) {
-                                continue;
-                            }
-
-                            var toggleParams = toggle.Data.CalculateParams();
-                            var context = new AbilityExecutionContext(toggle.Data, toggleParams, new TargetWrapper(task.Caster));
-                            toggle.Data.Cast(context);
-                            toggle.Data.Spend();
-                        }
-
-                        if (task.PowerfulChange) {
-                            var toggle = AbilityCache.CasterCache[task.Caster.UniqueId].PowerfulChange;
-                            if (toggle != null && toggle.Data.IsAvailableForCast) {
-                                var toggleParams = toggle.Data.CalculateParams();
-                                var context = new AbilityExecutionContext(toggle.Data, toggleParams, new TargetWrapper(task.Caster));
-                                toggle.Data.Cast(context);
-                                toggle.Data.Spend();
-                            }
-                        }
-
-
-                        if (task.IsSticky) {
-                            var context = new AbilityExecutionContext(task.SpellToCast, task.Params, Vector3.zero);
-                            AbilityExecutionProcess.ApplyEffectImmediate(context, task.Target.Unit);
-                        } else {
-                            var context = new AbilityExecutionContext(task.SpellToCast, task.Params, task.Target);
-                            context.FxSpawners?.Clear();
-                            context.DisableFx = true;
-                            task.SpellToCast.Cast(context);
-                        }
-
-                        task.SlottedSpell.Spend();
-                    } catch (Exception ex) {
-                        Main.Error(ex, "casting spell");
-                    }
-                    task.SpellToCast.Blueprint.SpellResistance = oldResistance;
+                    Cast(tasks[index]);
                 }
 
-                yield return new WaitForSeconds(0.05f);
+                yield return new WaitForSeconds(DELAY);
 
             }
             yield return null;

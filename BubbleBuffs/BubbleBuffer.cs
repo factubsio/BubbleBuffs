@@ -37,6 +37,8 @@ using BubbleBuffs.Extensions;
 using UnityEngine.SceneManagement;
 using Kingmaker.UI.SettingsUI;
 using Kingmaker.Blueprints.Classes;
+using Kingmaker.Localization;
+using Kingmaker.Localization.Shared;
 
 namespace BubbleBuffs {
 
@@ -666,15 +668,19 @@ namespace BubbleBuffs {
             popout.SetActive(false);
             popout.ChildObject("Background").GetComponent<Image>().raycastTarget = true;
 
-            var popLayout = popout.AddComponent<LayoutElement>();
-            popLayout.preferredWidth = 525;
-
-            var popVert = popout.AddComponent<VerticalLayoutGroup>();
-            popVert.childControlWidth = false;
-            popVert.childControlHeight = true;
+            var popGrid = popout.AddComponent<GridLayoutGroup>();
+            popGrid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
+            popGrid.constraintCount = 1;
+            int width = 450;
+            if (Language.Locale == Locale.deDE)
+                width = 650;
+            popGrid.cellSize = new Vector2(width, 40);
+            popGrid.padding.left = 25;
+            popGrid.padding.top = 12;
+            popGrid.padding.bottom = 12;
 
             GameObject MakeLabel(string text) {
-                var labelRoot = GameObject.Instantiate(togglePrefab, ToggleRect(popout).transform);
+                var labelRoot = GameObject.Instantiate(togglePrefab, popout.transform);
                 Main.Verbose($"Label root: {labelRoot == null}");
                 labelRoot.DestroyComponents<ToggleWorkaround>();
                 labelRoot.DestroyChildren("Background");
@@ -691,7 +697,7 @@ namespace BubbleBuffs {
             var hideSpellToggle = hideSpell.GetComponentInChildren<ToggleWorkaround>();
 
             view.addToAll = GameObject.Instantiate(buttonPrefab, detailsRect);
-            view.addToAll.GetComponentInChildren<TextMeshProUGUI>().text = "Add To All";
+            view.addToAll.GetComponentInChildren<TextMeshProUGUI>().text = "add-all".i8();
             var addToAllRect = view.addToAll.transform as RectTransform;
             addToAllRect.localPosition = Vector3.zero;
             addToAllRect.anchoredPosition = Vector3.zero;
@@ -700,7 +706,7 @@ namespace BubbleBuffs {
             addToAllRect.SetAnchor(0.03f, 0.1f);
 
             view.removeFromAll = GameObject.Instantiate(view.addToAll, detailsRect);
-            view.removeFromAll.GetComponentInChildren<TextMeshProUGUI>().text = "Remove From All";
+            view.removeFromAll.GetComponentInChildren<TextMeshProUGUI>().text = "remove-all".i8();
             var removeFromAllRect = view.removeFromAll.transform as RectTransform;
             removeFromAllRect.SetAnchor(0.03f, 0.3f);
 
@@ -740,7 +746,7 @@ namespace BubbleBuffs {
             var defaultLabelColor = shareTransmutationLabel.color;
 
             (ToggleWorkaround, TextMeshProUGUI) MakePopoutToggle(string text) {
-                var toggleObj = GameObject.Instantiate(togglePrefab, ToggleRect(popout).transform);
+                var toggleObj = GameObject.Instantiate(togglePrefab, popout.transform);
                 toggleObj.SetActive(true);
                 toggleObj.Rect().localPosition = Vector3.zero;
                 toggleObj.GetComponent<HorizontalLayoutGroup>().childControlWidth = true;
@@ -763,7 +769,7 @@ namespace BubbleBuffs {
             var capValueLabel = GameObject.Instantiate(togglePrefab.GetComponentInChildren<TextMeshProUGUI>().gameObject, capLabel.transform);
             var capValueText = capValueLabel.GetComponent<TextMeshProUGUI>();
             capValueText.text = "nolimit".i8();
-            capValueLabel.AddComponent<LayoutElement>().preferredWidth = 80;
+            //capValueLabel.AddComponent<LayoutElement>().preferredWidth = 80;
 
             var increaseCustomCap = GameObject.Instantiate(expandButtonPrefab, capLabel.transform);
             increaseCustomCap.Rect().pivot = new Vector2(.5f, .5f);
@@ -875,6 +881,8 @@ namespace BubbleBuffs {
             buffGroup.Add(BuffGroup.Important, "group.important".i8());
             buffGroup.Add(BuffGroup.Short, "group.short".i8());
 
+            castersRect.SetAsLastSibling();
+
             buffGroup.Selected.Subscribe<BuffGroup>(g => {
                 if (view.Get(out var buff)) {
                     buff.InGroup = g;
@@ -927,20 +935,6 @@ namespace BubbleBuffs {
                 }
 
             };
-
-            static GameObject ToggleRect(GameObject popout) {
-                var toggleRect = new GameObject("caster-toggle", typeof(RectTransform));
-                var toggleSize = toggleRect.AddComponent<LayoutElement>();
-                toggleSize.preferredHeight = 40;
-                toggleSize.preferredWidth = 525;
-                var toggleHori = toggleRect.AddComponent<HorizontalLayoutGroup>();
-                toggleHori.childAlignment = TextAnchor.MiddleCenter;
-                toggleHori.childControlHeight = false;
-                toggleHori.childControlWidth = false;
-                toggleRect.transform.SetParent(popout.transform);
-                toggleRect.transform.localPosition = Vector3.zero;
-                return toggleRect;
-            }
         }
 
 

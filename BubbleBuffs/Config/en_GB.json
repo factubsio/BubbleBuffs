@@ -41,5 +41,9 @@
   "bancasts": "Ban from casting",
   "use.powerfulchange": "Use Powerful Change",
   "use.sharetransmutation": "Allow Share Transmutation",
-  "nolimit": "no limit"
+  "nolimit": "no limit",
+
+  "remove-all": "Remove from all",
+  "add-all":  "Add to all"
+
 }
