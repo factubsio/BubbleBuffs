@@ -46,9 +46,9 @@ namespace BubbleBuffs {
     public class BubbleBuff {
         public BuffGroup InGroup = BuffGroup.Long;
         public AbilityData Spell;
-        byte[] wanted = new byte[16];
-        byte[] notWanted = new byte[16];
-        byte[] given = new byte[16];
+        HashSet<string> wanted = new();
+        HashSet<string> notWanted = new();
+        HashSet<string> given = new();
 
         public bool IsMass;
 
@@ -61,10 +61,10 @@ namespace BubbleBuffs {
         public AbilityCombinedEffects BuffsApplied;
 
         public int Requested {
-            get => wanted.Count(b => b != 0);
+            get => wanted.Count;
         }
         public int Fulfilled {
-            get => given.Count(b => b != 0);
+            get => given.Count;
         }
 
         public int Available {
@@ -108,12 +108,12 @@ namespace BubbleBuffs {
         public string Name => Key.Archmage ? "Archmage Armor" : Spell.Name;
         public string NameMeta => $"{Spell.Name} {MetaMagicFlags}";
 
-        public bool UnitWants(int unit) => wanted[unit] != 0;
-        public bool UnitWantsRemoved(int unit) => notWanted[unit] != 0;
-        public bool UnitGiven(int unit) => given[unit] != 0;
+        public bool UnitWants(UnitEntityData unit) => wanted.Contains(unit.UniqueId);
+        public bool UnitWantsRemoved(UnitEntityData unit) => notWanted.Contains(unit.UniqueId);
+        public bool UnitGiven(UnitEntityData unit) => given.Contains(unit.UniqueId);
 
         public List<BuffProvider> CasterQueue = new();
-        public List<(int, BuffProvider)> ActualCastQueue;
+        public List<(string, BuffProvider)> ActualCastQueue;
 
         public Metamagic[] Metamagics;
 
@@ -148,9 +148,14 @@ namespace BubbleBuffs {
             CasterQueue.Add(providerHandle);
         }
 
-        internal void SetUnitWants(int unit, bool v) {
-            wanted[unit] = v ? (byte)1 : (byte)0;
-            notWanted[unit] = v ? (byte)0 : (byte)1;
+        internal void SetUnitWants(UnitEntityData unit, bool v) {
+            if (v) {
+                wanted.Add(unit.UniqueId);
+                notWanted.Remove(unit.UniqueId);
+            } else {
+                wanted.Remove(unit.UniqueId);
+                notWanted.Add(unit.UniqueId);
+            }
         }
 
         public void InitialiseFromSave(SavedBuffState state) {
@@ -158,7 +163,7 @@ namespace BubbleBuffs {
             for (int i = 0; i < Bubble.Group.Count; i++) {
                 UnitEntityData u = Bubble.Group[i];
                 if (state.Wanted.Contains(u.UniqueId))
-                    SetUnitWants(i, true);
+                    SetUnitWants(u, true);
             }
             SetHidden(HideReason.Blacklisted, state.Blacklisted);
             foreach (var caster in CasterQueue) {
@@ -179,40 +184,38 @@ namespace BubbleBuffs {
                 caster.spent = 0;
                 caster.MaxCap = caster.AvailableCreditsNoCap;
             }
-            for (int i = 0; i < given.Length; i++)
-                given[i] = 0;
+            given.Clear();
 
             if (ActualCastQueue != null)
                 ActualCastQueue.Clear();
 
         }
 
-        public bool CanTarget(int who) {
+        public bool CanTarget(UnitEntityData who) {
             foreach (var caster in CasterQueue) {
-                if (caster.CanTarget(who))
+                if (caster.CanTarget(who.UniqueId))
                     return true;
             }
             return false;
         }
 
         public void Validate() {
-            for (int i = 0; i < wanted.Length; i++) {
-                if (wanted[i] == 0) continue;
+            foreach (var target in wanted) {
 
                 for (int n = 0; n < CasterQueue.Count; n++) {
                     var caster = CasterQueue[n];
                     if (caster.AvailableCredits > 0) {
                         //Main.Verbose($"checking if: {caster.who.CharacterName} => {Name} => {Bubble.Group[i].CharacterName}");
-                        if (!caster.CanTarget(i)) continue;
+                        if (!caster.CanTarget(target)) continue;
 
                         //Main.Verbose($"casting: {caster.who.CharacterName} => {Name} => {Bubble.Group[i].CharacterName}");
                         caster.ChargeCredits(1);
                         caster.spent++;
-                        given[i] = 1;
+                        given.Add(target);
 
                         if (ActualCastQueue == null)
                             ActualCastQueue = new();
-                        ActualCastQueue.Add((i, caster));
+                        ActualCastQueue.Add((target, caster));
                         break;
                     }
                 }
@@ -232,13 +235,24 @@ namespace BubbleBuffs {
 
         internal void SortProviders() {
             CasterQueue.Sort((a, b) => {
-                return a.Priority - b.Priority;
+                if (a.Priority == b.Priority) {
+                    int aScore = 0;
+                    int bScore = 0;
+
+                    if (!a.SelfCastOnly)
+                        aScore += 10_000;
+                    if (!b.SelfCastOnly)
+                        bScore += 10_000;
+
+                    return aScore - bScore;
+                } else {
+                    return a.Priority - b.Priority;
+                }
             });
         }
 
         internal void ClearRemovals() {
-            for (int i = 0; i < notWanted.Length; i++)
-                notWanted[i] = 0;
+            notWanted.Clear();
         }
 
         internal void AdjustCap(int casterIndex, int v) {
@@ -337,16 +351,18 @@ namespace BubbleBuffs {
             }
         }
 
-        public bool CanTarget(int dude) {
+        public bool SelfCastOnly => spell.TargetAnchor == Kingmaker.UnitLogic.Abilities.Blueprints.AbilityTargetAnchor.Owner;
+
+        public bool CanTarget(string targetId) {
             if (ArchmageArmor)
-                return dude == CharacterIndex;
+                return targetId == who.UniqueId;
 
             using (new ForceShareTransmutation(this)) {
-                if (!spell.CanTarget(new TargetWrapper(Bubble.Group[dude])))
+                if (!spell.CanTarget(new TargetWrapper(Bubble.GroupById[targetId])))
                     return false;
 
-                if (spell.TargetAnchor == Kingmaker.UnitLogic.Abilities.Blueprints.AbilityTargetAnchor.Owner)
-                    return dude == CharacterIndex;
+                if (SelfCastOnly)
+                    return targetId == who.UniqueId;
                 return true;
             }
         }

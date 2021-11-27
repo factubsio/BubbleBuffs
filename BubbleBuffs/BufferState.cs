@@ -122,6 +122,8 @@ namespace BubbleBuffs {
 
             lastGroup.Clear();
             lastGroup.AddRange(Group.Select(x => x.UniqueId));
+            foreach (var u in Group)
+                Bubble.GroupById[u.UniqueId] = u;
             InputDirty = false;
 
 
@@ -158,23 +160,23 @@ namespace BubbleBuffs {
             if (lastGroup.Count != group.Count)
                 return true;
 
-            foreach (var unit in group) {
-                if (!lastGroup.Contains(unit.UniqueId))
+            for (int i = 0; i < lastGroup.Count; i++) {
+                if (lastGroup[i] != group[i].UniqueId)
                     return true;
             }
 
             return false;
         }
 
-        public void Save() {
+        public void Save(bool shallow = false) {
             static void updateSavedBuff(BubbleBuff buff, SavedBuffState save) {
                 save.Blacklisted = buff.HideBecause(HideReason.Blacklisted);
                 save.InGroup = buff.InGroup;
-                for (int i = 0; i < Bubble.Group.Count; i++) {
-                    if (buff.UnitWants(i)) {
-                        save.Wanted.Add(Bubble.Group[i].UniqueId);
-                    } else if (buff.UnitWantsRemoved(i)) {
-                        save.Wanted.Remove(Bubble.Group[i].UniqueId);
+                foreach (var u in Bubble.Group) {
+                    if (buff.UnitWants(u)) {
+                        save.Wanted.Add(u.UniqueId);
+                    } else if (buff.UnitWantsRemoved(u)) {
+                        save.Wanted.Remove(u.UniqueId);
                     }
                 }
                 foreach (var caster in buff.CasterQueue) {
@@ -189,21 +191,23 @@ namespace BubbleBuffs {
                 }
             }
 
-            foreach (var buff in BuffList) {
-                var key = buff.Key;
-                if (SavedState.Buffs.TryGetValue(key, out var save)) {
-                    updateSavedBuff(buff, save);
-                    if (save.Wanted.Empty() && !buff.HideBecause(HideReason.Blacklisted) ) {
-                        SavedState.Buffs.Remove(key);
+
+            if (!shallow) {
+                foreach (var buff in BuffList) {
+                    var key = buff.Key;
+                    if (SavedState.Buffs.TryGetValue(key, out var save)) {
+                        updateSavedBuff(buff, save);
+                        if (save.Wanted.Empty() && !buff.HideBecause(HideReason.Blacklisted)) {
+                            SavedState.Buffs.Remove(key);
+                        }
+                    } else if (buff.Requested > 0 || buff.HideBecause(HideReason.Blacklisted)) {
+                        save = new();
+                        save.Wanted = new HashSet<string>();
+                        updateSavedBuff(buff, save);
+                        SavedState.Buffs[key] = save;
                     }
-                } else if (buff.Requested > 0 || buff.HideBecause(HideReason.Blacklisted)) {
-                    save = new();
-                    save.Wanted = new HashSet<string>();
-                    updateSavedBuff(buff, save);
-                    SavedState.Buffs[key] = save;
                 }
             }
-
 
             SavedState.Version = 1;
             using (var settingsWriter = File.CreateText(BubbleBuffSpellbookController.SettingsPath)) {
@@ -215,6 +219,14 @@ namespace BubbleBuffs {
         private static Dictionary<Guid, string> SpellNames = new();
         private static Guid MageArmorGuid = Guid.Parse("9e1ad5d6f87d19e4d8883d63a6e35568");
         private static BlueprintFeature ArchmageArmorFeature => Resources.GetBlueprint<BlueprintFeature>("c3ef5076c0feb3c4f90c229714e62cd0");
+
+        public bool AllowInCombat {
+            get => SavedState.AllowInCombat;
+            set {
+                SavedState.AllowInCombat = value;
+                Save(true);
+            }
+        }
 
         //private static Dictionary<Guid, List<ContextActionApplyBuff>> CachedBuffEffects;
 
@@ -240,11 +252,12 @@ namespace BubbleBuffs {
                         data = new AbilityData(variant, dude);
                     } else
                         data = new AbilityData(variant, book, spell.SpellLevel);
+
+                    data.MetamagicData = spell.MetamagicData?.Clone();
                     AddBuff(dude, book, data, spell, credits, false, creditClamp, charIndex, archmageArmor, category);
                 }
                 return;
             }
-            
 
             int clamp = int.MaxValue;
             if (archmageArmor || spell.TargetAnchor == Kingmaker.UnitLogic.Abilities.Blueprints.AbilityTargetAnchor.Owner) {
@@ -289,7 +302,7 @@ namespace BubbleBuffs {
         }
 
 
-        private HashSet<string> lastGroup = new();
+        private List<string> lastGroup = new();
         internal bool InputDirty = true;
 
     }

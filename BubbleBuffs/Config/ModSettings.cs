@@ -41,6 +41,7 @@ namespace BubbleBuffs.Config {
             AddLanguage(Locale.enGB, "en_GB.json");
             AddLanguage(Locale.deDE, "de_DE.json");
             AddLanguage(Locale.ruRU, "ru_RU.json");
+            AddLanguage(Locale.frFR, "fr_FR.json");
         }
 
         //public static Locale Locale => Locale.ruRU;

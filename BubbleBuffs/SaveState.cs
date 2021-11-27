@@ -12,6 +12,8 @@ namespace BubbleBuffs {
         [JsonProperty]
         public Dictionary<BuffKey, SavedBuffState> Buffs = new();
         [JsonProperty]
+        public bool AllowInCombat;
+        [JsonProperty]
         public int Version;
     }
 

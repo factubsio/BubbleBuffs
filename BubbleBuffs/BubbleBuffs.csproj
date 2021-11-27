@@ -203,6 +203,7 @@
     <EmbeddedResource Include="Config\en_GB.json" />
     <EmbeddedResource Include="Config\de_DE.json" />
     <EmbeddedResource Include="Config\ru_RU.json" />
+    <EmbeddedResource Include="Config\fr_FR.json" />
     <None Include="Info.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

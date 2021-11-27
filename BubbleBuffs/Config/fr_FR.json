@@ -1,0 +1,49 @@
+﻿{
+  "buffsetup": "Configuration de buff",
+  "casting": "Incantation",
+  "available": "disponible",
+  "available.atwill": "à volonté",
+  "showhidden": "Montrer caché",
+  "showshort": "Montrer tour/niveau",
+  "showreq": "Montrer sorts configurés",
+  "showNOTreq": "Montrer sorts NON configurés",
+  "group.normal": "Normal",
+  "group.important": "Important",
+  "group.short": "Court",
+  "cat.spells": "Sorts",
+  "cat.Abilities": "Habilités",
+  "cat.Items": "Objets",
+  "cat.Consumables": "Consommables",
+  "group.normal.tooltip.header": "Buff Normal!",
+  "group.normal.tooltip.desc": "Tente de lancer les sorts configurés dans la fenêtre de buff (Normal)",
+  "group.important.tooltip.header": "Buff Important!",
+  "group.important.tooltip.desc": "Tente de lancer les sorts configurés dans la fenêtre de buff (Important)",
+  "group.short.tooltip.header": "Buff Court!",
+  "group.short.tooltip.desc": "Tente de lancer les sorts configurés dans la fenêtre de buff (Court)",
+
+  "group.normal.log": "Buff Normal!",
+  "group.important.log": "Buff Important!",
+  "group.short.log": "Buff Court!",
+  "log.skipped": "Ignoré(s)",
+  "log.applied": "Appliqué(s)",
+
+  "hideability": "Cacher habilité",
+
+  "tooltip.results": "Résultats",
+  "tooltip.applied": "Buffs appliquées",
+  "tooltip.skipped": "Buffs ignorées",
+  "tooltip.failed": "Buffs échouées",
+  "noslot": "pas d'emplacement de sort",
+
+  "warn.arcanepool":  "  <i>Le Réservoir Arcanique <b>n'est pas</b> suivi</i>",
+
+  "limitcasts": "Limité l'incantation à",
+  "bancasts": "Interdire l'incantation",
+  "use.powerfulchange": "Utilisé Puissante altération",
+  "use.sharetransmutation": "Autorisé Transfert de transmutation",
+  "nolimit": "Non limité",
+
+  "remove-all": "Enlevé pour tous",
+  "add-all":  "Ajouté pour tous"
+
+}

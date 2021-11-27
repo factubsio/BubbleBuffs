@@ -10,5 +10,5 @@
     "Repository": "https://raw.githubusercontent.com/factubsio/BubbleBuffs/master/Repository.json",
     "Requirements": [],
     "LoadAfter": ["EnhancedInventory"],
-    "Version": "2.3.2"
+    "Version": "2.4.0"
 }

@@ -138,7 +138,7 @@ namespace BubbleBuffs {
             var tooltip = new TooltipTemplateBuffer();
 
 
-            UnitBuffData[] unitBuffs = Bubble.Group.Select(u => new UnitBuffData(u)).ToArray();
+            var unitBuffs = Bubble.Group.Select(u => new UnitBuffData(u)).ToDictionary(bd => bd.Unit.UniqueId);
 
             List<CastTask> tasks = new();
 
@@ -151,7 +151,8 @@ namespace BubbleBuffs {
                     TooltipTemplateBuffer.BuffResult badResult = null;
 
                     foreach (var (target, caster) in buff.ActualCastQueue) {
-                        if (buff.BuffsApplied.IsPresent(unitBuffs[target])) {
+                        var forTarget = unitBuffs[target];
+                        if (buff.BuffsApplied.IsPresent(forTarget)) {
                             thisBuffSkip++;
                             skippedCasts++;
                             continue;
@@ -163,7 +164,7 @@ namespace BubbleBuffs {
                         if (!caster.SlottedSpell.IsAvailable) {
                             if (badResult == null)
                                 badResult = tooltip.AddBad(buff);
-                            badResult.messages.Add($"  [{caster.who.CharacterName}] => [{Bubble.Group[target].CharacterName}], {"noslot".i8()}");
+                            badResult.messages.Add($"  [{caster.who.CharacterName}] => [{Bubble.GroupById[target].CharacterName}], {"noslot".i8()}");
                             thisBuffBad++;
                             continue;
                         }
@@ -181,7 +182,7 @@ namespace BubbleBuffs {
                         var task = new CastTask {
                             SlottedSpell = caster.SlottedSpell,
                             Params = spellParams,
-                            Target = targets[target],
+                            Target = new TargetWrapper(forTarget.Unit),
                             IsSticky = touching,
                             Caster = caster.who,
                             SpellToCast = spellToCast,

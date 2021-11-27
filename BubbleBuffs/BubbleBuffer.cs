@@ -72,6 +72,7 @@ namespace BubbleBuffs {
         private bool Buffing => PartyView.m_Hide;
         private GameObject MainContainer;
         private GameObject NoSpellbooksContainer;
+        public RectTransform TooltipRoot;
 
         private bool WasMainShown = false;
 
@@ -84,6 +85,17 @@ namespace BubbleBuffs {
         private GameObject Root;
 
         private bool WindowCreated = false;
+
+        public static Dictionary<string, TooltipBaseTemplate> AbilityTooltips = new();
+
+        public static TooltipBaseTemplate TooltipForAbility(BlueprintAbility ability) {
+            var key = ability.AssetGuid.ToString();
+            if (!AbilityTooltips.TryGetValue(key, out var tooltip)) {
+                tooltip = new TooltipTemplateAbility(ability);
+                AbilityTooltips[key] = tooltip;
+            }
+            return tooltip;
+        }
 
         public static string SettingsPath => $"{ModSettings.ModEntry.Path}UserSettings/bubblebuff-{Game.Instance.Player.GameId}.json";
 
@@ -428,6 +440,15 @@ namespace BubbleBuffs {
             fullOverlay.SetFloat("_Warmup", 1);
             _ToAnimate.Add(fullOverlay);
 
+            MakeSettings(togglePrefab, content);
+
+            var tooltipRootObj = new GameObject("tooltip-root", typeof(RectTransform));
+            TooltipRoot = tooltipRootObj.Rect();
+            TooltipRoot.AddTo(Root);
+            TooltipRoot.SetAsLastSibling();
+
+
+
             ShowHidden.Subscribe<bool>(show => {
                 RefreshFiltering();
             });
@@ -490,6 +511,67 @@ namespace BubbleBuffs {
                 UpdateDetailsView?.Invoke();
             };
             WindowCreated = true;
+        }
+
+        private static (ToggleWorkaround, TextMeshProUGUI) MakeSettingsToggle(GameObject prefab, Transform content, string text) {
+            var toggleObj = GameObject.Instantiate(prefab, content);
+            toggleObj.SetActive(true);
+            toggleObj.Rect().localPosition = Vector3.zero;
+            toggleObj.GetComponent<HorizontalLayoutGroup>().childControlWidth = true;
+            var label = toggleObj.GetComponentInChildren<TextMeshProUGUI>();
+            label.text = text;
+            return (toggleObj.GetComponentInChildren<ToggleWorkaround>(), label);
+        }
+
+        private void MakeSettings(GameObject togglePrefab, Transform content) {
+            var staticRoot = Game.Instance.UI.Canvas.transform;
+            var button = staticRoot.Find("HUDLayout/IngameMenuView/ButtonsPart/Container/SettingsButton").gameObject;
+
+            var toggleSettings = GameObject.Instantiate(button, content);
+            toggleSettings.Rect().anchoredPosition = Vector3.zero;
+            toggleSettings.Rect().pivot = new Vector2(1, 0);
+            toggleSettings.Rect().SetAnchor(.93, .10);
+
+            var actionBarView = UIHelpers.StaticRoot.Find("ActionBarPcView").GetComponent<ActionBarPCView>();
+            var panel = GameObject.Instantiate(actionBarView.m_DragSlot.m_ConvertedView.gameObject, toggleSettings.transform);
+            panel.DestroyComponents<ActionBarConvertedPCView>();
+            panel.DestroyComponents<GridLayoutGroup>();
+            panel.SetActive(false);
+            panel.Rect().SetAnchor(0, 1);
+            panel.Rect().sizeDelta = new Vector2(100, 100);
+            panel.Rect().pivot = new Vector2(1, 0);
+            panel.Rect().anchoredPosition = Vector3.zero;
+            panel.Rect().anchoredPosition = new Vector2(-3, 3);
+
+            var popGrid = panel.AddComponent<GridLayoutGroup>();
+            popGrid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
+            popGrid.constraintCount = 1;
+            int width = 450;
+            if (Language.Locale == Locale.deDE)
+                width = 550;
+            popGrid.cellSize = new Vector2(width, 40);
+            popGrid.padding.left = 25;
+            popGrid.padding.top = 12;
+            popGrid.padding.bottom = 50;
+            popGrid.startCorner = GridLayoutGroup.Corner.LowerLeft;
+
+            var (toggle, _) = MakeSettingsToggle(togglePrefab, panel.transform, "setting-in-combat".i8());
+            toggle.isOn = state.AllowInCombat;
+            toggle.onValueChanged.AddListener(enabled => {
+                state.AllowInCombat = enabled;
+                bool allow = !Game.Instance.Player.IsInCombat || enabled;
+                GlobalBubbleBuffer.Instance.Buttons.ForEach(b => b.Interactable = allow);
+            });
+
+            var b = toggleSettings.GetComponent<OwlcatButton>();
+            b.SetTooltip(new TooltipTemplateSimple("settings".i8(), "settings-toggle".i8()), new TooltipConfig {
+                InfoCallMethod = InfoCallMethod.None
+            });
+
+            b.OnLeftClick.AddListener(() => {
+                panel.SetActive(!panel.activeSelf);
+                b.IsPressed = panel.activeSelf;
+            });
         }
 
         private void RegenerateWidgetCache(Transform listPrefab, SpellbookKnownSpellsPCView spellsKnownView) {
@@ -715,8 +797,8 @@ namespace BubbleBuffs {
                 if (buff == null) return;
 
                 for (int i = 0; i < Group.Count; i++) {
-                    if (view.targets[i].Button.Interactable && !buff.UnitWants(i)) {
-                        buff.SetUnitWants(i, true);
+                    if (view.targets[i].Button.Interactable && !buff.UnitWants(Group[i])) {
+                        buff.SetUnitWants(Group[i], true);
                     }
                 }
                 state.Recalculate(true);
@@ -727,8 +809,8 @@ namespace BubbleBuffs {
                 if (buff == null) return;
 
                 for (int i = 0; i < Group.Count; i++) {
-                    if (buff.UnitWants(i)) {
-                        buff.SetUnitWants(i, false);
+                    if (buff.UnitWants(Group[i])) {
+                        buff.SetUnitWants(Group[i], false);
                     }
                 }
                 state.Recalculate(true);
@@ -954,7 +1036,9 @@ namespace BubbleBuffs {
 
             const float groupHeight = 166.25f;
 
+            Main.Log($"z-before-anchor: {groupRect.transform.position.z}");
             groupRect.SetAnchor(0.5f, 0.08f);
+            Main.Log($"after-anchor-z: {groupRect.transform.position.z}");
             groupRect.sizeDelta = new Vector2(300, groupHeight);
             groupRect.pivot = new Vector2(0.5f, 0);
 
@@ -966,7 +1050,6 @@ namespace BubbleBuffs {
             view.targets = new Portrait[Group.Count];
 
             for (int i = 0; i < Group.Count; i++) {
-                //Portrait portrait = MakePortrait(portraitPrefab, groupRect, true, null, view.targets, null); //expandButtonPrefab);
                 Portrait portrait = CreatePortrait(groupHeight, groupRect, false, false);
 
                 portrait.GameObject.SetActive(true);
@@ -978,34 +1061,19 @@ namespace BubbleBuffs {
 
                 int personIndex = i;
 
-                //portrait.Expand.OnLeftClick.AddListener(() => {
-                //    if (portrait.Expand.IsSelected) {
-                //        popout.transform.SetParent(portrait.Expand.transform);
-                //        popout.Rect().anchoredPosition = new Vector2(0, 32);
-                //        popout.Rect().SetAnchor(0.5, 0);
-                //        for (int t = 0; t < Group.Count; t++) {
-                //            if (personIndex != t)
-                //                view.targets[t].SetExpanded(false);
-                //        }
-                //        popout.SetActive(true);
-                //    } else {
-                //        popout.SetActive(false);
-                //    }
-                //});
-
-
                 portrait.Button.OnLeftClick.AddListener(() => {
+                    UnitEntityData me = Group[personIndex];
                     var buff = view.Selected;
                     if (buff == null)
                         return;
 
-                    if (!buff.CanTarget(personIndex))
+                    if (!buff.CanTarget(me))
                         return;
 
-                    if (buff.UnitWants(personIndex)) {
-                        buff.SetUnitWants(personIndex, false);
+                    if (buff.UnitWants(me)) {
+                        buff.SetUnitWants(me, false);
                     } else {
-                        buff.SetUnitWants(personIndex, true);
+                        buff.SetUnitWants(me, true);
                     }
 
                     try {
@@ -1019,9 +1087,6 @@ namespace BubbleBuffs {
 
                 totalCasters += Group[i].Spellbooks?.Count() ?? 0;
             }
-
-            //float actualWidth = (Group.Count - 1) * horizontalGroup.spacing;
-            //groupRect.anchoredPosition = new Vector2(-actualWidth / 2.0f, 0);
         }
 
         private void ShowBuffWindow() {
@@ -1552,7 +1617,8 @@ namespace BubbleBuffs {
     }
 
     class BubbleSpellView {
-        public static void BindBuffToView(BubbleBuff buff, GameObject view) {
+        private static TooltipConfig NoInfo = new TooltipConfig { InfoCallMethod = InfoCallMethod.None };
+        public static void BindBuffToView(BubbleBuff buff, GameObject view, bool tooltipOnRightClickOnly = false) {
             var button = view.GetComponent<OwlcatButton>();
             string text = buff.Name;
             //if (buff.Spell.Blueprint.LocalizedDuration.TryGetString(out var duration)) {
@@ -1563,6 +1629,7 @@ namespace BubbleBuffs {
             view.ChildObject("Icon/IconImage").GetComponent<Image>().sprite = buff.Spell.Blueprint.Icon;
             view.ChildObject("Icon/IconImage").GetComponent<Image>().color = buff.Key.Archmage ? Color.yellow : Color.white;
             view.ChildObject("Icon/FrameImage").GetComponent<Image>().color = buff.Key.Archmage ? Color.yellow : Color.white;
+
 
             if (buff.Spell.Blueprint.School != Kingmaker.Blueprints.Classes.Spells.SpellSchool.None)
                 view.ChildObject("School/SchoolLabel").GetComponent<TextMeshProUGUI>().text = buff.Spell.Blueprint.School.ToString();
@@ -1581,6 +1648,14 @@ namespace BubbleBuffs {
                 metamagicContainer.SetActive(true);
             } else
                 metamagicContainer.SetActive(false);
+
+            var tooltip = BubbleBuffSpellbookController.TooltipForAbility(buff.Spell.Blueprint);
+            
+            //button.OnRightClick.RemoveAllListeners();
+            //button.OnRightClick.AddListener(() => {
+            //    TooltipHelper.ShowInfo(tooltip);
+            //});
+            TooltipHelper.SetTooltip(button, tooltip);
 
         }
     }
@@ -1663,6 +1738,13 @@ namespace BubbleBuffs {
         }
 
         private static GameObject BigLabelPrefab => UIHelpers.CharacterScreen.Find("NamePortrait/CharName/CharacterName").gameObject;
+
+        public void ReorderTargetPortraits() {
+            var group = Bubble.Group;
+            for (int i = 0; i < group.Count; i++) {
+                targets[i].Image.sprite = group[i].Portrait.SmallPortrait;
+            }
+        }
 
         public void MakeBuffsList() {
             Main.Verbose("here");
@@ -1748,7 +1830,7 @@ namespace BubbleBuffs {
                             textImage.color = Color.white;
                         }
                     };
-                    BubbleSpellView.BindBuffToView(buff, widget);
+                    BubbleSpellView.BindBuffToView(buff, widget, button);
                     widget.ChildObject("School").SetActive(true);
                     widget.SetActive(true);
 
@@ -1767,6 +1849,7 @@ namespace BubbleBuffs {
             if (state.Dirty) {
                 try {
                     MakeBuffsList();
+                    ReorderTargetPortraits();
                 } catch (Exception ex) {
                     Main.Error(ex, "revalidating dirty");
                 }
@@ -1831,8 +1914,10 @@ namespace BubbleBuffs {
                     massGood = true;
             }
 
+            var me = Bubble.Group[i];
 
-            if (isMass && !buff.UnitWants(i)) {
+
+            if (isMass && !buff.UnitWants(me)) {
                 var target = massGood ? massGoodColor : massBadColor;
                 targets[i].Overlay.gameObject.SetActive(true);
                 var current = targets[i].Overlay.color;
@@ -1843,12 +1928,12 @@ namespace BubbleBuffs {
 
             fullOverlay.gameObject.SetActive(true);
 
-            if (!buff.CanTarget(i)) {
+            if (!buff.CanTarget(me)) {
                 fullOverlay.color = Color.red;
                 targets[i].Button.Interactable = false;
 
-            } else if (buff.UnitWants(i)) {
-                if (buff.UnitGiven(i)) {
+            } else if (buff.UnitWants(me)) {
+                if (buff.UnitGiven(me)) {
                     fullOverlay.color = Color.green;
                 } else {
                     fullOverlay.color = Color.yellow;
@@ -1924,6 +2009,7 @@ namespace BubbleBuffs {
 
     static class Bubble {
         public static List<UnitEntityData> Group => Game.Instance.SelectionCharacter.ActualGroup;
+        public static Dictionary<string, UnitEntityData> GroupById = new();
     }
 
 
@@ -1948,6 +2034,24 @@ namespace BubbleBuffs {
         }
 
         public void HandlePartyChanged() {
+            Main.Log("HERE");
+            Main.Log("HERE");
+            Main.Log("HERE");
+            Main.Log("HERE");
+            Main.Log("HERE");
+            Main.Log("HERE");
+            Main.Log("HERE");
+            Main.Log("HERE");
+            Main.Log("HERE");
+            Main.Log("HERE");
+            Main.Log("HERE");
+            Main.Log("HERE");
+            Main.Log("HERE");
+            Main.Log("HERE");
+            Main.Log("HERE");
+            Main.Log("HERE");
+            Main.Log("HERE");
+            Main.Log("HERE");
             Safely(() => GlobalBubbleBuffer.Instance.SpellbookController?.RevalidateSpells());
         }
 
@@ -1979,7 +2083,8 @@ namespace BubbleBuffs {
         public void HandleCutsceneStopped(CutscenePlayerData cutscene) { }
 
         public void HandlePartyCombatStateChanged(bool inCombat) {
-            GlobalBubbleBuffer.Instance.Buttons.ForEach(b => b.Interactable = !inCombat);
+            bool allow = !inCombat || GlobalBubbleBuffer.Instance.SpellbookController.state.AllowInCombat;
+            GlobalBubbleBuffer.Instance.Buttons.ForEach(b => b.Interactable = allow);
         }
     }
 

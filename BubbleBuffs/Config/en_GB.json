@@ -44,6 +44,10 @@
   "nolimit": "no limit",
 
   "remove-all": "Remove from all",
-  "add-all":  "Add to all"
+  "add-all":  "Add to all",
+
+  "settings": "Settings",
+  "settings-toggle": "Toggle the BubbleBuffs settings panel",
+  "setting-in-combat": "Allow bubble-buffing in combat"
 
 }
