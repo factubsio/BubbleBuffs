@@ -115,7 +115,7 @@ namespace BubbleBuffs {
         };
 
         public void Execute(BuffGroup buffGroup) {
-            if (Game.Instance.Player.IsInCombat)
+            if (Game.Instance.Player.IsInCombat && !State.AllowInCombat)
                 return;
 
             var lastExecuted = lastExecutedForGroup[buffGroup];
