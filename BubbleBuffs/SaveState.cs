@@ -14,6 +14,8 @@ namespace BubbleBuffs {
         [JsonProperty]
         public bool AllowInCombat;
         [JsonProperty]
+        public bool OverwriteBuff;
+        [JsonProperty]
         public int Version;
     }
 
