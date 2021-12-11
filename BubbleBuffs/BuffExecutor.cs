@@ -152,7 +152,7 @@ namespace BubbleBuffs {
 
                     foreach (var (target, caster) in buff.ActualCastQueue) {
                         var forTarget = unitBuffs[target];
-                        if (buff.BuffsApplied.IsPresent(forTarget) & !State.OverwriteBuff) {
+                        if (buff.BuffsApplied.IsPresent(forTarget) && !State.OverwriteBuff) {
                             thisBuffSkip++;
                             skippedCasts++;
                             continue;
