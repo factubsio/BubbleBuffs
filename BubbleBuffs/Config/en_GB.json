@@ -49,6 +49,6 @@
   "settings": "Settings",
   "settings-toggle": "Toggle the BubbleBuffs settings panel",
   "setting-in-combat": "Allow bubble-buffing in combat",
-  "setting-overwritebuff": "Overwrite buffs"
+  "setting-overwritebuff": "Ignore existing buffs"
 
 }
