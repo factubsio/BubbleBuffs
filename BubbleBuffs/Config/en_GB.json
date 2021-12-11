@@ -34,8 +34,8 @@
   "tooltip.skipped": "Buffs Skipped",
   "tooltip.failed": "Buffs Failed",
   "noslot": "no free spell-slot",
-  
-  "warn.arcanepool":  "  <i>Arcane Resevoir resource is <b>not</b> tracked</i>",
+
+  "warn.arcanepool": "  <i>Arcane Resevoir resource is <b>not</b> tracked</i>",
 
   "limitcasts": "Limit casts to",
   "bancasts": "Ban from casting",
@@ -44,10 +44,11 @@
   "nolimit": "no limit",
 
   "remove-all": "Remove from all",
-  "add-all":  "Add to all",
+  "add-all": "Add to all",
 
   "settings": "Settings",
   "settings-toggle": "Toggle the BubbleBuffs settings panel",
-  "setting-in-combat": "Allow bubble-buffing in combat"
+  "setting-in-combat": "Allow bubble-buffing in combat",
+  "setting-overwritebuff": "Overwrite buffs"
 
 }

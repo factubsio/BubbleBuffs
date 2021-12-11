@@ -563,6 +563,13 @@ namespace BubbleBuffs {
                 GlobalBubbleBuffer.Instance.Buttons.ForEach(b => b.Interactable = allow);
             });
 
+            var (toggle1, _) = MakeSettingsToggle(togglePrefab, panel.transform, "setting-overwritebuff".i8());
+            toggle1.isOn = state.OverwriteBuff;
+            toggle1.onValueChanged.AddListener(enabled => {
+                state.OverwriteBuff = enabled;
+                
+            });
+
             var b = toggleSettings.GetComponent<OwlcatButton>();
             b.SetTooltip(new TooltipTemplateSimple("settings".i8(), "settings-toggle".i8()), new TooltipConfig {
                 InfoCallMethod = InfoCallMethod.None
