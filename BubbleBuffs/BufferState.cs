@@ -228,6 +228,14 @@ namespace BubbleBuffs {
             }
         }
 
+        public bool OverwriteBuff {
+            get => SavedState.OverwriteBuff;
+            set {
+                SavedState.OverwriteBuff = value;
+                Save(true);
+            }
+        }
+
         //private static Dictionary<Guid, List<ContextActionApplyBuff>> CachedBuffEffects;
 
         public void AddBuff(UnitEntityData dude, Kingmaker.UnitLogic.Spellbook book, AbilityData spell, AbilityData baseSpell, IReactiveProperty<int> credits, bool newCredit, int creditClamp, int charIndex, bool archmageArmor = false, Category category = Category.Spell) {
