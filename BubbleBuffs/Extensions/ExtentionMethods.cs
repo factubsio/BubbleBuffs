@@ -85,7 +85,7 @@ namespace BubbleBuffs.Extensions {
     static class ExtentionMethods {
 
         private static void LogVerbose(int level, string message) {
-#if false && DEBUG
+#if DEBUG && false
             Main.Log($"{level.Indent()} {message}");
 #endif
 
@@ -97,6 +97,12 @@ namespace BubbleBuffs.Extensions {
                 if (action is ContextActionApplyBuff applyBuff && applyBuff.Buff.IsBeneficial(level + 1)) {
                     yield return new BuffEffect(applyBuff);
                     LogVerbose(level + 1, $"FOUND: applyBuff {action.name}");
+                } else if (action is ContextActionsOnPet enchantPet) {
+                    LogVerbose(level + 1, $"FOUND: enchantPet {action.name}");
+                    foreach (var subEffect in enchantPet.Actions.Actions.Where(a => a != null).SelectMany(a => a.GetBeneficialBuffs(level + 1))) {
+                        subEffect.PetType = enchantPet.PetType;
+                        yield return subEffect;
+                    }
                 } else if (action is ContextActionEnchantWornItem enchantItem) {
                     LogVerbose(level + 1, $"FOUND: enchantItem {action.name}");
                     yield return new WornItemEnchantmentEffect(enchantItem);

@@ -8,6 +8,7 @@ using Kingmaker.Utility;
 using System;
 using System.Linq;
 using System.Collections.Generic;
+using Kingmaker.Enums;
 
 namespace BubbleBuffs {
 
@@ -24,13 +25,26 @@ namespace BubbleBuffs {
     public class AbilityCombinedEffects {
 
         private HashSet<Guid> AppliedBuffs;
+        private HashSet<Guid> AppliedPetBuffs;
         private HashSet<Guid> PrimaryWeaponEnchants;
         private HashSet<Guid> SecondaryWeaponEnchants;
+        public PetType? PetType = null;
 
         private void Add(ref HashSet<Guid> set, Guid fact) {
             if (set == null)
                 set = new();
             set.Add(fact);
+        }
+
+        public void AddPetBuff(Guid buff, PetType type, bool isLong) {
+            if (PetType != null && type != PetType) {
+                Main.Error("Could not add pet buff with different pet type");
+                return;
+            }
+
+            Add(ref AppliedPetBuffs, buff);
+            PetType = type;
+            IsLong |= isLong;
         }
 
         public void AddBuff(Guid buff, bool isLong) {
@@ -49,11 +63,18 @@ namespace BubbleBuffs {
         public AbilityCombinedEffects(IEnumerable<IBeneficialEffect> beneficialEffects) {
             foreach (var effect in beneficialEffects.EmptyIfNull())
                 effect.AppendTo(this);
-            Empty = AppliedBuffs == null && PrimaryWeaponEnchants == null && SecondaryWeaponEnchants == null;
+            Empty = AppliedBuffs == null && AppliedPetBuffs == null && PrimaryWeaponEnchants == null && SecondaryWeaponEnchants == null;
         }
 
 
         internal bool IsPresent(UnitBuffData unitBuffData) {
+            if (AppliedPetBuffs != null) {
+                var pet = unitBuffData.Unit.GetPet(PetType.Value);
+                var existingBuffs = new HashSet<Guid>(pet.Buffs.RawFacts.Select(b => b.BGuid()));
+                if (existingBuffs.Overlaps(AppliedPetBuffs))
+                    return true;
+            }
+
             if (AppliedBuffs != null) {
                 if (unitBuffData.Buffs.Overlaps(AppliedBuffs))
                     return true;
@@ -81,6 +102,7 @@ namespace BubbleBuffs {
 
     public interface IBeneficialEffect {
         public void AppendTo(AbilityCombinedEffects effect);
+        public PetType? PetType { get; set; }
     }
     public class AreaBuffEffect : IBeneficialEffect {
 
@@ -91,8 +113,13 @@ namespace BubbleBuffs {
             IsLong = isLong;
         }
 
+        public PetType? PetType { get; set; }
+
         public void AppendTo(AbilityCombinedEffects effect) {
-            effect.AddBuff(Applied, IsLong);
+            if (PetType != null)
+                effect.AddPetBuff(Applied, PetType.Value, IsLong);
+            else
+                effect.AddBuff(Applied, IsLong);
         }
     }
 
@@ -106,9 +133,15 @@ namespace BubbleBuffs {
             IsLong = action.IsLong();
         }
 
+        public PetType? PetType { get; set; }
+
         public void AppendTo(AbilityCombinedEffects effect) {
-            if (Applied != Guid.Empty)
-                effect.AddBuff(Applied, IsLong);
+            if (Applied != Guid.Empty) {
+            if (PetType != null)
+                effect.AddPetBuff(Applied, PetType.Value, IsLong);
+                else
+                    effect.AddBuff(Applied, IsLong);
+            }
         }
     }
 
@@ -117,6 +150,8 @@ namespace BubbleBuffs {
         public readonly bool PrimaryWeapon;
         public readonly bool SecondaryWeapon;
         public readonly bool IsLong;
+
+        public PetType? PetType { get; set; }
         
         public WornItemEnchantmentEffect(ContextActionEnchantWornItem action) {
             Applied = action.Enchantment.AssetGuid.m_Guid;

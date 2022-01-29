@@ -147,4 +147,8 @@ namespace BubbleBuffs {
         public override string EncyclopediaView => "EncyclopediaPCView";
         public override string CharacterScreen => "CharacterInfoPCView/CharacterScreen";
     }
+
+    class WidgetPaths_1_2 : WidgetPaths_1_1 {
+
+    }
 }
