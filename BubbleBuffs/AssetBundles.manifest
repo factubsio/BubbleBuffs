@@ -1,0 +1,7 @@
+ManifestFileVersion: 0
+CRC: 879600257
+AssetBundleManifest:
+  AssetBundleInfos:
+    Info_0:
+      Name: tutorialcanvas
+      Dependencies: {}

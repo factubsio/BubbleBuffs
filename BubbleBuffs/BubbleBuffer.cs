@@ -385,7 +385,7 @@ namespace BubbleBuffs {
         private void CreateWindow() {
             var staticRoot = UIHelpers.StaticRoot;
 
-            var portraitPrefab = staticRoot.Find("PartyPCView/PartyCharacterView_01").gameObject;
+            var portraitPrefab = staticRoot.Find("PartyPCView/Viewport/Content/PartyCharacterView_01").gameObject;
             Main.Verbose("Got portrait prefab");
             var listPrefab = UIHelpers.SpellbookScreen.Find("MainContainer/KnownSpells");
             Main.Verbose("Got list prefab");
