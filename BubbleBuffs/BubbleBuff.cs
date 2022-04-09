@@ -49,6 +49,7 @@ namespace BubbleBuffs {
         HashSet<string> wanted = new();
         HashSet<string> notWanted = new();
         HashSet<string> given = new();
+        public HashSet<Guid> IgnoreForOverwriteCheck = new();
 
         public bool IsMass;
 
@@ -108,6 +109,7 @@ namespace BubbleBuffs {
         public string Name => Key.Archmage ? "Archmage Armor" : Spell.Name;
         public string NameMeta => $"{Spell.Name} {MetaMagicFlags}";
 
+
         public bool UnitWants(UnitEntityData unit) => wanted.Contains(unit.UniqueId);
         public bool UnitWantsRemoved(UnitEntityData unit) => notWanted.Contains(unit.UniqueId);
         public bool UnitGiven(UnitEntityData unit) => given.Contains(unit.UniqueId);
@@ -164,6 +166,9 @@ namespace BubbleBuffs {
                 UnitEntityData u = Bubble.Group[i];
                 if (state.Wanted.Contains(u.UniqueId))
                     SetUnitWants(u, true);
+            }
+            if (state.IgnoreForOverwriteCheck != null) {
+                IgnoreForOverwriteCheck = state.IgnoreForOverwriteCheck.Select(gstr => Guid.Parse(gstr)).ToHashSet();
             }
             SetHidden(HideReason.Blacklisted, state.Blacklisted);
             foreach (var caster in CasterQueue) {

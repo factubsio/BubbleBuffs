@@ -7,6 +7,7 @@
   "showshort": "显示 轮级法术",
   "showreq": "显示已设置法术",
   "showNOTreq": "显示未设置法术",
+  "sort.name":  "按名字排序",
   "group.normal": "标准施法序列",
   "group.important": "重要施法序列",
   "group.short": "临时施法序列",

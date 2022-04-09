@@ -9,6 +9,7 @@ using System;
 using System.Linq;
 using System.Collections.Generic;
 using Kingmaker.Enums;
+using Kingmaker.Blueprints;
 
 namespace BubbleBuffs {
 
@@ -29,6 +30,22 @@ namespace BubbleBuffs {
         private HashSet<Guid> PrimaryWeaponEnchants;
         private HashSet<Guid> SecondaryWeaponEnchants;
         public PetType? PetType = null;
+
+        public IEnumerable<(string name, Guid guid)> All {
+            get {
+                IEnumerable<Guid> some = Enumerable.Empty<Guid>();
+                if (AppliedBuffs != null)
+                     some = some.Concat(AppliedBuffs);
+                if (AppliedPetBuffs != null)
+                     some = some.Concat(AppliedPetBuffs);
+                if (PrimaryWeaponEnchants != null)
+                     some = some.Concat(PrimaryWeaponEnchants);
+                if (SecondaryWeaponEnchants != null)
+                     some = some.Concat(SecondaryWeaponEnchants);
+
+                return some.Select(x => (Resources.GetBlueprint<SimpleBlueprint>(new BlueprintGuid(x)).name, x));
+            }
+        }
 
         private void Add(ref HashSet<Guid> set, Guid fact) {
             if (set == null)
@@ -67,28 +84,30 @@ namespace BubbleBuffs {
         }
 
 
-        internal bool IsPresent(UnitBuffData unitBuffData) {
+        internal bool IsPresent(UnitBuffData unitBuffData, HashSet<Guid> ignoreForOverwriteCheck) {
             if (AppliedPetBuffs != null) {
                 var pet = unitBuffData.Unit.GetPet(PetType.Value);
                 var existingBuffs = new HashSet<Guid>(pet.Buffs.RawFacts.Select(b => b.BGuid()));
-                if (existingBuffs.Overlaps(AppliedPetBuffs))
+                if (existingBuffs.Overlaps(AppliedPetBuffs.Except(ignoreForOverwriteCheck)))
                     return true;
             }
 
             if (AppliedBuffs != null) {
-                if (unitBuffData.Buffs.Overlaps(AppliedBuffs))
+                if (unitBuffData.Buffs.Overlaps(AppliedBuffs.Except(ignoreForOverwriteCheck)))
                     return true;
             }
 
             if (PrimaryWeaponEnchants != null) {
+                var important = PrimaryWeaponEnchants.Except(ignoreForOverwriteCheck).ToHashSet();
                 foreach (var enchant in unitBuffData.Unit.Body.PrimaryHand.MaybeWeapon.Enchantments) {
-                    if (PrimaryWeaponEnchants.Contains(enchant.BGuid()))
+                    if (important.Contains(enchant.BGuid()))
                         return true;
                 }
             }
             if (SecondaryWeaponEnchants != null) {
+                var important = SecondaryWeaponEnchants.Except(ignoreForOverwriteCheck).ToHashSet();
                 foreach (var enchant in unitBuffData.Unit.Body.SecondaryHand.MaybeWeapon.Enchantments) {
-                    if (SecondaryWeaponEnchants.Contains(enchant.BGuid()))
+                    if (important.Contains(enchant.BGuid()))
                         return true;
                 }
             }

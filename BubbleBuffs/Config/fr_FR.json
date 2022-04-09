@@ -7,6 +7,7 @@
   "showshort": "Montrer tour/niveau",
   "showreq": "Montrer sorts configurés",
   "showNOTreq": "Montrer sorts NON configurés",
+  "sort.name":  "Trier par nom",
   "group.normal": "Normal",
   "group.important": "Important",
   "group.short": "Court",

@@ -3,10 +3,18 @@
   "casting": "каст",
   "available": "доступно",
   "available.atwill": "по желанию",
-  "showhidden": "Скрытые",
-  "showshort": "Короткие",
-  "showreq": "Выбранные",
-  "showNOTreq": "НЕ выбранные",
+
+  
+
+
+
+
+
+  "showhidden": "Показать скрытые",
+  "showshort": "Показывать недолгие",
+  "showreq": "Показывать выбранные",
+  "showNOTreq": "Показывать НЕ выбранные",
+  "sort.name":  "Сортировать по названию",
   "group.normal": "Нормальные",
   "group.important": "Важные",
   "group.short": "Короткие",

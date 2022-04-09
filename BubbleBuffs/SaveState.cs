@@ -36,6 +36,10 @@ namespace BubbleBuffs {
         public BuffGroup InGroup;
         [JsonProperty]
         public bool Blacklisted;
+
+        [JsonProperty]
+        public string[] IgnoreForOverwriteCheck;
+        
         [JsonProperty]
         public ISet<string> Wanted;
         [JsonProperty]

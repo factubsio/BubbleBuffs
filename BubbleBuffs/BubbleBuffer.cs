@@ -39,6 +39,8 @@ using Kingmaker.UI.SettingsUI;
 using Kingmaker.Blueprints.Classes;
 using Kingmaker.Localization;
 using Kingmaker.Localization.Shared;
+using DG.Tweening;
+using Kingmaker.Blueprints.Items.Equipment;
 
 namespace BubbleBuffs {
 
@@ -272,13 +274,13 @@ namespace BubbleBuffs {
         private static GameObject MakeToggle(GameObject togglePrefab, Transform parent, float x, float y, string text, string name, float scale = 1) {
             var toggle = GameObject.Instantiate(togglePrefab, parent);
             toggle.name = name;
-            var blacklistRect = toggle.transform as RectTransform;
-            blacklistRect.localPosition = Vector2.zero;
-            blacklistRect.anchoredPosition = Vector2.zero;
-            blacklistRect.anchorMin = new Vector2(x, y);
-            blacklistRect.anchorMax = new Vector2(x, y);
-            blacklistRect.pivot = new Vector2(0.5f, 0.5f);
-            blacklistRect.localScale = new Vector3(scale, scale, scale);
+            var toggleRect = toggle.transform as RectTransform;
+            toggleRect.localPosition = Vector2.zero;
+            toggleRect.anchoredPosition = Vector2.zero;
+            toggleRect.anchorMin = new Vector2(x, y);
+            toggleRect.anchorMax = new Vector2(x, y);
+            toggleRect.pivot = new Vector2(0.5f, 0.5f);
+            toggleRect.localScale = new Vector3(scale, scale, scale);
             toggle.GetComponentInChildren<TextMeshProUGUI>().text = text;
             toggle.SetActive(true);
             return toggle;
@@ -371,11 +373,12 @@ namespace BubbleBuffs {
             return portrait;
         }
 
-        public ReactiveProperty<bool> ShowNotRequested = new ReactiveProperty<bool>(true);
-        public ReactiveProperty<bool> ShowRequested = new ReactiveProperty<bool>(true);
-        public ReactiveProperty<bool> ShowShort = new ReactiveProperty<bool>(false);
-        public ReactiveProperty<bool> ShowHidden = new ReactiveProperty<bool>(false);
-        public ReactiveProperty<string> NameFilter = new ReactiveProperty<string>("");
+        public ReactiveProperty<bool> SortByName = new(false);
+        public ReactiveProperty<bool> ShowNotRequested = new(true);
+        public ReactiveProperty<bool> ShowRequested = new(true);
+        public ReactiveProperty<bool> ShowShort = new(true);
+        public ReactiveProperty<bool> ShowHidden = new(false);
+        public ReactiveProperty<string> NameFilter = new("");
         public ButtonGroup<Category> CurrentCategory;
 
         private List<UnitEntityData> Group => Game.Instance.SelectionCharacter.ActualGroup;
@@ -464,6 +467,9 @@ namespace BubbleBuffs {
             NameFilter.Subscribe<string>(val => {
                 if (search.InputField.text != val)
                     search.InputField.text = val;
+                RefreshFiltering();
+            });
+            SortByName.Subscribe<bool>(show => {
                 RefreshFiltering();
             });
 
@@ -648,16 +654,20 @@ namespace BubbleBuffs {
             filterRect.gameObject.EditComponent<VerticalLayoutGroup>(v => {
                 v.childScaleHeight = true;
                 v.childScaleWidth = true;
-
+                //v.childForceExpandWidth = true;
+                v.childControlWidth = false;
             });
 
             search = new SearchBar(filterRect, "...", false, "bubble-search-buff");
+            var searchRect = search.RootGameObject.transform as RectTransform;
+            searchRect.sizeDelta = new Vector2(280, 100);
 
-            const float scale = 1.0f;
+            const float scale = 0.8f;
             GameObject showHidden = MakeToggle(togglePrefab, filterRect, 0.8f, .5f, "showhidden".i8(), "bubble-toggle-show-hidden", scale);
             GameObject showShort = MakeToggle(togglePrefab, filterRect, .8f, .5f, "showshort".i8(), "bubble-toggle-show-short", scale);
             GameObject showRequested = MakeToggle(togglePrefab, filterRect, .8f, .5f, "showreq".i8(), "bubble-toggle-show-requested", scale);
             GameObject showNotRequested = MakeToggle(togglePrefab, filterRect, .8f, .5f, "showNOTreq".i8(), "bubble-toggle-show-not-requested", scale);
+            GameObject sortByName = MakeToggle(togglePrefab, filterRect, .8f, .5f, "sort.name".i8(), "bubble-toggle-sort-by-name", scale);
 
             search.InputField.onValueChanged.AddListener(val => {
                 NameFilter.Value = val;
@@ -680,13 +690,43 @@ namespace BubbleBuffs {
             ShowHidden.BindToView(showHidden);
             ShowRequested.BindToView(showRequested);
             ShowNotRequested.BindToView(showNotRequested);
+            SortByName.BindToView(sortByName);
 
             CurrentCategory.Selected.Value = Category.Spell;
         }
 
+        private bool previousSortByName = false;
+
         private void RefreshFiltering() {
             if (state.BuffList == null)
                 return;
+
+            if (previousSortByName != SortByName.Value) {
+                if (SortByName.Value) {
+                    view.DisplayOrder.Sort((a, b) => {
+                        if (a.name == b.name) {
+                            if (a.key.MetamagicMask == 0 && b.key.MetamagicMask > 0) {
+                                return -1;
+                            } else if (a.key.MetamagicMask > 0 && b.key.MetamagicMask == 0) {
+                                return 1;
+                            } else {
+                                return a.key.Archmage ? 1 : -1;
+                            }
+                        } else {
+                            return a.name.CompareTo(b.name);
+                        }
+                    });
+                } else {
+                    view.DisplayOrder.Sort((a, b) => {
+                        return a.discovery - b.discovery;
+                    });
+                }
+
+                previousSortByName = SortByName.Value;
+                foreach (var k in view.DisplayOrder) {
+                    view.buffWidgets[k.key].transform.SetAsLastSibling();
+                }
+            }
 
             foreach (var buff in state.BuffList) {
 
@@ -743,21 +783,119 @@ namespace BubbleBuffs {
             ReactiveProperty<int> SelectedCaster = new ReactiveProperty<int>(-1);
 
             var actionBarView = UIHelpers.StaticRoot.Find("ActionBarPcView").GetComponent<ActionBarPCView>();
-            var popout = GameObject.Instantiate(actionBarView.m_DragSlot.m_ConvertedView.gameObject, content);
+
+            var spellPopout = GameObject.Instantiate(actionBarView.m_DragSlot.m_ConvertedView.gameObject, detailsRect);
+            spellPopout.DestroyComponents<ActionBarConvertedPCView>();
+            spellPopout.DestroyComponents<GridLayoutGroup>();
+            spellPopout.Rect().anchoredPosition3D = Vector3.zero;
+            spellPopout.Rect().localPosition = Vector3.zero;
+            spellPopout.Rect().SetAnchor(0, 0);
+            spellPopout.SetActive(true);
+            spellPopout.ChildObject("Background").GetComponent<Image>().raycastTarget = true;
+
+            var spellPopGrid = spellPopout.AddComponent<GridLayoutGroup>();
+            spellPopGrid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
+            spellPopGrid.constraintCount = 1;
+            int spellPopWidth = 450;
+            if (Language.Locale == Locale.deDE)
+                spellPopWidth = 650;
+            spellPopGrid.cellSize = new Vector2(spellPopWidth, 40);
+            spellPopGrid.padding.left = 25;
+            spellPopGrid.padding.top = 12;
+            spellPopGrid.padding.bottom = 12;
+
+            GameObject MakeSpellLabel(string text) {
+                var labelRoot = GameObject.Instantiate(togglePrefab, spellPopout.transform);
+                Main.Verbose($"Label root: {labelRoot == null}");
+                labelRoot.DestroyComponents<ToggleWorkaround>();
+                labelRoot.DestroyChildren("Background");
+                labelRoot.GetComponentInChildren<TextMeshProUGUI>().text = text;
+                labelRoot.SetActive(true);
+
+                return labelRoot;
+            }
+
+            (ToggleWorkaround toggle, TextMeshProUGUI text) MakeSpellPopoutToggle(string text) {
+                var toggleObj = GameObject.Instantiate(togglePrefab, spellPopout.transform);
+                toggleObj.SetActive(true);
+                toggleObj.Rect().localPosition = Vector3.zero;
+                toggleObj.GetComponent<HorizontalLayoutGroup>().childControlWidth = true;
+                var label = toggleObj.GetComponentInChildren<TextMeshProUGUI>();
+                label.text = text;
+                return (toggleObj.GetComponentInChildren<ToggleWorkaround>(), label);
+            }
+
+            List<(ToggleWorkaround toggle, TextMeshProUGUI text)> ignoreEffectToggles = new();
+
+            MakeSpellLabel("Ignore effects when checking overwrite:");
+            for (int i = 0; i < 8; i++) {
+                int index = i;
+                var effectToggle = MakeSpellPopoutToggle("BlahblahBuff");
+                effectToggle.toggle.gameObject.SetActive(false);
+                effectToggle.toggle.onValueChanged.AddListener((ignore) => {
+                    try {
+                        var buff = view.currentSelectedSpell?.Value;
+                        if (buff == null)
+                            return;
+
+                        var effect = buff.BuffsApplied.All.Skip(index).First();
+
+                        if (ignore && buff.IgnoreForOverwriteCheck.Add(effect.guid))
+                            state.Save();
+                        if (!ignore && buff.IgnoreForOverwriteCheck.Remove(effect.guid))
+                            state.Save();
+                    } catch (Exception e) {
+                        Main.Error(e);
+                    }
+                });
+                ignoreEffectToggles.Add(effectToggle);
+            }
+            Vector3 rotateUp = new Vector3(0, 0, 89.9f);
+            Vector3 rotateDown = new Vector3(0, 0, -89.9f);
+
+            var expandSpellPopout = GameObject.Instantiate(expandButtonPrefab, detailsRect);
+            expandSpellPopout.Rect().pivot = new Vector2(0.5f, 0.5f);
+            expandSpellPopout.Rect().SetAnchor(0.9, 1);
+            expandSpellPopout.Rect().anchoredPosition = new Vector2(-20, -20);
+            expandSpellPopout.GetComponent<OwlcatButton>().Interactable = true;
+            expandSpellPopout.SetActive(true);
+            bool isExpanded = false;
+            spellPopout.Rect().SetAnchor(0.9, 1);
+            spellPopout.Rect().anchoredPosition = new Vector2(-20, 0);
+            UpdateSpellPopout();
+
+            expandSpellPopout.SetActive(false);
+
+
+            void UpdateSpellPopout() {
+                expandSpellPopout.ChildRect("Image").DORotate(isExpanded ? rotateUp : rotateDown, 0.22f).SetUpdate(true);
+                spellPopout.SetActive(isExpanded);
+                if (isExpanded)
+                    spellPopout.transform.SetAsLastSibling();
+            }
+
+            var expandSpellPopoutButton = expandSpellPopout.GetComponent<OwlcatButton>();
+            expandSpellPopoutButton.OnLeftClick.AddListener(() => {
+                isExpanded = !isExpanded;
+                UpdateSpellPopout();
+            });
+
+            var casterPopout = GameObject.Instantiate(actionBarView.m_DragSlot.m_ConvertedView.gameObject, content);
 
             HideCasterPopout = () => {
                 view.casterPortraits.ForEach(x => x.SetExpanded(false));
-                popout.SetActive(false);
+                casterPopout.SetActive(false);
             };
-            popout.DestroyComponents<ActionBarConvertedPCView>();
-            popout.DestroyComponents<GridLayoutGroup>();
-            popout.Rect().anchoredPosition3D = Vector3.zero;
-            popout.Rect().localPosition = Vector3.zero;
-            popout.Rect().SetAnchor(0, 0);
-            popout.SetActive(false);
-            popout.ChildObject("Background").GetComponent<Image>().raycastTarget = true;
+            casterPopout.DestroyComponents<ActionBarConvertedPCView>();
+            casterPopout.DestroyComponents<GridLayoutGroup>();
+            casterPopout.Rect().anchoredPosition3D = Vector3.zero;
+            casterPopout.Rect().localPosition = Vector3.zero;
+            casterPopout.Rect().SetAnchor(0, 0);
+            casterPopout.SetActive(false);
+            casterPopout.ChildObject("Background").GetComponent<Image>().raycastTarget = true;
 
-            var popGrid = popout.AddComponent<GridLayoutGroup>();
+
+            var popGrid = casterPopout.AddComponent<GridLayoutGroup>();
             popGrid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
             popGrid.constraintCount = 1;
             int width = 450;
@@ -768,8 +906,11 @@ namespace BubbleBuffs {
             popGrid.padding.top = 12;
             popGrid.padding.bottom = 12;
 
+
+
+
             GameObject MakeLabel(string text) {
-                var labelRoot = GameObject.Instantiate(togglePrefab, popout.transform);
+                var labelRoot = GameObject.Instantiate(togglePrefab, casterPopout.transform);
                 Main.Verbose($"Label root: {labelRoot == null}");
                 labelRoot.DestroyComponents<ToggleWorkaround>();
                 labelRoot.DestroyChildren("Background");
@@ -835,7 +976,7 @@ namespace BubbleBuffs {
             var defaultLabelColor = shareTransmutationLabel.color;
 
             (ToggleWorkaround, TextMeshProUGUI) MakePopoutToggle(string text) {
-                var toggleObj = GameObject.Instantiate(togglePrefab, popout.transform);
+                var toggleObj = GameObject.Instantiate(togglePrefab, casterPopout.transform);
                 toggleObj.SetActive(true);
                 toggleObj.Rect().localPosition = Vector3.zero;
                 toggleObj.GetComponent<HorizontalLayoutGroup>().childControlWidth = true;
@@ -936,7 +1077,7 @@ namespace BubbleBuffs {
             horizontalGroup.childForceExpandHeight = true;
 
             for (int i = 0; i < totalCasters; i++) {
-                var portrait = CreatePortrait(groupHeight, castersRect, true, true, view.casterPortraits, popout);
+                var portrait = CreatePortrait(groupHeight, castersRect, true, true, view.casterPortraits, casterPopout);
                 view.casterPortraits[i] = portrait;
                 portrait.Image.color = Color.yellow;
 
@@ -992,6 +1133,11 @@ namespace BubbleBuffs {
 
                 groupRect.gameObject.SetActive(hasBuff);
                 hideSpell.SetActive(hasBuff);
+                expandSpellPopout.SetActive(hasBuff);
+                if (!hasBuff) {
+                    isExpanded = false;
+                    UpdateSpellPopout();
+                }
 
                 if (!hasBuff)
                     return;
@@ -999,7 +1145,19 @@ namespace BubbleBuffs {
                 buffGroup.Selected.Value = buff.InGroup;
                 hideSpellToggle.isOn = buff.HideBecause(HideReason.Blacklisted);
 
-                if (SelectedCaster.Value >= 0 && popout.activeSelf) {
+                var effects = buff.BuffsApplied.All.ToArray();
+
+                for (int i = 0; i < ignoreEffectToggles.Count; i++) {
+                    if (i < effects.Length) {
+                        ignoreEffectToggles[i].toggle.gameObject.SetActive(true);
+                        ignoreEffectToggles[i].text.text = effects[i].name;
+                        ignoreEffectToggles[i].toggle.isOn = buff.IgnoreForOverwriteCheck.Contains(effects[i].guid);
+                    } else {
+                        ignoreEffectToggles[i].toggle.gameObject.SetActive(false);
+                    }
+                }
+
+                if (SelectedCaster.Value >= 0 && casterPopout.activeSelf) {
                     var who = buff.CasterQueue[SelectedCaster.value];
                     int actualCap = who.CustomCap < 0 ? who.MaxCap : who.CustomCap;
                     if (who.MaxCap < 100)
@@ -1043,9 +1201,7 @@ namespace BubbleBuffs {
 
             const float groupHeight = 166.25f;
 
-            Main.Log($"z-before-anchor: {groupRect.transform.position.z}");
             groupRect.SetAnchor(0.5f, 0.08f);
-            Main.Log($"after-anchor-z: {groupRect.transform.position.z}");
             groupRect.sizeDelta = new Vector2(300, groupHeight);
             groupRect.pivot = new Vector2(0.5f, 0);
 
@@ -1319,8 +1475,27 @@ namespace BubbleBuffs {
 
         public List<OwlcatButton> Buttons = new();
 
+        public static void TryAddFeature(UnitEntityData u, string feature) {
+            var bp = Resources.GetBlueprint<BlueprintFeature>(feature);
+            Main.Log("trying to add feature: " + bp.name);
+            if (!u.Progression.Features.HasFact(bp)) {
+                Main.Log("ADDING");
+                u.Progression.Features.AddFeature(bp);
+            }
+        }
+
         internal void TryInstallUI() {
+
+            //var u = Game.Instance.Player.ActiveCompanions.First(c => c.CharacterName == "Ember");
+            //Main.Log("Got character: " + u.CharacterName);
+            //TryAddFeature(u, "2f206e6d292bdfb4d981e99dcf08153f");
+            //TryAddFeature(u, "13f9269b3b48ae94c896f0371ce5e23c");
+
             try {
+
+                //var symbol = Resources.GetBlueprint<BlueprintItemEquipmentUsable>("18f7924f803793a4a9f60495fd88a73b");
+                //Game.Instance.Player.MainCharacter.Value.Inventory.Add(symbol);
+
                 Main.Verbose("Installing ui");
                 Main.Verbose($"spellscreennull: {UIHelpers.SpellbookScreen == null}");
                 var spellScreen = UIHelpers.SpellbookScreen.gameObject;
@@ -1726,6 +1901,7 @@ namespace BubbleBuffs {
 
     class BufferView {
         public Dictionary<BuffKey, GameObject> buffWidgets = new();
+        public List<(BuffKey key, string name, int discovery)> DisplayOrder = new();
 
         public GameObject buffWindow;
         public GameObject removeFromAll;
@@ -1765,6 +1941,7 @@ namespace BubbleBuffs {
             GameObject.Destroy(content.Find("AvailableBuffList")?.gameObject);
             Main.Verbose("destroyed old buff list");
             buffWidgets.Clear();
+            DisplayOrder.Clear();
             Main.Verbose("cleared widgets");
 
             var availableBuffs = GameObject.Instantiate(listPrefab.gameObject, content);
@@ -1841,6 +2018,7 @@ namespace BubbleBuffs {
                     widget.ChildObject("School").SetActive(true);
                     widget.SetActive(true);
 
+                    DisplayOrder.Add((buff.Key, buff.Name, DisplayOrder.Count));
                     buffWidgets[buff.Key] = widget;
                 }
             }
@@ -2020,7 +2198,7 @@ namespace BubbleBuffs {
     }
 
 
-    internal class SpellbookWatcher : ISpellBookUIHandler, IAreaHandler, ILevelUpCompleteUIHandler, IPartyChangedUIHandler, ISpellBookCustomSpell {
+    internal class SpellbookWatcher : ISpellBookUIHandler, IAreaHandler, ILevelUpCompleteUIHandler, IPartyChangedUIHandler, ISpellBookCustomSpell, IAreaActivationHandler {
         public static void Safely(Action a) {
             try {
                 a.Invoke();
@@ -2041,31 +2219,23 @@ namespace BubbleBuffs {
         }
 
         public void HandlePartyChanged() {
-            Main.Log("HERE");
-            Main.Log("HERE");
-            Main.Log("HERE");
-            Main.Log("HERE");
-            Main.Log("HERE");
-            Main.Log("HERE");
-            Main.Log("HERE");
-            Main.Log("HERE");
-            Main.Log("HERE");
-            Main.Log("HERE");
-            Main.Log("HERE");
-            Main.Log("HERE");
-            Main.Log("HERE");
-            Main.Log("HERE");
-            Main.Log("HERE");
-            Main.Log("HERE");
-            Main.Log("HERE");
-            Main.Log("HERE");
             Safely(() => GlobalBubbleBuffer.Instance.SpellbookController?.RevalidateSpells());
         }
 
+
         public void OnAreaDidLoad() {
+            //Main.Log("Loaded area...");
+            //GlobalBubbleBuffer.Instance.TryInstallUI();
+            //AbilityCache.Revalidate();
+
+        }
+
+        public void OnAreaActivated() {
             Main.Verbose("Loaded area...");
             GlobalBubbleBuffer.Instance.TryInstallUI();
             AbilityCache.Revalidate();
+
+
         }
 
         public void OnAreaBeginUnloading() { }

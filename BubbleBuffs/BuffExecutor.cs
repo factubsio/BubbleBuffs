@@ -45,7 +45,7 @@ namespace BubbleBuffs {
 
                 if (task.ShareTransmutation) {
                     var toggle = AbilityCache.CasterCache[task.Caster.UniqueId].ShareTransmutation;
-                    if (toggle == null || !toggle.Data.IsAvailableForCast) {
+                    if (toggle?.Data.IsAvailableForCast != true) {
                         return;
                     }
 
@@ -57,7 +57,7 @@ namespace BubbleBuffs {
 
                 if (task.PowerfulChange) {
                     var toggle = AbilityCache.CasterCache[task.Caster.UniqueId].PowerfulChange;
-                    if (toggle != null && toggle.Data.IsAvailableForCast) {
+                    if (toggle?.Data.IsAvailableForCast == true) {
                         var toggleParams = toggle.Data.CalculateParams();
                         var context = new AbilityExecutionContext(toggle.Data, toggleParams, new TargetWrapper(task.Caster));
                         toggle.Data.Cast(context);
@@ -65,11 +65,7 @@ namespace BubbleBuffs {
                     }
                 }
 
-
-                if (task.IsSticky) {
-                    var context = new AbilityExecutionContext(task.SpellToCast, task.Params, Vector3.zero);
-                    AbilityExecutionProcess.ApplyEffectImmediate(context, task.Target.Unit);
-                } else {
+                {
                     var context = new AbilityExecutionContext(task.SpellToCast, task.Params, task.Target);
                     context.FxSpawners?.Clear();
                     context.DisableFx = true;
@@ -152,7 +148,7 @@ namespace BubbleBuffs {
 
                     foreach (var (target, caster) in buff.ActualCastQueue) {
                         var forTarget = unitBuffs[target];
-                        if (buff.BuffsApplied.IsPresent(forTarget) && !State.OverwriteBuff) {
+                        if (buff.BuffsApplied.IsPresent(forTarget, buff.IgnoreForOverwriteCheck) && !State.OverwriteBuff) {
                             thisBuffSkip++;
                             skippedCasts++;
                             continue;
@@ -170,20 +166,16 @@ namespace BubbleBuffs {
                         }
                         var touching = caster.spell.Blueprint.GetComponent<AbilityEffectStickyTouch>();
                         if (touching) {
-                            spellToCast = new AbilityData(touching.TouchDeliveryAbility, caster.who);
-                            if (caster.spell.MetamagicData != null)
-                                spellToCast.MetamagicData = caster.spell.MetamagicData.Clone();
+                            spellToCast = new AbilityData(caster.spell, touching.TouchDeliveryAbility);
                         } else {
                             spellToCast = caster.spell;
                         }
-                        //modifiedSpell.Blueprint.SpellResistance = false;
                         var spellParams = spellToCast.CalculateParams();
 
                         var task = new CastTask {
                             SlottedSpell = caster.SlottedSpell,
                             Params = spellParams,
                             Target = new TargetWrapper(forTarget.Unit),
-                            IsSticky = touching,
                             Caster = caster.who,
                             SpellToCast = spellToCast,
                             PowerfulChange = caster.PowerfulChange,
@@ -233,7 +225,6 @@ namespace BubbleBuffs {
         public AbilityData SpellToCast;
         public AbilityData SlottedSpell;
         public AbilityParams Params;
-        public bool IsSticky;
         public bool PowerfulChange;
         public bool ShareTransmutation;
         public TargetWrapper Target;

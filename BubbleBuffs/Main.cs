@@ -171,6 +171,10 @@ namespace BubbleBuffs {
         public static void LogHeader(string msg) {
             Log($"--{msg.ToUpper()}--");
         }
+        public static void Error(Exception e) {
+            Log(e.ToString());
+            PFLog.Mods.Error(e.Message);
+        }
         public static void Error(Exception e, string message) {
             Log(message);
             Log(e.ToString());
