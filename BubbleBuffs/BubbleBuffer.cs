@@ -41,6 +41,7 @@ using Kingmaker.Localization;
 using Kingmaker.Localization.Shared;
 using DG.Tweening;
 using Kingmaker.Blueprints.Items.Equipment;
+using Owlcat.Runtime.UI.Tooltips;
 
 namespace BubbleBuffs {
 
@@ -352,8 +353,8 @@ namespace BubbleBuffs {
                 expand.SetActive(true);
                 portrait.Expand = expand.GetComponent<OwlcatButton>();
                 portrait.Expand.OnLeftClick.AddListener(() => {
-                    portrait.SetExpanded(!portrait.Expand.IsSelected);
-                    if (portrait.Expand.IsSelected) {
+                    portrait.SetExpanded(!portrait.Expand.IsPressed);
+                    if (portrait.Expand.IsPressed) {
                         foreach (var p in group)
                             if (p != portrait)
                                 p.SetExpanded(false);
@@ -578,7 +579,7 @@ namespace BubbleBuffs {
 
             var b = toggleSettings.GetComponent<OwlcatButton>();
             b.SetTooltip(new TooltipTemplateSimple("settings".i8(), "settings-toggle".i8()), new TooltipConfig {
-                InfoCallMethod = InfoCallMethod.None
+                InfoCallPCMethod = InfoCallPCMethod.None,
             });
 
             b.OnLeftClick.AddListener(() => {
@@ -1090,7 +1091,7 @@ namespace BubbleBuffs {
                 int casterIndex = i;
 
                 portrait.Expand?.OnLeftClick.AddListener(() => {
-                    if (portrait.Expand?.IsSelected ?? false) {
+                    if (portrait.Expand?.IsPressed ?? false) {
                         SelectedCaster.Value = casterIndex;
                         UpdateDetailsView();
                     } else {
@@ -1595,7 +1596,7 @@ namespace BubbleBuffs {
                         act();
                     });
                     button.SetTooltip(new TooltipTemplateSimple(text, tooltip), new TooltipConfig {
-                        InfoCallMethod = InfoCallMethod.None
+                        InfoCallPCMethod = InfoCallPCMethod.None
                     });
 
                     Buttons.Add(button);
@@ -1773,12 +1774,12 @@ namespace BubbleBuffs {
         public Image FullOverlay;
 
         public void ExpandOff() {
-            Expand.IsSelected = false;
+            Expand.IsPressed = false;
         }
 
         internal void SetExpanded(bool selected) {
-            Expand.IsSelected = selected;
-            Expand.gameObject.ChildRect("Image").eulerAngles = new Vector3(0, 0, Expand.IsSelected ? 90 : -90);
+            Expand.IsPressed = selected;
+            Expand.gameObject.ChildRect("Image").eulerAngles = new Vector3(0, 0, Expand.IsPressed ? 90 : -90);
         }
 
         public RectTransform Transform { get { return GameObject.transform as RectTransform; } }
@@ -1799,7 +1800,7 @@ namespace BubbleBuffs {
     }
 
     class BubbleSpellView {
-        private static TooltipConfig NoInfo = new TooltipConfig { InfoCallMethod = InfoCallMethod.None };
+        private static TooltipConfig NoInfo = new TooltipConfig { InfoCallPCMethod = InfoCallPCMethod.None };
         public static void BindBuffToView(BubbleBuff buff, GameObject view, bool tooltipOnRightClickOnly = false) {
             var button = view.GetComponent<OwlcatButton>();
             string text = buff.Name;
@@ -1985,10 +1986,10 @@ namespace BubbleBuffs {
                     });
                     button.OnSingleLeftClick.AddListener(() => {
                         if (previousSelection != null && previousSelection != button) {
-                            previousSelection.SetSelected(false);
+                            previousSelection.IsPressed = false;
                         }
-                        if (!button.IsSelected) {
-                            button.SetSelected(true);
+                        if (!button.IsPressed) {
+                            button.IsPressed = true;
                         }
                         currentSelectedSpell.Value = buff;
                         previousSelection = button;

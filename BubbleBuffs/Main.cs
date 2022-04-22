@@ -108,7 +108,9 @@ namespace BubbleBuffs {
 
             AssetLoader.AddBundle("tutorialcanvas");
 
-            if (UnityModManager.gameVersion.Minor == 2)
+            if (UnityModManager.gameVersion.Minor == 3)
+                UIHelpers.WidgetPaths = new WidgetPaths_1_2();
+            else if (UnityModManager.gameVersion.Minor == 2)
                 UIHelpers.WidgetPaths = new WidgetPaths_1_2();
             else if (UnityModManager.gameVersion.Minor == 1)
                 UIHelpers.WidgetPaths = new WidgetPaths_1_1();
