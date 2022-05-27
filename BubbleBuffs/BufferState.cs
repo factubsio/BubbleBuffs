@@ -139,6 +139,7 @@ namespace BubbleBuffs {
         internal void Recalculate(bool updateUi) {
             var group = Bubble.Group;
             if (InputDirty || GroupIsDirty(group)) {
+                AbilityCache.Revalidate();
                 RecalculateAvailableBuffs(group);
             }
 
