@@ -37,6 +37,7 @@
   "tooltip.skipped": "Buffs Skipped",
   "tooltip.failed": "Buffs Failed",
   "noslot": "no free spell-slot",
+  "noarcanist": "no available arcane reservoir points ",
 
   "warn.arcanepool": "  <i>Arcane Resevoir resource is <b>not</b> tracked</i>",
 
