@@ -3,7 +3,10 @@
   <Profiles />
   <Settings>
     <Setting Name="WratPath" Type="System.String" Scope="User">
-      <Value Profile="(Default)" />
+      <Value Profile="(Default)">C:\Program Files\Epic Games\PathfinderWOTR</Value>
+    </Setting>
+    <Setting Name="WrathPathDebug" Type="System.String" Scope="User">
+      <Value Profile="(Default)">C:\Program Files\Epic Games\PathfinderWOTR</Value>
     </Setting>
   </Settings>
 </SettingsFile>

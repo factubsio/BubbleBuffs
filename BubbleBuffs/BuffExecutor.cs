@@ -46,6 +46,7 @@ namespace BubbleBuffs {
                 if (task.ShareTransmutation) {
                     var toggle = AbilityCache.CasterCache[task.Caster.UniqueId].ShareTransmutation;
                     if (toggle?.Data.IsAvailableForCast != true) {
+                        Main.Error("Was unable to cast share transmutation?");
                         return;
                     }
 
@@ -57,12 +58,15 @@ namespace BubbleBuffs {
 
                 if (task.PowerfulChange) {
                     var toggle = AbilityCache.CasterCache[task.Caster.UniqueId].PowerfulChange;
-                    if (toggle?.Data.IsAvailableForCast == true) {
-                        var toggleParams = toggle.Data.CalculateParams();
-                        var context = new AbilityExecutionContext(toggle.Data, toggleParams, new TargetWrapper(task.Caster));
-                        toggle.Data.Cast(context);
-                        toggle.Data.Spend();
+                    if (toggle?.Data.IsAvailableForCast != true) {
+                        Main.Error("Was unable to cast powerful change?");
+                        return;
                     }
+
+                    var toggleParams = toggle.Data.CalculateParams();
+                    var context = new AbilityExecutionContext(toggle.Data, toggleParams, new TargetWrapper(task.Caster));
+                    toggle.Data.Cast(context);
+                    toggle.Data.Spend();
                 }
 
                 {
@@ -100,7 +104,7 @@ namespace BubbleBuffs {
     }
     public class BuffExecutor {
         public BufferState State;
-
+        
         public BuffExecutor(BufferState state) {
             State = state;
         }
@@ -138,6 +142,9 @@ namespace BubbleBuffs {
 
             List<CastTask> tasks = new();
 
+            Dictionary<UnitEntityData, int> remainingArcanistPool = new Dictionary<UnitEntityData, int>();
+            BlueprintScriptableObject arcanistPoolBlueprint = ResourcesLibrary.TryGetBlueprint<BlueprintScriptableObject>("cac948cbbe79b55459459dd6a8fe44ce");
+
             foreach (var buff in State.BuffList.Where(b => b.InGroup == buffGroup && b.Fulfilled > 0)) {
 
                 try {
@@ -164,6 +171,33 @@ namespace BubbleBuffs {
                             thisBuffBad++;
                             continue;
                         }
+
+                        int neededArcanistPool = 0;
+                        if (caster.PowerfulChange) {
+                            neededArcanistPool += 1;
+                        }
+                        if (caster.ShareTransmutation) {
+                            neededArcanistPool += 1;
+                        }
+
+                        if (neededArcanistPool != 0) {
+                            int availableArcanistPool;
+                            if (remainingArcanistPool.ContainsKey(caster.who)) {
+                                availableArcanistPool = remainingArcanistPool[caster.who];
+                            } else {
+                                availableArcanistPool = caster.who.Resources.GetResourceAmount(arcanistPoolBlueprint);
+                            }
+                            if (availableArcanistPool < neededArcanistPool) {
+                                if (badResult == null)
+                                    badResult = tooltip.AddBad(buff);
+                                badResult.messages.Add($"  [{caster.who.CharacterName}] => [{Bubble.GroupById[target].CharacterName}], {"noarcanist".i8()}");
+                                thisBuffBad++;
+                                continue;
+                            } else {
+                                remainingArcanistPool[caster.who] = availableArcanistPool - neededArcanistPool;
+                            }
+                        }
+
                         var touching = caster.spell.Blueprint.GetComponent<AbilityEffectStickyTouch>();
                         if (touching) {
                             spellToCast = new AbilityData(caster.spell, touching.TouchDeliveryAbility);

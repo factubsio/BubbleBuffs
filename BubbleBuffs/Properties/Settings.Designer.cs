@@ -25,13 +25,25 @@ namespace BubbleBuffs.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        [global::System.Configuration.DefaultSettingValueAttribute("C:\\Program Files\\Epic Games\\PathfinderWOTR")]
         public string WratPath {
             get {
                 return ((string)(this["WratPath"]));
             }
             set {
                 this["WratPath"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("C:\\Program Files\\Epic Games\\PathfinderWOTR")]
+        public string WrathPathDebug {
+            get {
+                return ((string)(this["WrathPathDebug"]));
+            }
+            set {
+                this["WrathPathDebug"] = value;
             }
         }
     }
