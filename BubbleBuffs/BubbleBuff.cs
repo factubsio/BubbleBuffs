@@ -11,6 +11,7 @@ using Newtonsoft.Json;
 using Kingmaker.Utility;
 
 namespace BubbleBuffs {
+
     public struct BuffKey {
         [JsonProperty]
         public readonly Guid Guid;

@@ -151,4 +151,11 @@ namespace BubbleBuffs {
     class WidgetPaths_1_2 : WidgetPaths_1_1 {
 
     }
+    class WidgetPaths_1_4 : WidgetPaths_1_2 {
+        public override string SpellScreen => "Background/Windows/SpellbookPCView/SpellbookScreen";
+        public override string MythicView => "Background/Windows/MythicInfoPCView";
+        public override string EncyclopediaView => "Background/Windows/EncyclopediaPCView";
+        public override string CharacterScreen => "Background/Windows/CharacterInfoPCView/CharacterScreen";
+
+    }
 }

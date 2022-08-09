@@ -42,6 +42,8 @@ using Kingmaker.Localization.Shared;
 using DG.Tweening;
 using Kingmaker.Blueprints.Items.Equipment;
 using Owlcat.Runtime.UI.Tooltips;
+using Kingmaker.UI.Log.CombatLog_ThreadSystem;
+using Kingmaker.UI.Log.CombatLog_ThreadSystem.LogThreads.Common;
 
 namespace BubbleBuffs {
 
@@ -125,13 +127,21 @@ namespace BubbleBuffs {
 
         public void CreateBuffstate() {
             if (File.Exists(SettingsPath)) {
-                using (var settingsReader = File.OpenText(SettingsPath))
-                using (var jsonReader = new JsonTextReader(settingsReader)) {
+                try {
+                    using var settingsReader = File.OpenText(SettingsPath);
+                    using var jsonReader = new JsonTextReader(settingsReader);
+
                     save = JsonSerializer.CreateDefault().Deserialize<SavedBufferState>(jsonReader);
 
                     if (save.Version == 0) {
                         MigrateSaveToV1();
                     }
+                } catch (JsonSerializationException) {
+                    //Main.LogError(ex);
+                    var messageLog = LogThreadController.Instance.m_Logs[LogChannelType.Common].First(x => x is MessageLogThread);
+
+                    messageLog.AddMessage(new("[BubbleBuffs] Saved buff setup was lost in the 1.4 update, sorry :-(", Color.red, PrefixIcon.None));
+                    save = new SavedBufferState();
                 }
             } else {
                 save = new SavedBufferState();
@@ -1550,9 +1560,16 @@ namespace BubbleBuffs {
                 bubbleHud.DestroyComponents<HUDLayout>();
                 bubbleHud.DestroyComponents<UISectionHUDController>();
 
-                GameObject.Destroy(rect.Find("CombatLog_New").gameObject);
+                Main.Verbose("destroyed components");
+
+                //GameObject.Destroy(rect.Find("CombatLog_New").gameObject);
+                //Main.Verbose("destroyed combatlog_new");
+
                 GameObject.Destroy(rect.Find("Console_InitiativeTrackerHorizontalPC").gameObject);
+                Main.Verbose("destroyed horizontaltrack");
+
                 GameObject.Destroy(rect.Find("IngameMenuView/CompassPart").gameObject);
+                Main.Verbose("destroyed compasspart");
 
                 bubbleHud.ChildObject("IngameMenuView").DestroyComponents<IngameMenuPCView>();
 
