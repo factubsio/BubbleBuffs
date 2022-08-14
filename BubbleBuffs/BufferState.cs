@@ -55,8 +55,17 @@ namespace BubbleBuffs {
                             Main.Verbose($"      Adding cantrip: {spell.Name}", "state");
                             AddBuff(dude, book, spell, null, credits, false, int.MaxValue, characterIndex);
                         }
-
-                        if (book.Blueprint.Spontaneous) {
+                        
+                        if (book.Blueprint.IsArcanist) {
+                            for (int level = 1; level <= book.LastSpellbookLevel; level++) {
+                                Main.Verbose($"    Looking at arcanist level {level}", "state");
+                                ReactiveProperty<int> credits = new ReactiveProperty<int>(book.GetSpellsPerDay(level));
+                                foreach (var slot in book.GetMemorizedSpells(level)) {
+                                    Main.Verbose($"      Adding arcanist buff: {slot.Spell.Name}", "state");
+                                    AddBuff(dude, book, slot.Spell, null, credits, false, int.MaxValue, characterIndex);
+                                }
+                            }
+                        } else if (book.Blueprint.Spontaneous) {
                             for (int level = 1; level <= book.LastSpellbookLevel; level++) {
                                 Main.Verbose($"    Looking at spont level {level}", "state");
                                 ReactiveProperty<int> credits = new ReactiveProperty<int>(book.GetSpellsPerDay(level));
