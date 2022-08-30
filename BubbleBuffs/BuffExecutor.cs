@@ -3,8 +3,8 @@ using Kingmaker;
 using Kingmaker.Blueprints;
 using Kingmaker.Controllers;
 using Kingmaker.EntitySystem.Entities;
-using Kingmaker.UI.Log.CombatLog_ThreadSystem;
-using Kingmaker.UI.Log.CombatLog_ThreadSystem.LogThreads.Common;
+using Kingmaker.UI.Models.Log.CombatLog_ThreadSystem;
+using Kingmaker.UI.Models.Log.CombatLog_ThreadSystem.LogThreads.Common;
 using Kingmaker.UnitLogic.Abilities;
 using Kingmaker.UnitLogic.Abilities.Components;
 using Kingmaker.UnitLogic.Buffs.Blueprints;
@@ -216,7 +216,7 @@ namespace BubbleBuffs {
 
             var message = new CombatLogMessage(messageString, Color.blue, PrefixIcon.RightArrow, tooltip, true);
 
-            var messageLog = LogThreadController.Instance.m_Logs[LogChannelType.Common].First(x => x is MessageLogThread);
+            var messageLog = LogThreadService.Instance.m_Logs[LogChannelType.Common].First(x => x is MessageLogThread);
             messageLog.AddMessage(message);
         }
     }

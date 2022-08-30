@@ -42,8 +42,8 @@ using Kingmaker.Localization.Shared;
 using DG.Tweening;
 using Kingmaker.Blueprints.Items.Equipment;
 using Owlcat.Runtime.UI.Tooltips;
-using Kingmaker.UI.Log.CombatLog_ThreadSystem;
-using Kingmaker.UI.Log.CombatLog_ThreadSystem.LogThreads.Common;
+using Kingmaker.UI.Models.Log.CombatLog_ThreadSystem;
+using Kingmaker.UI.Models.Log.CombatLog_ThreadSystem.LogThreads.Common;
 
 namespace BubbleBuffs {
 
@@ -136,9 +136,9 @@ namespace BubbleBuffs {
                     if (save.Version == 0) {
                         MigrateSaveToV1();
                     }
-                } catch (JsonSerializationException) {
+                } catch (JsonException) {
                     //Main.LogError(ex);
-                    var messageLog = LogThreadController.Instance.m_Logs[LogChannelType.Common].First(x => x is MessageLogThread);
+                    var messageLog = LogThreadService.Instance.m_Logs[LogChannelType.Common].First(x => x is MessageLogThread);
 
                     messageLog.AddMessage(new("[BubbleBuffs] Saved buff setup was lost in the 1.4 update, sorry :-(", Color.red, PrefixIcon.None));
                     save = new SavedBufferState();
