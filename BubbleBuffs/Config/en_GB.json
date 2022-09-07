@@ -21,6 +21,8 @@
   "group.important.tooltip.desc": "Try to cast spells set in the buff window (Important)",
   "group.short.tooltip.header": "Buff Short!",
   "group.short.tooltip.desc": "Try to cast spells set in the buff window (Short)",
+  "showmap.tooltip.header": "Show islands map",
+  "showmap.tooltip.desc": "Display the islands map to pick the next point in your adventure",
 
   "group.normal.log": "Buffed Normal!",
   "group.important.log": "Buffed Important!",

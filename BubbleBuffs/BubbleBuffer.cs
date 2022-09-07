@@ -44,6 +44,8 @@ using Kingmaker.Blueprints.Items.Equipment;
 using Owlcat.Runtime.UI.Tooltips;
 using Kingmaker.UI.Models.Log.CombatLog_ThreadSystem;
 using Kingmaker.UI.Models.Log.CombatLog_ThreadSystem.LogThreads.Common;
+using Kingmaker.UI.MVVM._PCView.Modificators;
+using Kingmaker.Dungeon.Actions;
 
 namespace BubbleBuffs {
 
@@ -1334,6 +1336,16 @@ namespace BubbleBuffs {
         }
     }
 
+    [HarmonyPatch(typeof(ModificatorsBaseView), nameof(ModificatorsBaseView.Initialize))]
+    static class NudgeModificators {
+        [HarmonyPostfix]
+        public static void Initialize(ModificatorsBaseView __instance) {
+            if (__instance.gameObject.transform is not RectTransform rect) return;
+
+            rect.localPosition += new Vector3(0, 70, 0);
+        }
+    }
+
 
     //[HarmonyPatch(typeof(UnitBuffPartPCView), "DrawBuffs")]
     static class UnitBuffPartView {
@@ -1477,6 +1489,7 @@ namespace BubbleBuffs {
         public BubbleBuffSpellbookController SpellbookController;
         private ButtonSprites applyBuffsSprites;
         private ButtonSprites applyBuffsShortSprites;
+        private ButtonSprites showMapSprites;
         private ButtonSprites applyBuffsImportantSprites;
         private GameObject buttonsContainer;
         public GameObject bubbleHud;
@@ -1537,6 +1550,8 @@ namespace BubbleBuffs {
                     applyBuffsShortSprites = ButtonSprites.Load("apply_buffs_short", new Vector2Int(95, 95));
                 if (applyBuffsImportantSprites == null)
                     applyBuffsImportantSprites = ButtonSprites.Load("apply_buffs_important", new Vector2Int(95, 95));
+                if (showMapSprites == null)
+                    showMapSprites = ButtonSprites.Load("show_map", new Vector2Int(95, 95));
 
                 var staticRoot = Game.Instance.UI.Canvas.transform;
                 Main.Verbose("got static root");
@@ -1622,9 +1637,12 @@ namespace BubbleBuffs {
 
                 }
 
+                DungeonShowMap showMap = new();
+
                 AddButton("group.normal.tooltip.header".i8(), "group.normal.tooltip.desc".i8(), applyBuffsSprites, () => GlobalBubbleBuffer.Execute(BuffGroup.Long));
                 AddButton("group.important.tooltip.header".i8(), "group.important.tooltip.desc".i8(), applyBuffsImportantSprites, () => GlobalBubbleBuffer.Execute(BuffGroup.Important));
                 AddButton("group.short.tooltip.header".i8(), "group.short.tooltip.desc".i8(), applyBuffsShortSprites, () => GlobalBubbleBuffer.Execute(BuffGroup.Short));
+                AddButton("showmap.tooltip.header".i8(), "showmap.tooltip.desc".i8(), showMapSprites, () => showMap.RunAction());
 
                 Main.Verbose("remove old bubble?");
 #if debug
