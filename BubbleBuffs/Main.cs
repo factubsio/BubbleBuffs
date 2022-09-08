@@ -162,6 +162,14 @@ namespace BubbleBuffs {
             throw new NotImplementedException();
         }
 
+        public static void Safely(Action a) {
+            try {
+                a();
+            } catch (Exception ex) {
+                Error(ex);
+            }
+        } 
+
         public static void Log(string msg) {
             //if (bubbleLog != null) {
             //    bubbleLog.WriteLine(msg);

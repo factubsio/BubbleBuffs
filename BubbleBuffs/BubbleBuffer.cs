@@ -364,21 +364,29 @@ namespace BubbleBuffs {
                 expand.GetComponent<OwlcatButton>().Interactable = true;
                 expand.SetActive(true);
                 portrait.Expand = expand.GetComponent<OwlcatButton>();
+                var fader = popout.GetComponent<FadeAnimator>();
                 portrait.Expand.OnLeftClick.AddListener(() => {
-                    portrait.SetExpanded(!portrait.Expand.IsPressed);
-                    if (portrait.Expand.IsPressed) {
-                        foreach (var p in group)
-                            if (p != portrait)
-                                p.SetExpanded(false);
+                    Main.Safely(() => {
+                        portrait.SetExpanded(!portrait.State);
+                        if (portrait.State) {
+                            foreach (var p in group)
+                                if (p != portrait)
+                                    p.SetExpanded(false);
 
-                        popout.transform.SetParent(pRect);
-                        popout.Rect().anchoredPosition = new Vector2(0, 18);
-                        popout.Rect().pivot = new Vector2(0.5f, 0);
-                        popout.Rect().SetAnchor(0.5, 1);
-                        popout.SetActive(true);
-                    } else {
-                        popout.SetActive(false);
-                    }
+                            popout.transform.SetParent(pRect);
+                            popout.Rect().anchoredPosition = new Vector2(0, 18);
+                            popout.Rect().pivot = new Vector2(0.5f, 0);
+                            popout.Rect().SetAnchor(0.5, 1);
+                            if (fader != null) {
+                                fader.AppearAnimation();
+                            }
+                            popout.SetActive(true);
+                        } else {
+                            if (fader != null) {
+                                fader.DisappearAnimation();
+                            }
+                        }
+                    });
                 });
                 portrait.SetExpanded(false);
             }
@@ -607,6 +615,7 @@ namespace BubbleBuffs {
 
         public static GameObject buttonPrefab;
         public static GameObject selectedPrefab;
+
 
         public static GameObject MakeButton(string title, Transform parent) {
             var button = GameObject.Instantiate(buttonPrefab, parent);
@@ -863,8 +872,6 @@ namespace BubbleBuffs {
                 });
                 ignoreEffectToggles.Add(effectToggle);
             }
-            Vector3 rotateUp = new Vector3(0, 0, 89.9f);
-            Vector3 rotateDown = new Vector3(0, 0, -89.9f);
 
             var expandSpellPopout = GameObject.Instantiate(expandButtonPrefab, detailsRect);
             expandSpellPopout.Rect().pivot = new Vector2(0.5f, 0.5f);
@@ -879,18 +886,21 @@ namespace BubbleBuffs {
 
             expandSpellPopout.SetActive(false);
 
-
             void UpdateSpellPopout() {
-                expandSpellPopout.ChildRect("Image").DORotate(isExpanded ? rotateUp : rotateDown, 0.22f).SetUpdate(true);
-                spellPopout.SetActive(isExpanded);
-                if (isExpanded)
-                    spellPopout.transform.SetAsLastSibling();
+                Main.Safely(() => {
+                    expandSpellPopout.ChildRect("Image").DORotate(isExpanded ? Toggles.rotateUp : Toggles.rotateDown, 0.22f).SetUpdate(true);
+                    spellPopout.SetActive(isExpanded);
+                    if (isExpanded)
+                        spellPopout.transform.SetAsLastSibling();
+                });
             }
 
             var expandSpellPopoutButton = expandSpellPopout.GetComponent<OwlcatButton>();
             expandSpellPopoutButton.OnLeftClick.AddListener(() => {
-                isExpanded = !isExpanded;
-                UpdateSpellPopout();
+                Main.Safely(() => {
+                    isExpanded = !isExpanded;
+                    UpdateSpellPopout();
+                });
             });
 
             var casterPopout = GameObject.Instantiate(actionBarView.m_DragSlot.m_ConvertedView.gameObject, content);
@@ -901,6 +911,8 @@ namespace BubbleBuffs {
             };
             casterPopout.DestroyComponents<ActionBarConvertedPCView>();
             casterPopout.DestroyComponents<GridLayoutGroup>();
+            casterPopout.AddComponent<CanvasGroup>();
+            casterPopout.AddComponent<FadeAnimator>();
             casterPopout.Rect().anchoredPosition3D = Vector3.zero;
             casterPopout.Rect().localPosition = Vector3.zero;
             casterPopout.Rect().SetAnchor(0, 0);
@@ -1058,6 +1070,7 @@ namespace BubbleBuffs {
             });
 
             blacklistToggle.onValueChanged.AddListener((blacklisted) => {
+                Main.Log($"blacklisting, buff={view.currentSelectedSpell != null}, caster={SelectedCaster.Value}");
                 var buff = view.currentSelectedSpell?.Value;
                 if (buff == null)
                     return;
@@ -1065,6 +1078,8 @@ namespace BubbleBuffs {
                     return;
 
                 var caster = buff.CasterQueue[SelectedCaster.value];
+
+                Main.Log("caster banned => " + blacklisted);
 
                 if (blacklisted != caster.Banned) {
                     caster.Banned = blacklisted;
@@ -1103,7 +1118,7 @@ namespace BubbleBuffs {
                 int casterIndex = i;
 
                 portrait.Expand?.OnLeftClick.AddListener(() => {
-                    if (portrait.Expand?.IsPressed ?? false) {
+                    if (portrait.State) {
                         SelectedCaster.Value = casterIndex;
                         UpdateDetailsView();
                     } else {
@@ -1799,7 +1814,13 @@ namespace BubbleBuffs {
         }
 
     }
+
+    public static class Toggles {
+        public static Vector3 rotateUp = new Vector3(0, 0, 89.9f);
+        public static Vector3 rotateDown = new Vector3(0, 0, -89.9f);
+    }
     class Portrait {
+
         public Image Image;
         public OwlcatButton Button;
         public GameObject GameObject;
@@ -1807,14 +1828,16 @@ namespace BubbleBuffs {
         public OwlcatButton Expand;
         public Image Overlay;
         public Image FullOverlay;
+        public bool State = false;
 
         public void ExpandOff() {
-            Expand.IsPressed = false;
+            SetExpanded(false);
         }
 
         internal void SetExpanded(bool selected) {
-            Expand.IsPressed = selected;
-            Expand.gameObject.ChildRect("Image").eulerAngles = new Vector3(0, 0, Expand.IsPressed ? 90 : -90);
+            State = selected;
+            //Expand.gameObject.ChildRect("Image").eulerAngles = new Vector3(0, 0, State ? 90 : -90);
+            Expand.gameObject.ChildRect("Image").DORotate(State ? Toggles.rotateUp : Toggles.rotateDown, 0.22f).SetUpdate(true);
         }
 
         public RectTransform Transform { get { return GameObject.transform as RectTransform; } }

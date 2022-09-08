@@ -188,6 +188,7 @@
     <Compile Include="BubbleBuffer.cs" />
     <Compile Include="BufferState.cs" />
     <Compile Include="BuffExecutor.cs" />
+    <Compile Include="SafeHandler.cs" />
     <Compile Include="SaveState.cs" />
     <Compile Include="UIHelpers.cs" />
     <Compile Include="Config\Blueprints.cs" />
