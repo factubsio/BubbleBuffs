@@ -3,6 +3,8 @@ using Kingmaker;
 using Kingmaker.Blueprints;
 using Kingmaker.Controllers;
 using Kingmaker.EntitySystem.Entities;
+using Kingmaker.RuleSystem;
+using Kingmaker.RuleSystem.Rules.Abilities;
 using Kingmaker.UI.Models.Log.CombatLog_ThreadSystem;
 using Kingmaker.UI.Models.Log.CombatLog_ThreadSystem.LogThreads.Common;
 using Kingmaker.UnitLogic.Abilities;
@@ -17,6 +19,10 @@ using System.Text.RegularExpressions;
 using UnityEngine;
 
 namespace BubbleBuffs {
+
+    public interface IBuffExecutionEngine {
+        public IEnumerator CreateSpellCastRoutine(List<CastTask> tasks);
+    }
     public class BubbleBuffGlobalController : MonoBehaviour {
 
         public static BubbleBuffGlobalController Instance { get; private set; }
@@ -32,70 +38,14 @@ namespace BubbleBuffs {
         }
 
         public void CastSpells(List<CastTask> tasks) {
-            Main.Verbose("Doing thing");
-            var castingCoroutine = CastSpellsInternal(tasks);
+            var castingCoroutine = Engine.CreateSpellCastRoutine(tasks);
             StartCoroutine(castingCoroutine);
         }
 
-        private void Cast(CastTask task) {
-            var oldResistance = task.SpellToCast.Blueprint.SpellResistance;
-            task.SpellToCast.Blueprint.SpellResistance = false;
-
-            try {
-
-                if (task.ShareTransmutation) {
-                    var toggle = AbilityCache.CasterCache[task.Caster.UniqueId].ShareTransmutation;
-                    if (toggle?.Data.IsAvailableForCast != true) {
-                        return;
-                    }
-
-                    var toggleParams = toggle.Data.CalculateParams();
-                    var context = new AbilityExecutionContext(toggle.Data, toggleParams, new TargetWrapper(task.Caster));
-                    toggle.Data.Cast(context);
-                    toggle.Data.Spend();
-                }
-
-                if (task.PowerfulChange) {
-                    var toggle = AbilityCache.CasterCache[task.Caster.UniqueId].PowerfulChange;
-                    if (toggle?.Data.IsAvailableForCast == true) {
-                        var toggleParams = toggle.Data.CalculateParams();
-                        var context = new AbilityExecutionContext(toggle.Data, toggleParams, new TargetWrapper(task.Caster));
-                        toggle.Data.Cast(context);
-                        toggle.Data.Spend();
-                    }
-                }
-
-                {
-                    var context = new AbilityExecutionContext(task.SpellToCast, task.Params, task.Target);
-                    context.FxSpawners?.Clear();
-                    context.DisableFx = true;
-                    task.SpellToCast.Cast(context);
-                }
-
-                task.SlottedSpell.Spend();
-            } catch (Exception ex) {
-                Main.Error(ex, "casting spell");
-            }
-            task.SpellToCast.Blueprint.SpellResistance = oldResistance;
-
-        }
-
-        private IEnumerator CastSpellsInternal(List<CastTask> tasks) {
-            var batchCount = (tasks.Count + BATCH_SIZE - 1) / BATCH_SIZE;
-            for (int batch = 0; batch < batchCount; batch++) {
-                for (int item = 0; item < BATCH_SIZE; item++) {
-                    var index = batch * BATCH_SIZE + item;
-                    if (index >= tasks.Count)
-                        break;
-
-                    Cast(tasks[index]);
-                }
-
-                yield return new WaitForSeconds(DELAY);
-
-            }
-            yield return null;
-        }
+        public static IBuffExecutionEngine Engine =>
+            GlobalBubbleBuffer.Instance.SpellbookController.state.VerboseCasting 
+                ? new AnimatedExecutionEngine() 
+                : new InstantExecutionEngine();
 
     }
     public class BuffExecutor {
@@ -183,16 +133,6 @@ namespace BubbleBuffs {
                         };
 
                         tasks.Add(task);
-
-                        //if (touching) {
-                        //    context = new AbilityExecutionContext(modifiedSpell, spellParams, Vector3.zero);
-                        //    AbilityExecutionProcess.ApplyEffectImmediate(context, targets[target].Unit);
-                        //} else {
-                        //    context = new AbilityExecutionContext(caster.spell, spellParams, targets[target]);
-                        //    modifiedSpell.Cast(context);
-                        //}
-
-                        //caster.SlottedSpell.Spend();
 
                         actuallyCast++;
                         thisBuffGood++;

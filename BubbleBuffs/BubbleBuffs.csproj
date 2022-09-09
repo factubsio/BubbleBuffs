@@ -183,11 +183,13 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AnimatedExecutionEngine.cs" />
     <Compile Include="IBeneficialEffect.cs" />
     <Compile Include="BubbleBuff.cs" />
     <Compile Include="BubbleBuffer.cs" />
     <Compile Include="BufferState.cs" />
     <Compile Include="BuffExecutor.cs" />
+    <Compile Include="InstantExecutionEngine.cs" />
     <Compile Include="SafeHandler.cs" />
     <Compile Include="SaveState.cs" />
     <Compile Include="UIHelpers.cs" />

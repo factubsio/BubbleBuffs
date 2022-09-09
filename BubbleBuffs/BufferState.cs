@@ -242,6 +242,13 @@ namespace BubbleBuffs {
                 Save(true);
             }
         }
+        public bool VerboseCasting {
+            get => SavedState.VerboseCasting;
+            set {
+                SavedState.VerboseCasting = value;
+                Save(true);
+            }
+        }
 
         //private static Dictionary<Guid, List<ContextActionApplyBuff>> CachedBuffEffects;
 

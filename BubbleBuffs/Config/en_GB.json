@@ -51,6 +51,7 @@
 
   "settings": "Settings",
   "settings-toggle": "Toggle the BubbleBuffs settings panel",
+  "setting-verbose": "Use full animation casting", 
   "setting-in-combat": "Allow bubble-buffing in combat",
   "setting-overwritebuff": "Ignore existing buffs"
 

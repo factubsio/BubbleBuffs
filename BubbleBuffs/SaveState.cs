@@ -24,6 +24,8 @@ namespace BubbleBuffs {
         public Dictionary<BuffKey, SavedBuffState> Buffs = new();
 
         [JsonProperty]
+        public bool VerboseCasting;
+        [JsonProperty]
         public bool AllowInCombat;
         [JsonProperty]
         public bool OverwriteBuff;
