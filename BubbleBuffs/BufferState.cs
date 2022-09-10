@@ -47,32 +47,83 @@ namespace BubbleBuffs {
                         foreach (var spell in book.GetCustomSpells(0)) {
                             ReactiveProperty<int> credits = new ReactiveProperty<int>(500);
                             Main.Verbose($"      Adding cantrip (completely normal): {spell.Name}", "state");
-                            AddBuff(dude, book, spell, null, credits, false, int.MaxValue, characterIndex);
+                            AddBuff(dude: dude,
+                                    book: book,
+                                    spell: spell,
+                                    baseSpell: null,
+                                    credits: credits,
+                                    newCredit: false,
+                                    creditClamp: int.MaxValue,
+                                    charIndex: characterIndex);
                         }
 
                         foreach (var spell in book.GetKnownSpells(0)) {
                             ReactiveProperty<int> credits = new ReactiveProperty<int>(500);
                             Main.Verbose($"      Adding cantrip: {spell.Name}", "state");
-                            AddBuff(dude, book, spell, null, credits, false, int.MaxValue, characterIndex);
+                            AddBuff(dude: dude,
+                                    book: book,
+                                    spell: spell,
+                                    baseSpell: null,
+                                    credits: credits,
+                                    newCredit: false,
+                                    creditClamp: int.MaxValue,
+                                    charIndex: characterIndex);
                         }
-
-                        if (book.Blueprint.Spontaneous) {
+                        
+                        if (book.Blueprint.IsArcanist) {
+                            for (int level = 1; level <= book.LastSpellbookLevel; level++) {
+                                Main.Verbose($"    Looking at arcanist level {level}", "state");
+                                ReactiveProperty<int> credits = new ReactiveProperty<int>(book.GetSpellsPerDay(level));
+                                foreach (var slot in book.GetMemorizedSpells(level)) {
+                                    Main.Verbose($"      Adding arcanist buff: {slot.Spell.Name}", "state");
+                                    AddBuff(dude: dude,
+                                            book: book,
+                                            spell: slot.Spell,
+                                            baseSpell: null,
+                                            credits: credits,
+                                            newCredit: false,
+                                            creditClamp: int.MaxValue,
+                                            charIndex: characterIndex);
+                                }
+                            }
+                        } else if (book.Blueprint.Spontaneous) {
                             for (int level = 1; level <= book.LastSpellbookLevel; level++) {
                                 Main.Verbose($"    Looking at spont level {level}", "state");
                                 ReactiveProperty<int> credits = new ReactiveProperty<int>(book.GetSpellsPerDay(level));
                                 foreach (var spell in book.GetKnownSpells(level)) {
                                     Main.Verbose($"      Adding spontaneous buff: {spell.Name}", "state");
-                                    AddBuff(dude, book, spell, null, credits, false, int.MaxValue, characterIndex);
+                                    AddBuff(dude: dude,
+                                            book: book,
+                                            spell: spell,
+                                            baseSpell: null,
+                                            credits: credits,
+                                            newCredit: false,
+                                            creditClamp: int.MaxValue,
+                                            charIndex: characterIndex);
                                 }
                                 foreach (var spell in book.GetCustomSpells(level)) {
                                     Main.Verbose($"      Adding spontaneous (customised) buff: {spell.Name}/{dude.CharacterName}", "state");
-                                    AddBuff(dude, book, spell, null, credits, false, int.MaxValue, characterIndex);
+                                    AddBuff(dude: dude,
+                                            book: book,
+                                            spell: spell,
+                                            baseSpell: null,
+                                            credits: credits,
+                                            newCredit: false,
+                                            creditClamp: int.MaxValue,
+                                            charIndex: characterIndex);
                                 }
                             }
                         } else {
                             foreach (var slot in book.GetAllMemorizedSpells()) {
                                 Main.Verbose($"      Adding prepared buff: {slot.Spell.Name}", "state");
-                                AddBuff(dude, book, slot.Spell, null, new ReactiveProperty<int>(1), true, int.MaxValue, characterIndex);
+                                AddBuff(dude: dude,
+                                        book: book,
+                                        spell: slot.Spell,
+                                        baseSpell: null,
+                                        credits: new ReactiveProperty<int>(1),
+                                        newCredit: true,
+                                        creditClamp: int.MaxValue,
+                                        charIndex: characterIndex);
                             }
                         }
                     }
@@ -91,7 +142,16 @@ namespace BubbleBuffs {
                             if (ability.Data.Resource != null) {
                                 credits.Value = ability.Data.Resource.GetMaxAmount(dude);
                             }
-                            AddBuff(dude, null, ability.Data, null, credits, true, int.MaxValue, characterIndex, false, Category.Ability);
+                            AddBuff(dude: dude,
+                                    book: null,
+                                    spell: ability.Data,
+                                    baseSpell: null,
+                                    credits: credits,
+                                    newCredit: true,
+                                    creditClamp: int.MaxValue,
+                                    charIndex: characterIndex,
+                                    archmageArmor: false,
+                                    category: Category.Ability);
                         }
                     }
                 }
@@ -262,27 +322,47 @@ namespace BubbleBuffs {
             //} 
 
             if (spell.Blueprint.AssetGuid.m_Guid == MageArmorGuid && !archmageArmor && dude.HasFact(ArchmageArmorFeature)) {
+                Main.Verbose($"        Adding archmage armor", "state");
                 AddBuff(dude, book, spell, null, credits, false, creditClamp, charIndex, true, category);
             }
 
 
             if (spell.Blueprint.HasVariants) {
-                var variantsComponent = spell.Blueprint.Components.First(c => typeof(AbilityVariants).IsAssignableFrom(c.GetType())) as AbilityVariants;
+                var variantsComponent = spell.Blueprint.AbilityVariants;
+                Main.Verbose($"        Adding variants...", "state");
+
+                //Only credit the first variant each time (they act like spontaneous and should share the same credit)
+                bool addCredit = true;
+
                 foreach (var variant in variantsComponent.Variants) {
                     AbilityData data;
                     if (book == null) {
+                        Main.Verbose($"          Variant: {variant.Name}, book=null", "state");
                         data = new AbilityData(variant, dude);
-                    } else
+                    } else {
+                        Main.Verbose($"          Variant: {variant.Name}, book={book.Blueprint.Name}, level={spell.SpellLevel}", "state");
                         data = new AbilityData(variant, book, spell.SpellLevel);
+                    }
 
                     data.MetamagicData = spell.MetamagicData?.Clone();
-                    AddBuff(dude, book, data, spell, credits, false, creditClamp, charIndex, archmageArmor, category);
+                    AddBuff(dude: dude,
+                            book: book,
+                            spell: data,
+                            baseSpell: spell,
+                            credits: credits,
+                            newCredit: addCredit,
+                            creditClamp: creditClamp,
+                            charIndex: charIndex,
+                            archmageArmor: archmageArmor,
+                            category: category);
+
+                    addCredit = false;
                 }
                 return;
             }
 
             int clamp = int.MaxValue;
-            if (archmageArmor || spell.TargetAnchor == Kingmaker.UnitLogic.Abilities.Blueprints.AbilityTargetAnchor.Owner) {
+            if (archmageArmor || spell.TargetAnchor == AbilityTargetAnchor.Owner) {
                 clamp = 1;
             }
 
@@ -290,8 +370,6 @@ namespace BubbleBuffs {
             if (BuffsByKey.TryGetValue(key, out var buff)) {
                 buff.AddProvider(dude, book, spell, baseSpell, credits, newCredit, clamp, charIndex);
             } else {
-                var touchAbility = spell.Blueprint.GetComponent<AbilityEffectStickyTouch>()?.TouchDeliveryAbility;
-
                 if (!SpellsWithBeneficialBuffs.TryGetValue(spell.Blueprint.AssetGuid.m_Guid, out var abilityEffect)) {
                     var beneficial = spell.Blueprint.GetBeneficialBuffs();
                     abilityEffect = new AbilityCombinedEffects(beneficial);

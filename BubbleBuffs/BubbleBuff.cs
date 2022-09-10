@@ -137,16 +137,29 @@ namespace BubbleBuffs {
         internal SavedBuffState SavedState;
 
         public void AddProvider(UnitEntityData provider, Spellbook book, AbilityData spell, AbilityData baseSpell, IReactiveProperty<int> credits, bool newCredit, int creditClamp, int u) {
-            if (this.book == null)
+            if (this.book == null) {
                 this.book = book;
+            }
+
             foreach (var buffer in CasterQueue) {
                 if (buffer.who == provider && buffer.book?.Blueprint.AssetGuid == book?.Blueprint.AssetGuid) {
-                    if (!Key.Archmage)
+                    if (!Key.Archmage && newCredit)
                         buffer.AddCredits(1);
                     return;
                 }
             }
-            var providerHandle = new BuffProvider(credits) { who = provider, spent = 0, clamp = creditClamp, book = book, spell = spell, baseSpell = baseSpell, CharacterIndex = u, ArchmageArmor = this.Key.Archmage };
+
+            var providerHandle = new BuffProvider(credits) {
+                who = provider,
+                spent = 0,
+                clamp = creditClamp,
+                book = book,
+                spell = spell,
+                baseSpell = baseSpell,
+                CharacterIndex = u,
+                ArchmageArmor = this.Key.Archmage
+            };
+
             //providerHandle.InstallDebugListeners();
             CasterQueue.Add(providerHandle);
         }

@@ -16,6 +16,7 @@ namespace BubbleBuffs {
                 if (task.ShareTransmutation) {
                     var toggle = AbilityCache.CasterCache[task.Caster.UniqueId].ShareTransmutation;
                     if (toggle?.Data.IsAvailableForCast != true) {
+                        Main.Error("Unable to cast share transmutation");
                         return null;
                     }
 
@@ -27,12 +28,15 @@ namespace BubbleBuffs {
 
                 if (task.PowerfulChange) {
                     var toggle = AbilityCache.CasterCache[task.Caster.UniqueId].PowerfulChange;
-                    if (toggle?.Data.IsAvailableForCast == true) {
-                        var toggleParams = toggle.Data.CalculateParams();
-                        var context = new AbilityExecutionContext(toggle.Data, toggleParams, new TargetWrapper(task.Caster));
-                        toggle.Data.Cast(context);
-                        toggle.Data.Spend();
+                    if (toggle?.Data.IsAvailableForCast != true) {
+                        Main.Error("Unable to cast powerful change");
+                        return null;
                     }
+
+                    var toggleParams = toggle.Data.CalculateParams();
+                    var context = new AbilityExecutionContext(toggle.Data, toggleParams, new TargetWrapper(task.Caster));
+                    toggle.Data.Cast(context);
+                    toggle.Data.Spend();
                 }
 
                 var command = UnitUseAbility.CreateCastCommand(task.SpellToCast, task.Target);
