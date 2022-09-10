@@ -46,7 +46,6 @@ namespace BubbleBuffs {
             GlobalBubbleBuffer.Instance.SpellbookController.state.VerboseCasting 
                 ? new AnimatedExecutionEngine() 
                 : new InstantExecutionEngine();
-
     }
     public class BuffExecutor {
         public BufferState State;
@@ -88,6 +87,9 @@ namespace BubbleBuffs {
 
             List<CastTask> tasks = new();
 
+            Dictionary<UnitEntityData, int> remainingArcanistPool = new Dictionary<UnitEntityData, int>();
+            BlueprintScriptableObject arcanistPoolBlueprint = ResourcesLibrary.TryGetBlueprint<BlueprintScriptableObject>("cac948cbbe79b55459459dd6a8fe44ce");
+
             foreach (var buff in State.BuffList.Where(b => b.InGroup == buffGroup && b.Fulfilled > 0)) {
 
                 try {
@@ -114,6 +116,33 @@ namespace BubbleBuffs {
                             thisBuffBad++;
                             continue;
                         }
+
+                        int neededArcanistPool = 0;
+                        if (caster.PowerfulChange) {
+                            neededArcanistPool += 1;
+                        }
+                        if (caster.ShareTransmutation) {
+                            neededArcanistPool += 1;
+                        }
+
+                        if (neededArcanistPool != 0) {
+                            int availableArcanistPool;
+                            if (remainingArcanistPool.ContainsKey(caster.who)) {
+                                availableArcanistPool = remainingArcanistPool[caster.who];
+                            } else {
+                                availableArcanistPool = caster.who.Resources.GetResourceAmount(arcanistPoolBlueprint);
+                            }
+                            if (availableArcanistPool < neededArcanistPool) {
+                                if (badResult == null)
+                                    badResult = tooltip.AddBad(buff);
+                                badResult.messages.Add($"  [{caster.who.CharacterName}] => [{Bubble.GroupById[target].CharacterName}], {"noarcanist".i8()}");
+                                thisBuffBad++;
+                                continue;
+                            } else {
+                                remainingArcanistPool[caster.who] = availableArcanistPool - neededArcanistPool;
+                            }
+                        }
+
                         var touching = caster.spell.Blueprint.GetComponent<AbilityEffectStickyTouch>();
                         if (touching) {
                             spellToCast = new AbilityData(caster.spell, touching.TouchDeliveryAbility);
