@@ -335,16 +335,9 @@ namespace BubbleBuffs {
                 bool addCredit = true;
 
                 foreach (var variant in variantsComponent.Variants) {
-                    AbilityData data;
-                    if (book == null) {
-                        Main.Verbose($"          Variant: {variant.Name}, book=null", "state");
-                        data = new AbilityData(variant, dude);
-                    } else {
-                        Main.Verbose($"          Variant: {variant.Name}, book={book.Blueprint.Name}, level={spell.SpellLevel}", "state");
-                        data = new AbilityData(variant, book, spell.SpellLevel);
-                    }
+                    AbilityData data= new AbilityData(spell, variant);
+                    Main.Verbose($"          Variant: {variant.Name}", "state");
 
-                    data.MetamagicData = spell.MetamagicData?.Clone();
                     AddBuff(dude: dude,
                             book: book,
                             spell: data,

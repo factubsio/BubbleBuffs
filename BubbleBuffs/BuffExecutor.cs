@@ -144,7 +144,9 @@ namespace BubbleBuffs {
                         }
 
                         var touching = caster.spell.Blueprint.GetComponent<AbilityEffectStickyTouch>();
+                        Main.Verbose("Adding cast task for: " + caster.spell.Name, "apply");
                         if (touching) {
+                            Main.Verbose("   Switching spell to touch => " + touching.TouchDeliveryAbility.Name, "apply");
                             spellToCast = new AbilityData(caster.spell, touching.TouchDeliveryAbility);
                         } else {
                             spellToCast = caster.spell;
@@ -153,7 +155,6 @@ namespace BubbleBuffs {
 
                         var task = new CastTask {
                             SlottedSpell = caster.SlottedSpell,
-                            Params = spellParams,
                             Target = new TargetWrapper(forTarget.Unit),
                             Caster = caster.who,
                             SpellToCast = spellToCast,
@@ -193,7 +194,6 @@ namespace BubbleBuffs {
     public class CastTask {
         public AbilityData SpellToCast;
         public AbilityData SlottedSpell;
-        public AbilityParams Params;
         public bool PowerfulChange;
         public bool ShareTransmutation;
         public TargetWrapper Target;

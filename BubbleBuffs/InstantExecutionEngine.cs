@@ -16,6 +16,7 @@ namespace BubbleBuffs {
         private void Cast(CastTask task) {
             var oldResistance = task.SpellToCast.Blueprint.SpellResistance;
             task.SpellToCast.Blueprint.SpellResistance = false;
+            bool hasShare = false;
 
             try {
 
@@ -25,20 +26,23 @@ namespace BubbleBuffs {
                         return;
                     }
 
-                    var toggleParams = toggle.Data.CalculateParams();
-                    var context = new AbilityExecutionContext(toggle.Data, toggleParams, new TargetWrapper(task.Caster));
-                    toggle.Data.Cast(context);
                     toggle.Data.Spend();
+                    task.Caster.State.Features.ShareTransmutation.Retain();
+                    hasShare = true;
                 }
 
                 if (task.PowerfulChange) {
                     var toggle = AbilityCache.CasterCache[task.Caster.UniqueId].PowerfulChange;
-                    if (toggle?.Data.IsAvailableForCast == true) {
-                        var toggleParams = toggle.Data.CalculateParams();
-                        var context = new AbilityExecutionContext(toggle.Data, toggleParams, new TargetWrapper(task.Caster));
-                        toggle.Data.Cast(context);
-                        toggle.Data.Spend();
+                    if (toggle?.Data.IsAvailableForCast != true) {
+                        return;
                     }
+                    Rulebook.Trigger<RuleCastSpell>(new(toggle.Data, new(task.Caster)) {
+                        Context = {
+                            DisableLog = true,
+                        },
+                        DisableBattleLogSelf = true,
+                    });
+                    toggle.Data.Spend();
                 }
 
                 {
@@ -48,11 +52,15 @@ namespace BubbleBuffs {
                         },
                         DisableBattleLogSelf = true,
                     });
+                    hasShare = false;
                     task.SlottedSpell.Spend();
                 }
 
             } catch (Exception ex) {
                 Main.Error(ex, "casting spell");
+            } finally {
+                if (hasShare)
+                    task.Caster.State.Features.ShareTransmutation.Release();
             }
             task.SpellToCast.Blueprint.SpellResistance = oldResistance;
 

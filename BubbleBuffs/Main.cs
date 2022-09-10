@@ -27,6 +27,8 @@ using System.Reflection;
 using System.IO;
 using Kingmaker.Cheats;
 using Newtonsoft.Json;
+using Kingmaker.Blueprints.Items.Shields;
+using Kingmaker.Designers;
 
 namespace BubbleBuffs {
 
@@ -138,8 +140,11 @@ namespace BubbleBuffs {
                 GlobalBubbleBuffer.Instance.SpellbookController.state.RecalculateAvailableBuffs(Bubble.Group);
             }
             if (Input.GetKeyDown(KeyCode.R) && (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift))) {
-                foreach (var unit in Bubble.Group)
-                    RestController.ApplyRest(unit);
+                //foreach (var unit in Bubble.Group)
+                //    RestController.ApplyRest(unit);
+                var shield = Resources.GetBlueprint<BlueprintItemShield>("6a1a429f023e5134fb16a4962cb79257");
+                //Game.Instance.Player.Inventory.Add();
+                GameHelper.GetPlayerCharacter().Inventory.Add(shield, 1, null);
             }
             if (Input.GetKeyDown(KeyCode.B) && (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift))) {
                 modEntry.GetType().GetMethod("Reload", BindingFlags.NonPublic | BindingFlags.Instance).Invoke(modEntry, new object[] {});
@@ -207,6 +212,7 @@ namespace BubbleBuffs {
             //"minority",
             //"rejection",
             "interop",
+            "apply",
         };
 
         static bool suppressUnfiltered = false;
