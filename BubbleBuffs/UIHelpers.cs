@@ -158,4 +158,7 @@ namespace BubbleBuffs {
         public override string CharacterScreen => "Background/Windows/CharacterInfoPCView/CharacterScreen";
 
     }
+    class WidgetPaths_2_0 : WidgetPaths_1_4 {
+
+    }
 }

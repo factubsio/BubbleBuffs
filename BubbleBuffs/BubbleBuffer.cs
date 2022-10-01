@@ -46,6 +46,7 @@ using Kingmaker.UI.Models.Log.CombatLog_ThreadSystem;
 using Kingmaker.UI.Models.Log.CombatLog_ThreadSystem.LogThreads.Common;
 using Kingmaker.UI.MVVM._PCView.Modificators;
 using Kingmaker.Dungeon.Actions;
+using Kingmaker.Dungeon;
 
 namespace BubbleBuffs {
 
@@ -225,9 +226,13 @@ namespace BubbleBuffs {
             TryFixEILayout();
 
             MainContainer = transform.Find("MainContainer").gameObject;
+            Main.Verbose($"Found main container: {MainContainer != null}");
             NoSpellbooksContainer = transform.Find("NoSpellbooksContainer").gameObject;
+            Main.Verbose($"NospellbooksContainer: {NoSpellbooksContainer != null}");
 
-            PartyView = UIHelpers.StaticRoot.Find("PartyPCView").gameObject.GetComponent<PartyPCView>();
+            PartyView = UIHelpers.StaticRoot.Find("NestedCanvas2/PartyPCView").gameObject.GetComponent<PartyPCView>();
+
+            Main.Verbose($"PartyView: {PartyView != null}");
 
             GameObject.Destroy(transform.Find("bubblebuff-toggle")?.gameObject);
             GameObject.Destroy(transform.Find("bubblebuff-root")?.gameObject);
@@ -409,7 +414,8 @@ namespace BubbleBuffs {
         private void CreateWindow() {
             var staticRoot = UIHelpers.StaticRoot;
 
-            var portraitPrefab = staticRoot.Find("PartyPCView/Viewport/Content/PartyCharacterView_01").gameObject;
+
+            var portraitPrefab = staticRoot.Find("NestedCanvas2/PartyPCView/Viewport/Content/PartyCharacterView_01").gameObject;
             Main.Verbose("Got portrait prefab");
             var listPrefab = UIHelpers.SpellbookScreen.Find("MainContainer/KnownSpells");
             Main.Verbose("Got list prefab");
@@ -431,9 +437,9 @@ namespace BubbleBuffs {
             Main.Verbose("Got button prefab: ");
             selectedPrefab = UIHelpers.CharacterScreen.Find("Menu/Button/Selected").gameObject;
             Main.Verbose("Got selected prefab");
-            var nextPrefab = staticRoot.Find("PartyPCView/Background/Next").gameObject;
+            var nextPrefab = staticRoot.Find("NestedCanvas2/PartyPCView/Background/Next").gameObject;
             Main.Verbose("Got next prefab");
-            var prevPrefab = staticRoot.Find("PartyPCView/Background/Prev").gameObject;
+            var prevPrefab = staticRoot.Find("NestedCanvas2/PartyPCView/Background/Prev").gameObject;
             Main.Verbose("Got prev prefab");
 
             var content = Root.transform;
@@ -551,15 +557,18 @@ namespace BubbleBuffs {
         }
 
         private void MakeSettings(GameObject togglePrefab, Transform content) {
+            Main.VerboseNotNull(() => togglePrefab);
+            Main.VerboseNotNull(() => content);
             var staticRoot = Game.Instance.UI.Canvas.transform;
-            var button = staticRoot.Find("HUDLayout/IngameMenuView/ButtonsPart/Container/SettingsButton").gameObject;
+            var button = staticRoot.Find("NestedCanvas1/IngameMenuView/ButtonsPart/Container/SettingsButton").gameObject;
+            Main.VerboseNotNull(() => button);
 
             var toggleSettings = GameObject.Instantiate(button, content);
             toggleSettings.Rect().anchoredPosition = Vector3.zero;
             toggleSettings.Rect().pivot = new Vector2(1, 0);
             toggleSettings.Rect().SetAnchor(.93, .10);
 
-            var actionBarView = UIHelpers.StaticRoot.Find("ActionBarPcView").GetComponent<ActionBarPCView>();
+            var actionBarView = UIHelpers.StaticRoot.Find("NestedCanvas1/ActionBarPcView").GetComponent<ActionBarPCView>();
             var panel = GameObject.Instantiate(actionBarView.m_DragSlot.m_ConvertedView.gameObject, toggleSettings.transform);
             panel.DestroyComponents<ActionBarConvertedPCView>();
             panel.DestroyComponents<GridLayoutGroup>();
@@ -796,26 +805,47 @@ namespace BubbleBuffs {
         private static BlueprintFeature PowerfulChangeFeature => Resources.GetBlueprint<BlueprintFeature>("5e01e267021bffe4e99ebee3fdc872d1");
         private static BlueprintFeature ShareTransmutationFeature => Resources.GetBlueprint<BlueprintFeature>("c4ed8d1a90c93754eacea361653a7d56");
 
-        private void MakeDetailsView(GameObject portraitPrefab, GameObject framePrefab, GameObject nextPrefab, GameObject prevPrefab, GameObject togglePrefab, GameObject expandButtonPrefab, Transform content) {
+        private void MakeDetailsView(GameObject portraitPrefab,
+                                     GameObject framePrefab,
+                                     GameObject nextPrefab,
+                                     GameObject prevPrefab,
+                                     GameObject togglePrefab,
+                                     GameObject expandButtonPrefab,
+                                     Transform content) {
+
+            Main.VerboseNotNull(() => portraitPrefab);
+            Main.VerboseNotNull(() => framePrefab);
+            Main.VerboseNotNull(() => nextPrefab);
+            Main.VerboseNotNull(() => prevPrefab);
+            Main.VerboseNotNull(() => togglePrefab);
+            Main.VerboseNotNull(() => expandButtonPrefab);
+            Main.VerboseNotNull(() => content);
+
             var detailsHolder = GameObject.Instantiate(framePrefab, content);
             var detailsRect = detailsHolder.GetComponent<RectTransform>();
             GameObject.Destroy(detailsHolder.transform.Find("FrameDecor").gameObject);
+            Main.Verbose("destroyed FrameDecor");
+
             detailsRect.localPosition = Vector2.zero;
             detailsRect.sizeDelta = Vector2.zero;
             detailsRect.anchorMin = new Vector2(0.25f, 0.225f);
             detailsRect.anchorMax = new Vector2(0.75f, 0.475f);
 
             currentSpellView = view.widgetCache.Get(detailsRect);
+            Main.VerboseNotNull(() => currentSpellView);
 
             currentSpellView.GetComponentInChildren<OwlcatButton>().Interactable = false;
+            Main.Verbose("set owlcatbutton to interactable");
             currentSpellView.SetActive(false);
             var currentSpellRect = currentSpellView.transform as RectTransform;
+            Main.VerboseNotNull(() => currentSpellRect);
             currentSpellRect.SetAnchor(.5, .8);
 
 
             ReactiveProperty<int> SelectedCaster = new ReactiveProperty<int>(-1);
 
-            var actionBarView = UIHelpers.StaticRoot.Find("ActionBarPcView").GetComponent<ActionBarPCView>();
+            var actionBarView = UIHelpers.StaticRoot.Find("NestedCanvas1/ActionBarPcView").GetComponent<ActionBarPCView>();
+            Main.VerboseNotNull(() => actionBarView);
 
             var spellPopout = GameObject.Instantiate(actionBarView.m_DragSlot.m_ConvertedView.gameObject, detailsRect);
             spellPopout.DestroyComponents<ActionBarConvertedPCView>();
@@ -1581,7 +1611,7 @@ namespace BubbleBuffs {
 
                 var staticRoot = Game.Instance.UI.Canvas.transform;
                 Main.Verbose("got static root");
-                hudLayout = staticRoot.Find("HUDLayout/").gameObject;
+                hudLayout = staticRoot.Find("NestedCanvas1/").gameObject;
                 Main.Verbose("got hud layout");
 
                 Main.Verbose("Removing old bubble root");
@@ -1598,7 +1628,6 @@ namespace BubbleBuffs {
                 rect.SetSiblingIndex(hudLayout.transform.GetSiblingIndex() + 1);
                 Main.Verbose("set sibling index");
 
-                bubbleHud.DestroyComponents<HUDLayout>();
                 bubbleHud.DestroyComponents<UISectionHUDController>();
 
                 Main.Verbose("destroyed components");
@@ -1606,11 +1635,23 @@ namespace BubbleBuffs {
                 //GameObject.Destroy(rect.Find("CombatLog_New").gameObject);
                 //Main.Verbose("destroyed combatlog_new");
 
-                GameObject.Destroy(rect.Find("Console_InitiativeTrackerHorizontalPC").gameObject);
-                Main.Verbose("destroyed horizontaltrack");
+                //GameObject.Destroy(rect.Find("Console_InitiativeTrackerHorizontalPC").gameObject);
+                //Main.Verbose("destroyed horizontaltrack");
 
                 GameObject.Destroy(rect.Find("IngameMenuView/CompassPart").gameObject);
                 Main.Verbose("destroyed compasspart");
+
+                List<GameObject> toDestroy = new();
+                for (int rectChildIndex = 0; rectChildIndex < rect.childCount; rectChildIndex++) {
+                    var rectChild = rect.GetChild(rectChildIndex);
+                    if (rect.GetChild(rectChildIndex).name != "IngameMenuView")
+                        toDestroy.Add(rectChild.gameObject);
+                }
+
+                foreach (var obj in toDestroy) {
+                    var name = obj.name;
+                    GameObject.Destroy(obj);
+                }
 
                 bubbleHud.ChildObject("IngameMenuView").DestroyComponents<IngameMenuPCView>();
 
@@ -1663,12 +1704,14 @@ namespace BubbleBuffs {
 
                 }
 
-                DungeonShowMap showMap = new();
 
                 AddButton("group.normal.tooltip.header".i8(), "group.normal.tooltip.desc".i8(), applyBuffsSprites, () => GlobalBubbleBuffer.Execute(BuffGroup.Long));
                 AddButton("group.important.tooltip.header".i8(), "group.important.tooltip.desc".i8(), applyBuffsImportantSprites, () => GlobalBubbleBuffer.Execute(BuffGroup.Important));
                 AddButton("group.short.tooltip.header".i8(), "group.short.tooltip.desc".i8(), applyBuffsShortSprites, () => GlobalBubbleBuffer.Execute(BuffGroup.Short));
-                AddButton("showmap.tooltip.header".i8(), "showmap.tooltip.desc".i8(), showMapSprites, () => showMap.RunAction());
+                if (DungeonController.IsDungeonCampaign) {
+                    DungeonShowMap showMap = new();
+                    AddButton("showmap.tooltip.header".i8(), "showmap.tooltip.desc".i8(), showMapSprites, () => showMap.RunAction());
+                }
 
                 Main.Verbose("remove old bubble?");
 #if debug

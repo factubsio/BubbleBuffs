@@ -29,6 +29,7 @@ using Kingmaker.Cheats;
 using Newtonsoft.Json;
 using Kingmaker.Blueprints.Items.Shields;
 using Kingmaker.Designers;
+using System.Linq.Expressions;
 
 namespace BubbleBuffs {
 
@@ -111,16 +112,22 @@ namespace BubbleBuffs {
 
             AssetLoader.AddBundle("tutorialcanvas");
 
-            if (UnityModManager.gameVersion.Minor == 4)
-                UIHelpers.WidgetPaths = new WidgetPaths_1_4();
-            else if (UnityModManager.gameVersion.Minor == 3)
-                UIHelpers.WidgetPaths = new WidgetPaths_1_2();
-            else if (UnityModManager.gameVersion.Minor == 2)
-                UIHelpers.WidgetPaths = new WidgetPaths_1_2();
-            else if (UnityModManager.gameVersion.Minor == 1)
-                UIHelpers.WidgetPaths = new WidgetPaths_1_1();
-            else
-                UIHelpers.WidgetPaths = new WidgetPaths_1_0();
+            if (UnityModManager.gameVersion.Major == 2) {
+                UIHelpers.WidgetPaths = new WidgetPaths_2_0();
+            } else if (UnityModManager.gameVersion.Major == 1) {
+
+                if (UnityModManager.gameVersion.Minor == 4)
+                    UIHelpers.WidgetPaths = new WidgetPaths_1_4();
+                else if (UnityModManager.gameVersion.Minor == 3)
+                    UIHelpers.WidgetPaths = new WidgetPaths_1_2();
+                else if (UnityModManager.gameVersion.Minor == 2)
+                    UIHelpers.WidgetPaths = new WidgetPaths_1_2();
+                else if (UnityModManager.gameVersion.Minor == 1)
+                    UIHelpers.WidgetPaths = new WidgetPaths_1_1();
+                else
+                    UIHelpers.WidgetPaths = new WidgetPaths_1_0();
+            }
+
             harmony.PatchAll();
 
             GlobalBubbleBuffer.Install();
@@ -216,6 +223,12 @@ namespace BubbleBuffs {
         };
 
         static bool suppressUnfiltered = false;
+
+        internal static void VerboseNotNull(Expression<Func<object>> getter, string filter = null) {
+#if true && DEBUG
+            Verbose($"{getter} is not-null: {getter.Compile().Invoke() != null}", filter);
+#endif
+        }
 
         internal static void Verbose(string v, string filter = null) {
 #if true && DEBUG
