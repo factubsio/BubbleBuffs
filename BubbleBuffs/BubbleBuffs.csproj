@@ -62,7 +62,7 @@
   </Target>
   <Target Name="Publicise" AfterTargets="CreateLib">
     <ItemGroup>
-      <PubliciseAssemblyCSharp Include="$(WrathPathDebug)\Wrath_Data\Managed\Assembly-CSharp.dll;$(WrathPath)\Wrath_Data\Managed\Owlcat.Runtime.UI.dll" />
+      <PubliciseAssemblyCSharp Include="$(WrathPathDebug)\Wrath_Data\Managed\Assembly-CSharp.dll;$(WrathPathDebug)\Wrath_Data\Managed\Owlcat.Runtime.UI.dll" />
       <PubliciseUniRx Include="$(WrathPathDebug)\Wrath_Data\Managed\UniRx.dll" />
     </ItemGroup>
     <Publicise InputAssemblies="@(PubliciseAssemblyCSharp)" OutputPath="$(SolutionDir)lib/" PubliciseCompilerGenerated="true" />
