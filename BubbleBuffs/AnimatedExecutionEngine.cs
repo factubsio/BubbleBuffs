@@ -1,4 +1,6 @@
-﻿using Kingmaker.UnitLogic.Abilities;
+﻿using BubbleBuffs.Subscriptions;
+using Kingmaker.PubSubSystem;
+using Kingmaker.UnitLogic.Abilities;
 using Kingmaker.UnitLogic.Commands;
 using Kingmaker.UnitLogic.Commands.Base;
 using Kingmaker.Utility;
@@ -15,34 +17,42 @@ namespace BubbleBuffs {
 
                 if (task.ShareTransmutation) {
                     var toggle = AbilityCache.CasterCache[task.Caster.UniqueId].ShareTransmutation;
-                    if (toggle?.Data.IsAvailableForCast != true) {
-                        Main.Error("Unable to cast share transmutation");
-                        return null;
+                    if (!task.BuffProvider.AzataZippyMagic || (task.BuffProvider.AzataZippyMagic && !task.IsDuplicateSpellApplied)) {
+                        if (toggle?.Data.IsAvailableForCast != true) {
+                            Main.Error("Unable to cast share transmutation");
+                            return null;
+                        }
+
+                        toggle.Data.Spend();
                     }
 
                     var toggleParams = toggle.Data.CalculateParams();
                     var context = new AbilityExecutionContext(toggle.Data, toggleParams, new TargetWrapper(task.Caster));
                     toggle.Data.Cast(context);
-                    toggle.Data.Spend();
                 }
 
                 if (task.PowerfulChange) {
                     var toggle = AbilityCache.CasterCache[task.Caster.UniqueId].PowerfulChange;
-                    if (toggle?.Data.IsAvailableForCast != true) {
-                        Main.Error("Unable to cast powerful change");
-                        return null;
+                    if (!task.BuffProvider.AzataZippyMagic || (task.BuffProvider.AzataZippyMagic && !task.IsDuplicateSpellApplied)) {
+                        if (toggle?.Data.IsAvailableForCast != true) {
+                            Main.Error("Unable to cast powerful change");
+                            return null;
+                        }
+
+                        toggle.Data.Spend();
                     }
 
                     var toggleParams = toggle.Data.CalculateParams();
                     var context = new AbilityExecutionContext(toggle.Data, toggleParams, new TargetWrapper(task.Caster));
                     toggle.Data.Cast(context);
-                    toggle.Data.Spend();
                 }
 
-                var command = UnitUseAbility.CreateCastCommand(task.SpellToCast, task.Target);
+                // Subscribe to the RuleCastSpell event that will be executed by the cast command
+                EventBus.Subscribe(new ZippyMagicBeforeRulebookEventTriggerHandler(task));
 
-                return command;
-            } catch (Exception ex) {
+                return UnitUseAbility.CreateCastCommand(task.SpellToCast, task.Target);
+            } 
+            catch (Exception ex) {
                 Main.Error(ex, "casting spell");
                 return null;
             }

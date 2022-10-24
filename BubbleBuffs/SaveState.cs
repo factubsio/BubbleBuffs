@@ -42,6 +42,8 @@ namespace BubbleBuffs {
         public bool ShareTransmutation;
         [JsonProperty]
         public bool PowerfulChange;
+        [JsonProperty]
+        public bool UseAzataZippyMagic;
     }
 
     public class SavedBuffState {

@@ -1,5 +1,9 @@
-﻿using Kingmaker.RuleSystem;
+﻿using BubbleBuffs.Subscriptions;
+using Kingmaker.Blueprints.Classes;
+using Kingmaker.PubSubSystem;
+using Kingmaker.RuleSystem;
 using Kingmaker.RuleSystem.Rules.Abilities;
+using Kingmaker.UnitLogic;
 using Kingmaker.UnitLogic.Abilities;
 using Kingmaker.Utility;
 using System;
@@ -22,48 +26,59 @@ namespace BubbleBuffs {
 
                 if (task.ShareTransmutation) {
                     var toggle = AbilityCache.CasterCache[task.Caster.UniqueId].ShareTransmutation;
-                    if (toggle?.Data.IsAvailableForCast != true) {
-                        return;
-                    }
+                    if (!task.BuffProvider.AzataZippyMagic || (task.BuffProvider.AzataZippyMagic && !task.IsDuplicateSpellApplied)) {
+                        if (toggle?.Data.IsAvailableForCast != true) {
+                            return;
+                        }
 
-                    toggle.Data.Spend();
+                        toggle.Data.Spend();
+                    }
+                    
                     task.Caster.State.Features.ShareTransmutation.Retain();
                     hasShare = true;
                 }
 
                 if (task.PowerfulChange) {
                     var toggle = AbilityCache.CasterCache[task.Caster.UniqueId].PowerfulChange;
-                    if (toggle?.Data.IsAvailableForCast != true) {
-                        return;
+                    if (!task.BuffProvider.AzataZippyMagic || (task.BuffProvider.AzataZippyMagic && !task.IsDuplicateSpellApplied)) {
+                        if (toggle?.Data.IsAvailableForCast != true) {
+                            return;
+                        }
                     }
+
+                    var hasAzataZippyMagicFact = task.Caster.HasFact(Resources.GetBlueprint<BlueprintFeature>("30b4200f897ba25419ba3a292aed4053"));
+                    var isSpellAOE = task.SpellToCast.IsAOE;
+                    var canCastOnOthers = task.ShareTransmutation || !task.BuffProvider.SelfCastOnly;
+
                     Rulebook.Trigger<RuleCastSpell>(new(toggle.Data, new(task.Caster)) {
                         Context = {
                             DisableLog = true,
                         },
                         DisableBattleLogSelf = true,
+                        IsDuplicateSpellApplied = task.BuffProvider.AzataZippyMagic && hasAzataZippyMagicFact && !isSpellAOE && canCastOnOthers
                     });
-                    toggle.Data.Spend();
-                }
 
-                {
-                    Rulebook.Trigger<RuleCastSpell>(new(task.SpellToCast, task.Target) {
-                        Context = {
-                            DisableLog = true,
-                        },
-                        DisableBattleLogSelf = true,
-                    });
-                    hasShare = false;
-                    task.SlottedSpell.Spend();
+                    if (!task.BuffProvider.AzataZippyMagic || (task.BuffProvider.AzataZippyMagic && !task.IsDuplicateSpellApplied)) {
+                        toggle.Data.Spend();
+                    }
                 }
+                
+                // Subscribe to the RuleCastSpell event that will be executed by the trigger
+                EventBus.Subscribe(new ZippyMagicBeforeRulebookEventTriggerHandler(task));
+                Rulebook.Trigger<RuleCastSpell>(new RuleCastSpell(task.SpellToCast, task.Target));
+                task.SpellToCast.Spend();
 
-            } catch (Exception ex) {
+                hasShare = false;
+            } 
+            catch (Exception ex) {
                 Main.Error(ex, "casting spell");
-            } finally {
+            } 
+            finally {
                 if (hasShare)
                     task.Caster.State.Features.ShareTransmutation.Release();
             }
-            task.SpellToCast.Blueprint.SpellResistance = oldResistance;
 
+            task.SpellToCast.Blueprint.SpellResistance = oldResistance;
         }
 
         public IEnumerator CreateSpellCastRoutine(List<CastTask> tasks) {

@@ -7,7 +7,7 @@
   "showshort": "显示 轮级法术",
   "showreq": "显示已设置法术",
   "showNOTreq": "显示未设置法术",
-  "sort.name":  "按名字排序",
+  "sort.name": "按名字排序",
   "group.normal": "标准施法序列",
   "group.important": "重要施法序列",
   "group.short": "临时施法序列",
@@ -36,11 +36,12 @@
   "tooltip.failed": "施法失败，法术位不足",
   "noslot": "没有剩余法术位",
 
-  "warn.arcanepool":  "  注意，剩余的奥能点数量没有记录",
+  "warn.arcanepool": "  注意，剩余的奥能点数量没有记录",
 
   "limitcasts": "限制施法次数为",
   "bancasts": "禁止使用此法术",
   "use.powerfulchange": "使用强力变形",
   "use.sharetransmutation": "允许分享变化",
+  "use.azatazippymagic": "控制 Azata Zippy 魔法辅助 Buff",
   "nolimit": "不限制"
 }

@@ -117,31 +117,44 @@ namespace BubbleBuffs {
                             continue;
                         }
 
-                        int neededArcanistPool = 0;
-                        if (caster.PowerfulChange) {
-                            neededArcanistPool += 1;
-                        }
-                        if (caster.ShareTransmutation) {
-                            neededArcanistPool += 1;
+                        // Azata Zippy Magic
+                        var priorSpellTasks = tasks.Where(x => x.Caster == caster.who && x.SlottedSpell.UniqueId == caster.SlottedSpell.UniqueId).ToList();
+                        
+                        // Check to see if this spell does count for casting
+                        if (!caster.AzataZippyMagic || (caster.AzataZippyMagic && priorSpellTasks.Count() % 2 == 0)) {
+                            int neededArcanistPool = 0;
+                            if (caster.PowerfulChange) {
+                                neededArcanistPool += 1;
+                            }
+                            if (caster.ShareTransmutation) {
+                                neededArcanistPool += 1;
+                            }
+
+                            if (neededArcanistPool != 0) {
+                                int availableArcanistPool;
+                                if (remainingArcanistPool.ContainsKey(caster.who)) {
+                                    availableArcanistPool = remainingArcanistPool[caster.who];
+                                } else {
+                                    availableArcanistPool = caster.who.Resources.GetResourceAmount(arcanistPoolBlueprint);
+                                }
+                                if (availableArcanistPool < neededArcanistPool) {
+                                    if (badResult == null)
+                                        badResult = tooltip.AddBad(buff);
+                                    badResult.messages.Add($"  [{caster.who.CharacterName}] => [{Bubble.GroupById[target].CharacterName}], {"noarcanist".i8()}");
+                                    thisBuffBad++;
+                                    continue;
+                                } else {
+                                    remainingArcanistPool[caster.who] = availableArcanistPool - neededArcanistPool;
+                                }
+                            }
                         }
 
-                        if (neededArcanistPool != 0) {
-                            int availableArcanistPool;
-                            if (remainingArcanistPool.ContainsKey(caster.who)) {
-                                availableArcanistPool = remainingArcanistPool[caster.who];
-                            } else {
-                                availableArcanistPool = caster.who.Resources.GetResourceAmount(arcanistPoolBlueprint);
-                            }
-                            if (availableArcanistPool < neededArcanistPool) {
-                                if (badResult == null)
-                                    badResult = tooltip.AddBad(buff);
-                                badResult.messages.Add($"  [{caster.who.CharacterName}] => [{Bubble.GroupById[target].CharacterName}], {"noarcanist".i8()}");
-                                thisBuffBad++;
-                                continue;
-                            } else {
-                                remainingArcanistPool[caster.who] = availableArcanistPool - neededArcanistPool;
-                            }
+                        // This is a free cast
+                        var IsDuplicateSpellApplied = false;
+                        if (caster.AzataZippyMagic && priorSpellTasks.Count() % 2 == 1) {
+                            IsDuplicateSpellApplied = true;
                         }
+
 
                         var touching = caster.spell.Blueprint.GetComponent<AbilityEffectStickyTouch>();
                         Main.Verbose("Adding cast task for: " + caster.spell.Name, "apply");
@@ -160,6 +173,8 @@ namespace BubbleBuffs {
                             SpellToCast = spellToCast,
                             PowerfulChange = caster.PowerfulChange,
                             ShareTransmutation = caster.ShareTransmutation,
+                            IsDuplicateSpellApplied = IsDuplicateSpellApplied,
+                            BuffProvider = caster
                         };
 
                         tasks.Add(task);
@@ -196,7 +211,9 @@ namespace BubbleBuffs {
         public AbilityData SlottedSpell;
         public bool PowerfulChange;
         public bool ShareTransmutation;
+        public bool IsDuplicateSpellApplied;
         public TargetWrapper Target;
         public UnitEntityData Caster;
+        public BuffProvider BuffProvider;
     }
 }

@@ -7,7 +7,7 @@
   "showshort": "Mit kurzer Dauer",
   "showreq": "Bereits konfiguriert",
   "showNOTreq": "Nicht konfiguriert",
-  "sort.name":  "Sortiere nach Namen",
+  "sort.name": "Sortiere nach Namen",
   "group.normal": "Normal",
   "group.important": "Wichtig",
   "group.short": "Kurz",
@@ -36,15 +36,16 @@
   "tooltip.skipped": "Übersprungene Buffs",
   "tooltip.failed": "Fehlgeschlagene Buffs",
   "noslot": "Keine freien Zauberplätze mehr",
-  
-  "warn.arcanepool":  "  <i>Ressourcen aus dem arkanen Reservoir werden <b>nicht</b> beachtet</i>",
+
+  "warn.arcanepool": "  <i>Ressourcen aus dem arkanen Reservoir werden <b>nicht</b> beachtet</i>",
 
   "limitcasts": "Ausführung begrenzen auf",
   "bancasts": "Von der Ausführung verbieten",
   "use.powerfulchange": "Machtvolle Verwandlung (Gestaltwandelnder Arkanist) benutzen",
   "use.sharetransmutation": "Verwandlung teilen (Gestaltwandelnder Arkanist) benutzen",
+  "use.azatazippymagic": "Kontrolliere Azata Zippy Magic Secondary Buff",
   "nolimit": "Keine Begrenzung",
 
   "remove-all": "Buff überall entfernen",
-  "add-all":  "Buff überall einsetzen"
+  "add-all": "Buff überall einsetzen"
 }

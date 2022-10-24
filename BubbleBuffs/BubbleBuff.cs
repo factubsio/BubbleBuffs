@@ -191,6 +191,7 @@ namespace BubbleBuffs {
                     caster.CustomCap = casterState.Cap;
                     caster.ShareTransmutation = casterState.ShareTransmutation;
                     caster.PowerfulChange = casterState.PowerfulChange;
+                    caster.AzataZippyMagic = casterState.UseAzataZippyMagic;
                 }
             }
         }
@@ -223,13 +224,22 @@ namespace BubbleBuffs {
 
                 for (int n = 0; n < CasterQueue.Count; n++) {
                     var caster = CasterQueue[n];
-                    if (caster.AvailableCredits > 0) {
+
+                    // Available Credit check incorporating Azata Zippy Magic
+                    var numberOfSpellCastsByCaster = ActualCastQueue?.Where(x => x.Item2 == caster).Count() ?? 0;
+                    var hasAvailableCredits = caster.AvailableCredits > 0 || (caster.AvailableCredits == 0 && caster.AzataZippyMagic && numberOfSpellCastsByCaster % 2 == 1);
+
+                    if (hasAvailableCredits) {
                         //Main.Verbose($"checking if: {caster.who.CharacterName} => {Name} => {Bubble.Group[i].CharacterName}");
                         if (!caster.CanTarget(target)) continue;
 
                         //Main.Verbose($"casting: {caster.who.CharacterName} => {Name} => {Bubble.Group[i].CharacterName}");
-                        caster.ChargeCredits(1);
-                        caster.spent++;
+                        
+                        // Azata Zippy Magic - only charge credits if not prime cast
+                        if (!caster.AzataZippyMagic || (caster.AzataZippyMagic && numberOfSpellCastsByCaster % 2 == 0)) {
+                            caster.ChargeCredits(1);
+                            caster.spent++;
+                        }
                         given.Add(target);
 
                         if (ActualCastQueue == null)
@@ -296,6 +306,7 @@ namespace BubbleBuffs {
         public bool ArchmageArmor = false;
         public bool ShareTransmutation;
         public bool PowerfulChange;
+        public bool AzataZippyMagic;
         public UnitEntityData who;
         public AbilityData baseSpell;
         public Spellbook book;
