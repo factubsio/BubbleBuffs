@@ -58,8 +58,8 @@ namespace BubbleBuffs.Handlers {
                 return _castTask.Caster?.Resources?.PersistantResources?.Where(x => x.Blueprint.AssetGuidThreadSafe == "cac948cbbe79b55459459dd6a8fe44ce")?.First()?.Amount ?? 0;
             }
             set {
-                var temp = _castTask.Caster?.Resources?.PersistantResources?.Where(x => x.Blueprint.AssetGuidThreadSafe == "cac948cbbe79b55459459dd6a8fe44ce")?.First();
-                if (temp != null) temp.Amount = value;
+                var arcaneReserviorResource = _castTask.Caster?.Resources?.PersistantResources?.Where(x => x.Blueprint.AssetGuidThreadSafe == "cac948cbbe79b55459459dd6a8fe44ce")?.First();
+                if (arcaneReserviorResource != null) arcaneReserviorResource.Amount = value;
             }
         }
 
