@@ -192,7 +192,7 @@
     <Compile Include="InstantExecutionEngine.cs" />
     <Compile Include="SafeHandler.cs" />
     <Compile Include="SaveState.cs" />
-    <Compile Include="Subscriptions\ZippyMagicBeforeRulebookEventTriggerHandler.cs" />
+    <Compile Include="Handlers\EngineCastingHandler.cs" />
     <Compile Include="UIHelpers.cs" />
     <Compile Include="Config\Blueprints.cs" />
     <Compile Include="Config\IDisableableGroup.cs" />
