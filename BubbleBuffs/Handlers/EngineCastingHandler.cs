@@ -102,8 +102,9 @@ namespace BubbleBuffs.Handlers {
                     // Set proper context so retentions may be released
                     Context = evt.Context;
 
-                    // Check for needed arcanist reservoir point
-                    if (ArcaneReservoirPointsNeeded > 0) {
+                    // Check for needed arcanist reservoir points
+                    // Don't perform check or spend points if this is an Azata Zippy Magic secondary cast
+                    if (ArcaneReservoirPointsNeeded > 0 && (!_castTask.AzataZippyMagic || !_castTask.IsDuplicateSpellApplied)) {
                         if (ArcaneReservoirPointsAvailable >= ArcaneReservoirPointsNeeded) {
                             DecreaseArcanePoolPoints(ArcaneReservoirPointsNeeded);
                         }
@@ -127,13 +128,7 @@ namespace BubbleBuffs.Handlers {
 
                     // Correct casting slots expended when on zippy magic secondary cast
                     if (_castTask.AzataZippyMagic && _castTask.IsDuplicateSpellApplied) {
-                        // Undo the spell slot spend
                         evt.Spell.ExtraSpellSlotCost = -evt.Spell.SpellSlotCost;
-
-                        // Undo the Arcane Reservoir spend
-                        if (ArcaneReservoirPointsNeeded > 0) {
-                            IncreaseArcanePoolPoints(ArcaneReservoirPointsNeeded);
-                        }
                     }
 
                     // Spend spell slots if requested (e.g. cast directly from a rule trigger)
@@ -197,7 +192,6 @@ namespace BubbleBuffs.Handlers {
 
         private void ResetSpellResistance() => _castTask.SpellToCast.Blueprint.SpellResistance = PriorSpellResistance;
 
-        private void IncreaseArcanePoolPoints(int amount) => ArcaneReservoirPointsAvailable += amount;
         private void DecreaseArcanePoolPoints(int amount) => ArcaneReservoirPointsAvailable -= amount;
 
         #endregion
