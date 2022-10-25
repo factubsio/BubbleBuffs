@@ -173,8 +173,9 @@ namespace BubbleBuffs {
                             SpellToCast = spellToCast,
                             PowerfulChange = caster.PowerfulChange,
                             ShareTransmutation = caster.ShareTransmutation,
+                            AzataZippyMagic = caster.AzataZippyMagic,
                             IsDuplicateSpellApplied = IsDuplicateSpellApplied,
-                            BuffProvider = caster
+                            SelfCastOnly = caster.SelfCastOnly
                         };
 
                         tasks.Add(task);
@@ -211,9 +212,10 @@ namespace BubbleBuffs {
         public AbilityData SlottedSpell;
         public bool PowerfulChange;
         public bool ShareTransmutation;
+        public bool AzataZippyMagic;
         public bool IsDuplicateSpellApplied;
         public TargetWrapper Target;
         public UnitEntityData Caster;
-        public BuffProvider BuffProvider;
+        public bool SelfCastOnly;
     }
 }

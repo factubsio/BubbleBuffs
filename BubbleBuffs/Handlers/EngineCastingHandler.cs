@@ -118,15 +118,15 @@ namespace BubbleBuffs.Handlers {
                     // Azata Zippy Magic checks
                     var hasAzataZippyMagicFact = _castTask.Caster.HasFact(Resources.GetBlueprint<BlueprintFeature>("30b4200f897ba25419ba3a292aed4053"));
                     var isSpellAOE = _castTask.SpellToCast.IsAOE;
-                    var canCastOnOthers = _castTask.ShareTransmutation || !_castTask.BuffProvider.SelfCastOnly;
+                    var canCastOnOthers = _castTask.ShareTransmutation || !_castTask.SelfCastOnly;
 
                     // Set logs and flags as appropriate
                     evt.Context.DisableLog = true;
                     evt.DisableBattleLogSelf = true;
-                    evt.IsDuplicateSpellApplied = _castTask.BuffProvider.AzataZippyMagic && hasAzataZippyMagicFact && !isSpellAOE && canCastOnOthers;
+                    evt.IsDuplicateSpellApplied = _castTask.AzataZippyMagic && hasAzataZippyMagicFact && !isSpellAOE && canCastOnOthers;
 
                     // Correct casting slots expended when on zippy magic secondary cast
-                    if (_castTask.BuffProvider.AzataZippyMagic && _castTask.IsDuplicateSpellApplied) {
+                    if (_castTask.AzataZippyMagic && _castTask.IsDuplicateSpellApplied) {
                         // Undo the spell slot spend
                         evt.Spell.ExtraSpellSlotCost = -evt.Spell.SpellSlotCost;
 
