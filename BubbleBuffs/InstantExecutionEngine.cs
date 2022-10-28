@@ -16,7 +16,7 @@ namespace BubbleBuffs {
         private RuleCastSpell Cast(CastTask task) {
             try {
                 // Subscribe to the RuleCastSpell event that will be executed by the trigger
-                EventBus.Subscribe(new EngineCastingHandler(task, 1));
+                EventBus.Subscribe(new EngineCastingHandler(task, true));
 
                 // Trigger the RuleCastSpell
                 return Rulebook.Trigger<RuleCastSpell>(new(task.SpellToCast, task.Target));
