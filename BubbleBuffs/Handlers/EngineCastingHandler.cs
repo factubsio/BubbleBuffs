@@ -70,7 +70,7 @@ namespace BubbleBuffs.Handlers {
         private int ArcaneReservoirPointsNeeded {
             get {
                 var points = 0;
-                if (_castTask.ShareTransmutation) points++;
+                if (_castTask.ShareTransmutation && _castTask.Caster != _castTask.Target.Unit) points++;
                 if (_castTask.PowerfulChange) points++;
                 return points;
             }

@@ -126,7 +126,7 @@ namespace BubbleBuffs {
                             if (caster.PowerfulChange) {
                                 neededArcanistPool += 1;
                             }
-                            if (caster.ShareTransmutation) {
+                            if (caster.ShareTransmutation && caster.who != forTarget.Unit) {
                                 neededArcanistPool += 1;
                             }
 
