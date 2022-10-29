@@ -278,7 +278,7 @@ namespace BubbleBuffs.Handlers {
                 spell.Spellbook.m_SpontaneousSlots[spellLevel] += amount;
             } else {
                 // Find spent slots we can reactivate
-                var spentSpellSlots = spell.Spellbook?.SureMemorizedSpells(spellLevel)?.Where(x => x.Available)?.Take(amount);
+                var spentSpellSlots = spell.Spellbook?.SureMemorizedSpells(spellLevel)?.Where(x => !x.Available && x.Spell == spell)?.Take(amount);
 
                 // Make sure we found enough spell slots
                 if (spentSpellSlots == null || spentSpellSlots.Count() != amount) {

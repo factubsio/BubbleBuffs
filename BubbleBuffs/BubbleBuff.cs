@@ -9,6 +9,7 @@ using Kingmaker.UnitLogic.Mechanics.Actions;
 using BubbleBuffs.Extensions;
 using Newtonsoft.Json;
 using Kingmaker.Utility;
+using static Kingmaker.Blueprints.BlueprintAbilityResource;
 
 namespace BubbleBuffs {
 
@@ -219,6 +220,24 @@ namespace BubbleBuffs {
             return false;
         }
 
+        private int CreditsNeeded(AbilityData spell) {
+            if (spell.ConvertedFrom != null) {
+                return CreditsNeeded(spell.ConvertedFrom);
+            }
+
+            if (spell.Spellbook.Blueprint.Spontaneous) {
+                return 1;
+            }
+            else {
+                if (spell.SpellSlot.LinkedSlots != null && spell.SpellSlot.IsOpposition) {
+                    return spell.SpellSlot.LinkedSlots.Count();
+                }
+                else {
+                    return 1;
+                }
+            }
+        }
+
         public void Validate() {
             foreach (var target in wanted) {
 
@@ -227,7 +246,8 @@ namespace BubbleBuffs {
 
                     // Available Credit check incorporating Azata Zippy Magic
                     var numberOfSpellCastsByCaster = ActualCastQueue?.Where(x => x.Item2 == caster).Count() ?? 0;
-                    var hasAvailableCredits = caster.AvailableCredits > 0 || (caster.AvailableCredits == 0 && caster.AzataZippyMagic && numberOfSpellCastsByCaster % 2 == 1);
+                    var creditsNeeded = CreditsNeeded(caster.spell);
+                    var hasAvailableCredits = caster.AvailableCredits >= creditsNeeded || (caster.AvailableCredits < creditsNeeded && caster.AvailableCredits >= 0 && caster.AzataZippyMagic && numberOfSpellCastsByCaster % 2 == 1);
 
                     if (hasAvailableCredits) {
                         //Main.Verbose($"checking if: {caster.who.CharacterName} => {Name} => {Bubble.Group[i].CharacterName}");
@@ -237,8 +257,9 @@ namespace BubbleBuffs {
                         
                         // Azata Zippy Magic - only charge credits if not prime cast
                         if (!caster.AzataZippyMagic || (caster.AzataZippyMagic && numberOfSpellCastsByCaster % 2 == 0)) {
-                            caster.ChargeCredits(1);
-                            caster.spent++;
+                            // Check for opposition school
+                            caster.ChargeCredits(creditsNeeded);
+                            caster.spent += creditsNeeded;
                         }
                         given.Add(target);
 
