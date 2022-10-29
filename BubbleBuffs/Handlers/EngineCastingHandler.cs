@@ -1,4 +1,5 @@
-﻿using JetBrains.Annotations;
+﻿using BubbleBuffs.Extensions;
+using JetBrains.Annotations;
 using Kingmaker.Blueprints.Classes;
 using Kingmaker.PubSubSystem;
 using Kingmaker.RuleSystem;
@@ -79,10 +80,10 @@ namespace BubbleBuffs.Handlers {
             get {
                 // Azata Zippy Magic checks
                 var hasAzataZippyMagicFact = _castTask.Caster.HasFact(Resources.GetBlueprint<BlueprintFeature>("30b4200f897ba25419ba3a292aed4053"));
-                var isSpellAOE = _castTask.SpellToCast.IsAOE;
+                var isSpellMass = _castTask.SpellToCast.Blueprint.IsMass();
                 var canCastOnOthers = _castTask.ShareTransmutation || !_castTask.SelfCastOnly;
 
-                return _castTask.AzataZippyMagic && hasAzataZippyMagicFact && !isSpellAOE && canCastOnOthers;
+                return _castTask.AzataZippyMagic && hasAzataZippyMagicFact && !isSpellMass && canCastOnOthers;
             }
         }
 

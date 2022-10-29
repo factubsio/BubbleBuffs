@@ -1260,10 +1260,10 @@ namespace BubbleBuffs {
                     azataZippyMagicToggle.isOn = who.AzataZippyMagic;
 
                     var hasAzataZippyMagicFact = who.who.HasFact(AzataZippyMagicFeature);
-                    var isSpellAOE = buff.IsMass;
+                    var isSpellMass = buff.IsMass;
                     var canCastOnOthers = shareTransmutationToggle.isOn || !who.SelfCastOnly;
 
-                    azataZippyMagicToggle.interactable = hasAzataZippyMagicFact && !isSpellAOE && canCastOnOthers;
+                    azataZippyMagicToggle.interactable = hasAzataZippyMagicFact && !isSpellMass && canCastOnOthers;
                     azataZippyMagicLabel.color = azataZippyMagicToggle.interactable ? defaultLabelColor : Color.gray;
 
                 }
