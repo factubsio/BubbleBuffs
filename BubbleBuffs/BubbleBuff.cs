@@ -229,7 +229,7 @@ namespace BubbleBuffs {
                 return 1;
             }
             else {
-                if (spell.SpellSlot.LinkedSlots != null && spell.SpellSlot.IsOpposition) {
+                if (spell.SpellSlot?.LinkedSlots != null && (spell.SpellSlot?.IsOpposition ?? false)) {
                     return spell.SpellSlot.LinkedSlots.Count();
                 }
                 else {
