@@ -11,7 +11,7 @@ using System;
 using System.Linq;
 
 namespace BubbleBuffs.Handlers {
-    public class EngineCastingHandler : IBeforeRulebookEventTriggerHandler<RuleCastSpell>, IAbilityExecutionProcessHandler, IRulebookEventAboutToTriggerHook {
+    public class EngineCastingHandler : IAbilityExecutionProcessHandler, IRulebookEventAboutToTriggerHook {
         #region Fields
 
         private readonly CastTask _castTask;
@@ -120,51 +120,6 @@ namespace BubbleBuffs.Handlers {
 
         #endregion
 
-        #region IBeforeRulebookEventTriggerHandler<RuleCastSpell>
-
-        public void OnBeforeRulebookEventTrigger(RuleCastSpell evt) {
-            if (_castTask.SpellToCast == evt.Spell && _castTask.Target == evt.SpellTarget) {
-                try {
-                    // Set proper context so retentions may be released
-                    Context = evt.Context;
-
-                    // Check for needed arcanist reservoir points
-                    // Don't spend points if this is an Azata Zippy Magic secondary cast
-                    if (ArcaneReservoirPointsNeeded > 0 && !IsAzataZippyMagicSecondaryCast) {
-                        if (ArcaneReservoirPointsAvailable >= ArcaneReservoirPointsNeeded) {
-                            DecreaseArcanePoolPoints(ArcaneReservoirPointsNeeded);
-                        }
-                        else {
-                            // Not enough points are available, so cancel the cast
-                            Main.Error($"Unable to cast {_castTask.SpellToCast.Name} for {_castTask.Target.Unit.CharacterName} because {ArcaneReservoirPointsNeeded} arcane reservoir points are needed but only {ArcaneReservoirPointsAvailable} arcane reservoir points are available");
-                            evt.CancelAbilityExecution();
-                            return;
-                        }
-                    }
-
-                    // Disable the logs for this cast
-                    evt.Context.DisableLog = true;
-                    evt.DisableBattleLogSelf = true;
-
-                    // Always set to true if controlling Azata Zippy Magic Secondary casts
-                    // This prevents the game's secondary cast from triggering, and allows us to control casting
-                    if (IsControllingAzataZippyMagicSecondaryCast) {
-                        evt.IsDuplicateSpellApplied = true;
-                    }
-
-                    // Spend spell slots if requested (e.g. cast directly from a rule trigger)
-                    if (_spendSpellSlot) {
-                        _castTask.SpellToCast.Spend();
-                    }
-                } 
-                catch (Exception ex) {
-                    Main.Error(ex, "Casting: OnBeforeRulebookEventTrigger");
-                }
-            }
-        }
-
-        #endregion
-
         #region IAbilityExecutionProcessHandler
 
         /// <summary>
@@ -185,11 +140,9 @@ namespace BubbleBuffs.Handlers {
 
                     // Reset Spell resistance
                     ResetSpellResistance();
-                }
-                catch (Exception ex) {
+                } catch (Exception ex) {
                     Main.Error(ex, "Casting: HandleExecutionProcessEnd");
-                }
-                finally {
+                } finally {
                     // Remove from event bus
                     EventBus.Unsubscribe(this);
                 }
@@ -204,7 +157,48 @@ namespace BubbleBuffs.Handlers {
         /// This event handler is very handy for watching all the rule book events around casting
         /// </summary>
         /// <param name="rule"></param>
-        public void OnBeforeEventAboutToTrigger([NotNull] RulebookEvent rule) { }
+        public void OnBeforeEventAboutToTrigger([NotNull] RulebookEvent rule) {
+            if (rule is RuleCastSpell evt) {
+                if (_castTask.SpellToCast == evt.Spell && _castTask.Target == evt.SpellTarget) {
+                    try {
+                        // Set proper context so retentions may be released
+                        Context = evt.Context;
+
+                        // Check for needed arcanist reservoir points
+                        // Don't spend points if this is an Azata Zippy Magic secondary cast
+                        if (ArcaneReservoirPointsNeeded > 0 && !IsAzataZippyMagicSecondaryCast) {
+                            if (ArcaneReservoirPointsAvailable >= ArcaneReservoirPointsNeeded) {
+                                DecreaseArcanePoolPoints(ArcaneReservoirPointsNeeded);
+                            } 
+                            else {
+                                // Not enough points are available, so cancel the cast
+                                Main.Error($"Unable to cast {_castTask.SpellToCast.Name} for {_castTask.Target.Unit.CharacterName} because {ArcaneReservoirPointsNeeded} arcane reservoir points are needed but only {ArcaneReservoirPointsAvailable} arcane reservoir points are available");
+                                evt.CancelAbilityExecution();
+                                return;
+                            }
+                        }
+
+                        // Disable the logs for this cast
+                        evt.Context.DisableLog = true;
+                        evt.DisableBattleLogSelf = true;
+
+                        // Always set to true if controlling Azata Zippy Magic Secondary casts
+                        // This prevents the game's secondary cast from triggering, and allows us to control casting
+                        if (IsControllingAzataZippyMagicSecondaryCast) {
+                            evt.IsDuplicateSpellApplied = true;
+                        }
+
+                        // Spend spell slots if requested (e.g. cast directly from a rule trigger)
+                        if (_spendSpellSlot) {
+                            _castTask.SpellToCast.Spend();
+                        }
+                    } 
+                    catch (Exception ex) {
+                        Main.Error(ex, "Casting: OnBeforeRulebookEventTrigger");
+                    }
+                }
+            }
+        }
 
         #endregion
 
@@ -223,7 +217,7 @@ namespace BubbleBuffs.Handlers {
         /// <summary>
         /// Release spell modifier retentions
         /// </summary>
-        private void ReleaseAllRetentions() {
+        public void ReleaseAllRetentions() {
             if (UseShareTransmutation) _castTask.Caster.State.Features.ShareTransmutation.Release();
             if (UseImprovedShareTransmutation) _castTask.Caster.State.Features.ImprovedShareTransmutation.Release();
             if (UsePowerfulChange) _castTask.Caster.State.Features.PowerfulChange.Release();
