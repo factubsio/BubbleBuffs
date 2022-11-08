@@ -1,5 +1,6 @@
 ﻿using BubbleBuffs.Extensions;
 using JetBrains.Annotations;
+using Kingmaker;
 using Kingmaker.Blueprints.Classes;
 using Kingmaker.PubSubSystem;
 using Kingmaker.RuleSystem;
@@ -79,6 +80,7 @@ namespace BubbleBuffs.Handlers {
             // If this is an Azata Zippy magic secondary cast, then increase the number of spell slots available to offset the spell cast
             if (IsAzataZippyMagicSecondaryCast) {
                 IncreaseSpellSlotsAvailable(_castTask.SpellToCast, _castTask.SpellToCast.SpellSlotCost);
+                AddMaterialComponentsForSpell(_castTask.SpellToCast, _castTask.SpellToCast.SpellSlotCost);
             }
         }
 
@@ -253,6 +255,24 @@ namespace BubbleBuffs.Handlers {
                         x.LinkedSlots.ToList().ForEach(x => x.Available = true);
                     }
                 });
+            }
+        }
+
+        private void AddMaterialComponentsForSpell(AbilityData spell, int amount) {
+            // Check if this is a converted spell.  A good test example is Magic Weapon, Primary
+            if (spell.ConvertedFrom != null) {
+                AddMaterialComponentsForSpell(spell.ConvertedFrom, amount);
+                return;
+            }
+
+            // Get the material cost
+            if (spell.Blueprint.MaterialComponent != null && spell.Blueprint.MaterialComponent.Item != null) {
+                // Get the cost
+                var item = spell.Blueprint.MaterialComponent.Item;
+                var itemCost = spell.Blueprint.MaterialComponent.Count;
+
+                // Add the cost to the inventory
+                if (itemCost > 0) Game.Instance.Player.Inventory.Add(item, itemCost * amount);
             }
         }
 
