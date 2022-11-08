@@ -21,42 +21,6 @@ namespace BubbleBuffs.Handlers {
 
         #region Properties
 
-        private bool UseShareTransmutation {
-            get {
-                var casterHasAvailable = _castTask.Caster.HasFact(Resources.GetBlueprint<BlueprintFeature>("c4ed8d1a90c93754eacea361653a7d56"));
-                var userSelectedForSpell = _castTask.ShareTransmutation;
-
-                return casterHasAvailable && userSelectedForSpell;
-            }
-        }
-
-        private bool UseImprovedShareTransmutation {
-            get {
-                var casterHasAvailable = _castTask.Caster.HasFact(Resources.GetBlueprint<BlueprintFeature>("c94d764d2ce3cd14f892f7c00d9f3a70"));
-                var userSelectedForSpell = _castTask.ShareTransmutation;
-
-                return casterHasAvailable && userSelectedForSpell;
-            }
-        }
-
-        private bool UsePowerfulChange {
-            get {
-                var casterHasAvailable = _castTask.Caster.HasFact(Resources.GetBlueprint<BlueprintFeature>("5e01e267021bffe4e99ebee3fdc872d1"));
-                var userSelectedForSpell = _castTask.PowerfulChange;
-
-                return casterHasAvailable && userSelectedForSpell;
-            }
-        }
-
-        private bool UseImprovedPowerfulChange {
-            get {
-                var casterHasAvailable = _castTask.Caster.HasFact(Resources.GetBlueprint<BlueprintFeature>("c94d764d2ce3cd14f892f7c00d9f3a70"));
-                var userSelectedForSpell = _castTask.PowerfulChange;
-
-                return casterHasAvailable && userSelectedForSpell;
-            }
-        }
-
         private int ArcaneReservoirPointsAvailable {
             get {
                 return _castTask.Caster?.Resources?.PersistantResources?.Where(x => x.Blueprint.AssetGuidThreadSafe == "cac948cbbe79b55459459dd6a8fe44ce")?.First()?.Amount ?? 0;
@@ -208,20 +172,20 @@ namespace BubbleBuffs.Handlers {
         /// Set spell modifier retentions
         /// </summary>
         private void SetAllRetentions() {
-            if (UseShareTransmutation) _castTask.Caster.State.Features.ShareTransmutation.Retain();
-            if (UseImprovedShareTransmutation) _castTask.Caster.State.Features.ImprovedShareTransmutation.Retain();
-            if (UsePowerfulChange) _castTask.Caster.State.Features.PowerfulChange.Retain();
-            if (UseImprovedPowerfulChange) _castTask.Caster.State.Features.ImprovedPowerfulChange.Retain();
+            if (_castTask.Retentions.ShareTransmutation) _castTask.Caster.State.Features.ShareTransmutation.Retain();
+            if (_castTask.Retentions.ImprovedShareTransmutation) _castTask.Caster.State.Features.ImprovedShareTransmutation.Retain();
+            if (_castTask.Retentions.PowerfulChange) _castTask.Caster.State.Features.PowerfulChange.Retain();
+            if (_castTask.Retentions.ImprovedPowerfulChange) _castTask.Caster.State.Features.ImprovedPowerfulChange.Retain();
         }
 
         /// <summary>
         /// Release spell modifier retentions
         /// </summary>
         public void ReleaseAllRetentions() {
-            if (UseShareTransmutation) _castTask.Caster.State.Features.ShareTransmutation.Release();
-            if (UseImprovedShareTransmutation) _castTask.Caster.State.Features.ImprovedShareTransmutation.Release();
-            if (UsePowerfulChange) _castTask.Caster.State.Features.PowerfulChange.Release();
-            if (UseImprovedPowerfulChange) _castTask.Caster.State.Features.ImprovedPowerfulChange.Release();
+            if (_castTask.Retentions.ShareTransmutation) _castTask.Caster.State.Features.ShareTransmutation.Release();
+            if (_castTask.Retentions.ImprovedShareTransmutation) _castTask.Caster.State.Features.ImprovedShareTransmutation.Release();
+            if (_castTask.Retentions.PowerfulChange) _castTask.Caster.State.Features.PowerfulChange.Release();
+            if (_castTask.Retentions.ImprovedPowerfulChange) _castTask.Caster.State.Features.ImprovedPowerfulChange.Release();
         }
 
         private void RemoveSpellResistance() {

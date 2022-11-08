@@ -1,10 +1,13 @@
-﻿using BubbleBuffs.Handlers;
+﻿using BubbleBuffs.Extensions;
+using BubbleBuffs.Handlers;
 using Kingmaker.PubSubSystem;
 using Kingmaker.RuleSystem;
 using Kingmaker.RuleSystem.Rules.Abilities;
+using Kingmaker.Utility;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace BubbleBuffs {
@@ -28,20 +31,24 @@ namespace BubbleBuffs {
         }
 
         public IEnumerator CreateSpellCastRoutine(List<CastTask> tasks) {
-            var batchCount = (tasks.Count + BATCH_SIZE - 1) / BATCH_SIZE;
-            for (int batch = 0; batch < batchCount; batch++) {
-                for (int item = 0; item < BATCH_SIZE; item++) {
-                    var index = batch * BATCH_SIZE + item;
-                    if (index >= tasks.Count)
-                        break;
+            var tasks_WithRetentions = tasks.Where(x => x.Retentions.Any);
+            var batches_WithoutRetentions = tasks.Where(x => !x.Retentions.Any).Chunk(BATCH_SIZE);
 
-                    Cast(tasks[index]);
-                }
+            // Batches without retentions
+            foreach (var batch in batches_WithoutRetentions) {
+                batch.ForEach(task => {
+                    Cast(task);
+                });
 
                 yield return new WaitForSeconds(DELAY);
-
             }
-            yield return null;
+
+            // Batches with retentions
+            foreach (var task in tasks_WithRetentions) {
+                Cast(task);
+
+                yield return new WaitForSeconds(DELAY);
+            }
         }
     }
 }

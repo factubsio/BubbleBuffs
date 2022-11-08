@@ -1,12 +1,14 @@
 ﻿using BubbleBuffs.Config;
 using Kingmaker;
 using Kingmaker.Blueprints;
+using Kingmaker.Blueprints.Classes;
 using Kingmaker.Controllers;
 using Kingmaker.EntitySystem.Entities;
 using Kingmaker.RuleSystem;
 using Kingmaker.RuleSystem.Rules.Abilities;
 using Kingmaker.UI.Models.Log.CombatLog_ThreadSystem;
 using Kingmaker.UI.Models.Log.CombatLog_ThreadSystem.LogThreads.Common;
+using Kingmaker.UnitLogic;
 using Kingmaker.UnitLogic.Abilities;
 using Kingmaker.UnitLogic.Abilities.Components;
 using Kingmaker.UnitLogic.Buffs.Blueprints;
@@ -206,7 +208,7 @@ namespace BubbleBuffs {
             messageLog.AddMessage(message);
         }
     }
-
+    //castTask.Retentions.Any
     public class CastTask {
         public AbilityData SpellToCast;
         public AbilityData SlottedSpell;
@@ -217,5 +219,61 @@ namespace BubbleBuffs {
         public TargetWrapper Target;
         public UnitEntityData Caster;
         public bool SelfCastOnly;
+
+        public Retentions Retentions {
+            get {
+                return new Retentions(this);
+            }
+        }
+    }
+
+    public class Retentions {
+        private CastTask _castTask;
+
+        public Retentions(CastTask castTask) {
+            _castTask = castTask;
+        }
+
+        public bool ShareTransmutation {
+            get {
+                var casterHasAvailable = _castTask.Caster.HasFact(Resources.GetBlueprint<BlueprintFeature>("c4ed8d1a90c93754eacea361653a7d56"));
+                var userSelectedForSpell = _castTask.ShareTransmutation;
+
+                return casterHasAvailable && userSelectedForSpell;
+            }
+        }
+
+        public bool ImprovedShareTransmutation {
+            get {
+                var casterHasAvailable = _castTask.Caster.HasFact(Resources.GetBlueprint<BlueprintFeature>("c94d764d2ce3cd14f892f7c00d9f3a70"));
+                var userSelectedForSpell = _castTask.ShareTransmutation;
+
+                return casterHasAvailable && userSelectedForSpell;
+            }
+        }
+
+        public bool PowerfulChange {
+            get {
+                var casterHasAvailable = _castTask.Caster.HasFact(Resources.GetBlueprint<BlueprintFeature>("5e01e267021bffe4e99ebee3fdc872d1"));
+                var userSelectedForSpell = _castTask.PowerfulChange;
+
+                return casterHasAvailable && userSelectedForSpell;
+            }
+        }
+
+        public bool ImprovedPowerfulChange {
+            get {
+                var casterHasAvailable = _castTask.Caster.HasFact(Resources.GetBlueprint<BlueprintFeature>("c94d764d2ce3cd14f892f7c00d9f3a70"));
+                var userSelectedForSpell = _castTask.PowerfulChange;
+
+                return casterHasAvailable && userSelectedForSpell;
+            }
+        }
+
+        public bool Any {
+            get {
+                return ShareTransmutation || ImprovedShareTransmutation || PowerfulChange || ImprovedPowerfulChange;
+            }
+        }
     }
 }
