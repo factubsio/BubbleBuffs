@@ -9,6 +9,7 @@ using Kingmaker.UnitLogic.Mechanics.Actions;
 using BubbleBuffs.Extensions;
 using Newtonsoft.Json;
 using Kingmaker.Utility;
+using static Kingmaker.Blueprints.BlueprintAbilityResource;
 
 namespace BubbleBuffs {
 
@@ -191,6 +192,7 @@ namespace BubbleBuffs {
                     caster.CustomCap = casterState.Cap;
                     caster.ShareTransmutation = casterState.ShareTransmutation;
                     caster.PowerfulChange = casterState.PowerfulChange;
+                    caster.AzataZippyMagic = casterState.UseAzataZippyMagic;
                 }
             }
         }
@@ -218,18 +220,47 @@ namespace BubbleBuffs {
             return false;
         }
 
+        private int CreditsNeeded(AbilityData spell) {
+            if (spell.ConvertedFrom != null) {
+                return CreditsNeeded(spell.ConvertedFrom);
+            }
+
+            if (spell.Spellbook.Blueprint.Spontaneous) {
+                return 1;
+            }
+            else {
+                if (spell.SpellSlot?.LinkedSlots != null && (spell.SpellSlot?.IsOpposition ?? false)) {
+                    return spell.SpellSlot.LinkedSlots.Count();
+                }
+                else {
+                    return 1;
+                }
+            }
+        }
+
         public void Validate() {
             foreach (var target in wanted) {
 
                 for (int n = 0; n < CasterQueue.Count; n++) {
                     var caster = CasterQueue[n];
-                    if (caster.AvailableCredits > 0) {
+
+                    // Available Credit check incorporating Azata Zippy Magic
+                    var numberOfSpellCastsByCaster = ActualCastQueue?.Where(x => x.Item2 == caster).Count() ?? 0;
+                    var creditsNeeded = CreditsNeeded(caster.spell);
+                    var hasAvailableCredits = caster.AvailableCredits >= creditsNeeded || (caster.AvailableCredits < creditsNeeded && caster.AvailableCredits >= 0 && caster.AzataZippyMagic && numberOfSpellCastsByCaster % 2 == 1);
+
+                    if (hasAvailableCredits) {
                         //Main.Verbose($"checking if: {caster.who.CharacterName} => {Name} => {Bubble.Group[i].CharacterName}");
                         if (!caster.CanTarget(target)) continue;
 
                         //Main.Verbose($"casting: {caster.who.CharacterName} => {Name} => {Bubble.Group[i].CharacterName}");
-                        caster.ChargeCredits(1);
-                        caster.spent++;
+                        
+                        // Azata Zippy Magic - only charge credits if not prime cast
+                        if (!caster.AzataZippyMagic || (caster.AzataZippyMagic && numberOfSpellCastsByCaster % 2 == 0)) {
+                            // Check for opposition school
+                            caster.ChargeCredits(creditsNeeded);
+                            caster.spent += creditsNeeded;
+                        }
                         given.Add(target);
 
                         if (ActualCastQueue == null)
@@ -296,6 +327,7 @@ namespace BubbleBuffs {
         public bool ArchmageArmor = false;
         public bool ShareTransmutation;
         public bool PowerfulChange;
+        public bool AzataZippyMagic;
         public UnitEntityData who;
         public AbilityData baseSpell;
         public Spellbook book;

@@ -804,6 +804,7 @@ namespace BubbleBuffs {
 
         private static BlueprintFeature PowerfulChangeFeature => Resources.GetBlueprint<BlueprintFeature>("5e01e267021bffe4e99ebee3fdc872d1");
         private static BlueprintFeature ShareTransmutationFeature => Resources.GetBlueprint<BlueprintFeature>("c4ed8d1a90c93754eacea361653a7d56");
+        private static BlueprintFeature AzataZippyMagicFeature => Resources.GetBlueprint<BlueprintFeature>("30b4200f897ba25419ba3a292aed4053");
 
         private void MakeDetailsView(GameObject portraitPrefab,
                                      GameObject framePrefab,
@@ -964,7 +965,7 @@ namespace BubbleBuffs {
             var popGrid = casterPopout.AddComponent<GridLayoutGroup>();
             popGrid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
             popGrid.constraintCount = 1;
-            int width = 450;
+            int width = 550;
             if (Language.Locale == Locale.deDE)
                 width = 650;
             popGrid.cellSize = new Vector2(width, 40);
@@ -1039,6 +1040,7 @@ namespace BubbleBuffs {
             var (blacklistToggle, _) = MakePopoutToggle("bancasts".i8());
             var (powerfulChangeToggle, powerfulChangeLabel) = MakePopoutToggle("use.powerfulchange".i8());
             var (shareTransmutationToggle, shareTransmutationLabel) = MakePopoutToggle("use.sharetransmutation".i8());
+            var (azataZippyMagicToggle, azataZippyMagicLabel) = MakePopoutToggle("use.azatazippymagic".i8());
             var defaultLabelColor = shareTransmutationLabel.color;
 
             (ToggleWorkaround, TextMeshProUGUI) MakePopoutToggle(string text) {
@@ -1106,6 +1108,12 @@ namespace BubbleBuffs {
             powerfulChangeToggle.onValueChanged.AddListener(allow => {
                 if (SelectedCaster.Value >= 0 && view.Get(out var buff)) {
                     buff.CasterQueue[SelectedCaster.Value].PowerfulChange = allow;
+                    state.Recalculate(true);
+                }
+            });
+            azataZippyMagicToggle.onValueChanged.AddListener(allow => {
+                if (SelectedCaster.Value >= 0 && view.Get(out var buff)) {
+                    buff.CasterQueue[SelectedCaster.Value].AzataZippyMagic = allow;
                     state.Recalculate(true);
                 }
             });
@@ -1247,6 +1255,16 @@ namespace BubbleBuffs {
 
                     increaseCustomCapButton.Interactable = who.AvailableCredits < 100 && who.CustomCap != -1;
                     decreaseCustomCapButton.Interactable = who.AvailableCredits < 100 && who.CustomCap != 0;
+
+                    // Azata Zippy Magic
+                    azataZippyMagicToggle.isOn = who.AzataZippyMagic;
+
+                    var hasAzataZippyMagicFact = who.who.HasFact(AzataZippyMagicFeature);
+                    var isSpellMass = buff.IsMass;
+                    var canCastOnOthers = shareTransmutationToggle.isOn || !who.SelfCastOnly;
+
+                    azataZippyMagicToggle.interactable = hasAzataZippyMagicFact && !isSpellMass && canCastOnOthers;
+                    azataZippyMagicLabel.color = azataZippyMagicToggle.interactable ? defaultLabelColor : Color.gray;
 
                 }
 

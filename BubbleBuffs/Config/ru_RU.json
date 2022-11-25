@@ -4,7 +4,7 @@
   "available": "доступно",
   "available.atwill": "по желанию",
 
-  
+
 
 
 
@@ -14,7 +14,7 @@
   "showshort": "Показывать недолгие",
   "showreq": "Показывать выбранные",
   "showNOTreq": "Показывать НЕ выбранные",
-  "sort.name":  "Сортировать по названию",
+  "sort.name": "Сортировать по названию",
   "group.normal": "Нормальные",
   "group.important": "Важные",
   "group.short": "Короткие",
@@ -49,5 +49,6 @@
   "bancasts": "Не бафать",
   "use.powerfulchange": "Использовать Мощный Заряд",
   "use.sharetransmutation": "Разрешить Общую Трансмутацию",
+  "use.azatazippymagic": "Управление дополнительным усилением магии Azata Zippy",
   "nolimit": "без ограничений"
 }

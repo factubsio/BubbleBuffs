@@ -1,10 +1,13 @@
-﻿using Kingmaker.RuleSystem;
+﻿using BubbleBuffs.Extensions;
+using BubbleBuffs.Handlers;
+using Kingmaker.PubSubSystem;
+using Kingmaker.RuleSystem;
 using Kingmaker.RuleSystem.Rules.Abilities;
-using Kingmaker.UnitLogic.Abilities;
 using Kingmaker.Utility;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace BubbleBuffs {
@@ -13,75 +16,39 @@ namespace BubbleBuffs {
         public const int BATCH_SIZE = 8;
         public const float DELAY = 0.05f;
 
-        private void Cast(CastTask task) {
-            var oldResistance = task.SpellToCast.Blueprint.SpellResistance;
-            task.SpellToCast.Blueprint.SpellResistance = false;
-            bool hasShare = false;
-
+        private RuleCastSpell Cast(CastTask task) {
             try {
+                // Subscribe to the RuleCastSpell event that will be executed by the trigger
+                EventBus.Subscribe(new EngineCastingHandler(task, true));
 
-                if (task.ShareTransmutation) {
-                    var toggle = AbilityCache.CasterCache[task.Caster.UniqueId].ShareTransmutation;
-                    if (toggle?.Data.IsAvailableForCast != true) {
-                        return;
-                    }
-
-                    toggle.Data.Spend();
-                    task.Caster.State.Features.ShareTransmutation.Retain();
-                    hasShare = true;
-                }
-
-                if (task.PowerfulChange) {
-                    var toggle = AbilityCache.CasterCache[task.Caster.UniqueId].PowerfulChange;
-                    if (toggle?.Data.IsAvailableForCast != true) {
-                        return;
-                    }
-                    Rulebook.Trigger<RuleCastSpell>(new(toggle.Data, new(task.Caster)) {
-                        Context = {
-                            DisableLog = true,
-                        },
-                        DisableBattleLogSelf = true,
-                    });
-                    toggle.Data.Spend();
-                }
-
-                {
-                    Rulebook.Trigger<RuleCastSpell>(new(task.SpellToCast, task.Target) {
-                        Context = {
-                            DisableLog = true,
-                        },
-                        DisableBattleLogSelf = true,
-                    });
-                    hasShare = false;
-                    task.SlottedSpell.Spend();
-                }
-
-            } catch (Exception ex) {
-                Main.Error(ex, "casting spell");
-            } finally {
-                if (hasShare)
-                    task.Caster.State.Features.ShareTransmutation.Release();
-            }
-            task.SpellToCast.Blueprint.SpellResistance = oldResistance;
-
+                // Trigger the RuleCastSpell
+                return Rulebook.Trigger<RuleCastSpell>(new(task.SpellToCast, task.Target));
+            } 
+            catch (Exception ex) {
+                Main.Error(ex, "Instant Engine Casting");
+                return null;
+            } 
         }
 
         public IEnumerator CreateSpellCastRoutine(List<CastTask> tasks) {
-            var batchCount = (tasks.Count + BATCH_SIZE - 1) / BATCH_SIZE;
-            for (int batch = 0; batch < batchCount; batch++) {
-                for (int item = 0; item < BATCH_SIZE; item++) {
-                    var index = batch * BATCH_SIZE + item;
-                    if (index >= tasks.Count)
-                        break;
+            var tasks_WithRetentions = tasks.Where(x => x.Retentions.Any);
+            var batches_WithoutRetentions = tasks.Where(x => !x.Retentions.Any).Chunk(BATCH_SIZE);
 
-                    Cast(tasks[index]);
-                }
+            // Batches without retentions
+            foreach (var batch in batches_WithoutRetentions) {
+                batch.ForEach(task => {
+                    Cast(task);
+                });
 
                 yield return new WaitForSeconds(DELAY);
-
             }
-            yield return null;
-        }
 
+            // Batches with retentions
+            foreach (var task in tasks_WithRetentions) {
+                Cast(task);
+
+                yield return new WaitForSeconds(DELAY);
+            }
+        }
     }
 }
