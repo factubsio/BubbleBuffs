@@ -1,15 +1,14 @@
-﻿using BubbleBuffs.Extensions;
+﻿using BubbleBuffs.Config;
+using BubbleBuffs.Extensions;
+using Kingmaker.Blueprints;
 using Kingmaker.EntitySystem.Entities;
-using Kingmaker.Items;
+using Kingmaker.Enums;
 using Kingmaker.UnitLogic.Abilities.Components.AreaEffects;
-using Kingmaker.UnitLogic.Buffs;
 using Kingmaker.UnitLogic.Mechanics.Actions;
 using Kingmaker.Utility;
 using System;
-using System.Linq;
 using System.Collections.Generic;
-using Kingmaker.Enums;
-using Kingmaker.Blueprints;
+using System.Linq;
 
 namespace BubbleBuffs {
 
@@ -132,6 +131,12 @@ namespace BubbleBuffs {
             IsLong = isLong;
         }
 
+        public AreaBuffEffect(ModBuffs.ModBuff modBuff) {
+            Applied = new(modBuff.AssetID);
+            IsLong = modBuff.IsLong;
+            PetType = modBuff.PetType;
+        }
+
         public PetType? PetType { get; set; }
 
         public void AppendTo(AbilityCombinedEffects effect) {
@@ -152,12 +157,18 @@ namespace BubbleBuffs {
             IsLong = action.IsLong();
         }
 
+        public BuffEffect(ModBuffs.ModBuff modBuff) {
+            Applied = new(modBuff.AssetID);
+            IsLong = modBuff.IsLong;
+            PetType = modBuff.PetType;
+        }
+
         public PetType? PetType { get; set; }
 
         public void AppendTo(AbilityCombinedEffects effect) {
             if (Applied != Guid.Empty) {
-            if (PetType != null)
-                effect.AddPetBuff(Applied, PetType.Value, IsLong);
+                if (PetType != null)
+                    effect.AddPetBuff(Applied, PetType.Value, IsLong);
                 else
                     effect.AddBuff(Applied, IsLong);
             }
@@ -181,6 +192,15 @@ namespace BubbleBuffs {
 
             IsLong = action.IsLong();
         }
+
+        public WornItemEnchantmentEffect(ModBuffs.ModBuff modBuff) {
+            Applied = new(modBuff.AssetID);
+            IsLong = modBuff.IsLong;
+            PetType = modBuff.PetType;
+            PrimaryWeapon = modBuff.Type == ModBuffs.ModBuffType.PrimaryWeapon;
+            SecondaryWeapon = modBuff.Type == ModBuffs.ModBuffType.SecondaryWeapon;
+        }
+
         public void AppendTo(AbilityCombinedEffects effect) {
             if (PrimaryWeapon)
                 effect.AddPrimaryWeaponEnchant(Applied, IsLong);

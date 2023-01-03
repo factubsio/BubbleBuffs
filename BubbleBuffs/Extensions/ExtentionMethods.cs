@@ -29,6 +29,7 @@ using Kingmaker.UnitLogic.Mechanics;
 using Kingmaker.EntitySystem;
 using Kingmaker.UnitLogic.Abilities.Components.AreaEffects;
 using BubbleBuffs;
+using BubbleBuffs.Config;
 
 namespace BubbleBuffs.Extensions {
     static class AbilityExtensions {
@@ -184,7 +185,9 @@ namespace BubbleBuffs.Extensions {
             LogVerbose(level, $"getting buffs for spell: {spell.Name}");
             spell = spell.DeTouchify();
             LogVerbose(level, $"detouchified-to: {spell.Name}");
-            if (spell.TryGetComponent<AbilityEffectRunAction>(out var runAction)) {
+            if (ModSettings.ModBuffs.Buffs.ContainsKey(spell.AssetGuid.m_Guid.ToString())) {
+                return ModSettings.ModBuffs.GetEffects(spell.AssetGuid.m_Guid);
+            } else if (spell.TryGetComponent<AbilityEffectRunAction>(out var runAction)) {
                 return runAction.Actions.Actions.SelectMany(a => a.GetBeneficialBuffs(level + 1));
             } else {
                 return new IBeneficialEffect[] { };

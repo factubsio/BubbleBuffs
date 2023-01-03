@@ -33,7 +33,6 @@ namespace BubbleBuffs.Config {
             Languages[locale] = json.Deserialize<Dictionary<string, string>>(jsonReader);
 
             Main.Log($"Added language pack for: {locale}");
-
         }
 
         public static void Initialise() {
@@ -67,11 +66,13 @@ namespace BubbleBuffs.Config {
         public static Fixes Fixes;
         public static AddedContent AddedContent;
         public static Blueprints Blueprints;
+        public static ModBuffs ModBuffs;
 
         public static void LoadAllSettings() {
-            LoadSettings("Fixes.json", ref Fixes);
-            LoadSettings("AddedContent.json", ref AddedContent);
-            LoadSettings("Blueprints.json", ref Blueprints);
+         //   LoadSettings("Fixes.json", ref Fixes);
+          //  LoadSettings("AddedContent.json", ref AddedContent);
+           // LoadSettings("Blueprints.json", ref Blueprints);
+            LoadSettings("ModBuffs.json", ref ModBuffs);
             Language.Initialise();
         }
         private static void LoadSettings<T>(string fileName, ref T setting) where T : IUpdatableSettings {
@@ -80,7 +81,6 @@ namespace BubbleBuffs.Config {
             Directory.CreateDirectory(userConfigFolder);
             var resourcePath = $"BubbleBuffs.Config.{fileName}";
             var userPath = $"{userConfigFolder}{Path.DirectorySeparatorChar}{fileName}";
-
 
             using (Stream stream = assembly.GetManifestResourceStream(resourcePath))
             using (StreamReader reader = new StreamReader(stream)) {

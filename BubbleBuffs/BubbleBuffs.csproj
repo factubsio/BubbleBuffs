@@ -184,6 +184,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AnimatedExecutionEngine.cs" />
+    <Compile Include="Config\ModBuffs.cs" />
     <Compile Include="IBeneficialEffect.cs" />
     <Compile Include="BubbleBuff.cs" />
     <Compile Include="BubbleBuffer.cs" />
@@ -238,6 +239,7 @@
     <None Include="AssetBundles.manifest">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <EmbeddedResource Include="Config\ModBuffs.json" />
     <None Include="Info.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
