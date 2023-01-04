@@ -97,7 +97,7 @@ namespace BubbleBuffs.Config {
                     }
                 }
             }
-            File.WriteAllText(userPath, JsonConvert.SerializeObject(setting, Formatting.Indented));
+            //File.WriteAllText(userPath, JsonConvert.SerializeObject(setting, Formatting.Indented));
         }
     }
 }

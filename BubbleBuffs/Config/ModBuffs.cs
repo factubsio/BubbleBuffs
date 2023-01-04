@@ -7,7 +7,11 @@ namespace BubbleBuffs.Config {
         public Dictionary<string, List<ModBuff>> Buffs = new();
 
         public void OverrideSettings(IUpdatableSettings userSettings) {
-            Buffs = (userSettings as ModBuffs).Buffs;
+            // Append rather than override. This does mean you can't remove buffs but it feels better than the 
+            // alternative, where user settings result in new pushes being ignored!
+            foreach (var entry in (userSettings as ModBuffs).Buffs) {
+                Buffs[entry.Key] = entry.Value;
+            }
         }
 
         public List<IBeneficialEffect> GetEffects(Guid buff) {
