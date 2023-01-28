@@ -21,6 +21,13 @@
         "IsLong": true,
         "Type": "PrimaryWeapon"
       }
+    ],
+
+    "e12e8537-7bfc-415e-9d50-87456dd0a3a1": [
+      {
+        "AssetID": "e12e8537-7bfc-415e-9d50-87456dd0a3a1",
+        "IsLong": true
+      }
     ]
   }
 }
