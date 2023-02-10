@@ -94,7 +94,7 @@ namespace BubbleBuffs.Extensions {
 
         public static IEnumerable<IBeneficialEffect> GetBeneficialBuffs(this GameAction action, int level = 0) {
             if (action != null) {
-                LogVerbose(level, $"Extracting buffs from: {action.name}");
+                LogVerbose(level, $"Extracting buffs from: {action.name}, {action.GetType().Name}");
                 if (action is ContextActionApplyBuff applyBuff && applyBuff.Buff.IsBeneficial(level + 1)) {
                     yield return new BuffEffect(applyBuff);
                     LogVerbose(level + 1, $"FOUND: applyBuff {action.name}");
@@ -107,6 +107,12 @@ namespace BubbleBuffs.Extensions {
                 } else if (action is ContextActionEnchantWornItem enchantItem) {
                     LogVerbose(level + 1, $"FOUND: enchantItem {action.name}");
                     yield return new WornItemEnchantmentEffect(enchantItem);
+                } else if (action.GetType().Name.Equals("ContextActionApplyBuffRanks")) {
+                    // This is from TabletopTweaks-Core. Since it's all reflection don't bother with the full logic,
+                    // just add it, treat it as long, and let users hide if they want.
+                    LogVerbose(level + 1, $"FOUND: applyBuffRanks {action.name}");
+                    var buffRef = (BlueprintBuffReference) action.GetType().GetField("m_Buff").GetValue(action);
+                    yield return new BuffEffect(buffRef.deserializedGuid.m_Guid);
                 } else if (action is ContextActionPartyMembers applyParty) {
                     LogVerbose(level, $"recursing into partyMembers");
                     foreach (var subEffect in applyParty.Action.Actions.Where(a => a != null).SelectMany(a => a.GetBeneficialBuffs(level + 1)))
