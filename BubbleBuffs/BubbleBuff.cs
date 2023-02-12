@@ -225,6 +225,9 @@ namespace BubbleBuffs {
                 return CreditsNeeded(spell.ConvertedFrom);
             }
 
+            if (spell.Spellbook == null)
+                return 1;
+
             if (spell.Spellbook.Blueprint.Spontaneous) {
                 return 1;
             }
