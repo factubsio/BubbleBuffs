@@ -25,6 +25,7 @@ namespace BubbleBuffs {
 
     public class BufferState {
         private readonly Dictionary<BuffKey, BubbleBuff> BuffsByKey = new();
+        private readonly HashSet<BlueprintFeature> Feats = new();
         //public List<Buff> buffList = new();
         public IEnumerable<BubbleBuff> BuffList;
 

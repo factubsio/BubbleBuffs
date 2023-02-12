@@ -1545,6 +1545,21 @@ namespace BubbleBuffs {
 
     class SyncBubbleHud : MonoBehaviour {
         private GameObject bubbleHud => GlobalBubbleBuffer.Instance.bubbleHud;
+        private CanvasGroup src;
+        private void Awake() {
+            src = GetComponent<CanvasGroup>();
+            if (src == null)
+                Main.Log("src canvas group is null");
+        }
+
+        private void Update() {
+            if (bubbleHud == null) return;
+
+            if (src.alpha < 0.1)
+                bubbleHud.SetActive(false);
+            else if (src.alpha > 0.9)
+                bubbleHud.SetActive(true);
+        }
 
         private void OnEnable() {
             if (bubbleHud != null && !bubbleHud.activeSelf)
