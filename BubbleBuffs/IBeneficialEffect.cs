@@ -152,6 +152,11 @@ namespace BubbleBuffs {
             IsLong = action.IsLong();
         }
 
+        public BuffEffect(Guid applied) {
+            Applied = applied;
+            IsLong = true;
+        }
+
         public PetType? PetType { get; set; }
 
         public void AppendTo(AbilityCombinedEffects effect) {
