@@ -177,6 +177,10 @@
       <HintPath>$(WrathPathDebug)\Wrath_Data\Managed\DOTween.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="dnlib">
+      <HintPath>$(WrathPathDebug)\Wrath_Data\Managed\UnityModManager\dnlib.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
     <Reference Include="UnityModManager">
       <HintPath>$(WrathPathDebug)\Wrath_Data\Managed\UnityModManager\UnityModManager.dll</HintPath>
       <Private>False</Private>
@@ -184,6 +188,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AnimatedExecutionEngine.cs" />
+    <Compile Include="EidolonEditor\CharacterPage.cs" />
+    <Compile Include="EidolonEditor\IUIProvider.cs" />
     <Compile Include="IBeneficialEffect.cs" />
     <Compile Include="BubbleBuff.cs" />
     <Compile Include="BubbleBuffer.cs" />

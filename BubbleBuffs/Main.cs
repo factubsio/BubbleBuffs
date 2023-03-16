@@ -30,6 +30,7 @@ using Newtonsoft.Json;
 using Kingmaker.Blueprints.Items.Shields;
 using Kingmaker.Designers;
 using System.Linq.Expressions;
+using BubbleBuffs.EidolonEditor;
 
 namespace BubbleBuffs {
 
@@ -131,6 +132,7 @@ namespace BubbleBuffs {
             harmony.PatchAll();
 
             GlobalBubbleBuffer.Install();
+            EidolonEditor.EidolonEditor.Install();
 
 
             return true;
@@ -149,9 +151,10 @@ namespace BubbleBuffs {
             if (Input.GetKeyDown(KeyCode.R) && (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift))) {
                 //foreach (var unit in Bubble.Group)
                 //    RestController.ApplyRest(unit);
-                var shield = Resources.GetBlueprint<BlueprintItemShield>("6a1a429f023e5134fb16a4962cb79257");
+                //var shield = Resources.GetBlueprint<BlueprintItemShield>("6a1a429f023e5134fb16a4962cb79257");
                 //Game.Instance.Player.Inventory.Add();
-                GameHelper.GetPlayerCharacter().Inventory.Add(shield, 1, null);
+                //GameHelper.GetPlayerCharacter().Inventory.Add(shield, 1, null);
+                Safely(EidolonEvolutionsPCView.ReloadUIProvider);
             }
             if (Input.GetKeyDown(KeyCode.B) && (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift))) {
                 modEntry.GetType().GetMethod("Reload", BindingFlags.NonPublic | BindingFlags.Instance).Invoke(modEntry, new object[] {});

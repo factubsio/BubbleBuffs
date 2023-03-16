@@ -9,7 +9,7 @@ using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 namespace BubbleBuffs {
-    static class UIHelpers {
+    public static class UIHelpers {
         public static WidgetPaths_1_0 WidgetPaths;
         public static Transform Settings => SceneManager.GetSceneByName("UI_LoadingScreen_Scene").GetRootGameObjects().First(x => x.name.StartsWith("CommonPCView")).ChildTransform("Canvas/SettingsView");
         public static Transform StaticRoot => Game.Instance.UI.Canvas.transform;
@@ -133,7 +133,7 @@ namespace BubbleBuffs {
             return ret;
     }
     }
-    class WidgetPaths_1_0 {
+    public class WidgetPaths_1_0 {
         public virtual string SpellScreen => "SpellbookView/SpellbookScreen";
         public virtual string MythicView => "MythicInfoView";
         public virtual string EncyclopediaView => "EncyclopediaView";
@@ -141,24 +141,24 @@ namespace BubbleBuffs {
         public virtual string CharacterScreen => "CharacterInfoView/CharacterScreen";
     }
 
-    class WidgetPaths_1_1 : WidgetPaths_1_0 {
+    public class WidgetPaths_1_1 : WidgetPaths_1_0 {
         public override string SpellScreen => "SpellbookPCView/SpellbookScreen";
         public override string MythicView => "MythicInfoPCView";
         public override string EncyclopediaView => "EncyclopediaPCView";
         public override string CharacterScreen => "CharacterInfoPCView/CharacterScreen";
     }
 
-    class WidgetPaths_1_2 : WidgetPaths_1_1 {
+    public class WidgetPaths_1_2 : WidgetPaths_1_1 {
 
     }
-    class WidgetPaths_1_4 : WidgetPaths_1_2 {
+    public class WidgetPaths_1_4 : WidgetPaths_1_2 {
         public override string SpellScreen => "Background/Windows/SpellbookPCView/SpellbookScreen";
         public override string MythicView => "Background/Windows/MythicInfoPCView";
         public override string EncyclopediaView => "Background/Windows/EncyclopediaPCView";
         public override string CharacterScreen => "Background/Windows/CharacterInfoPCView/CharacterScreen";
 
     }
-    class WidgetPaths_2_0 : WidgetPaths_1_4 {
+    public class WidgetPaths_2_0 : WidgetPaths_1_4 {
 
     }
 }
