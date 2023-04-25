@@ -223,10 +223,10 @@ namespace BubbleBuffs {
         }
 
         private static void FadeOut(GameObject obj) {
-            obj.GetComponent<FadeAnimator>().DisappearAnimation();
+            obj?.GetComponent<FadeAnimator>()?.DisappearAnimation();
         }
         private static void FadeIn(GameObject obj) {
-            obj.GetComponent<FadeAnimator>().AppearAnimation();
+            obj?.GetComponent<FadeAnimator>()?.AppearAnimation();
         }
 
         private List<Material> _ToAnimate = new();
