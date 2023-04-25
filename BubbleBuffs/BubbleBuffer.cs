@@ -115,12 +115,26 @@ namespace BubbleBuffs {
                 var eiToggle2 = UIHelpers.SpellbookScreen.Find("MainContainer/KnownSpells/ToggleMetamagic");
                 var eiToggle1 = UIHelpers.SpellbookScreen.Find("MainContainer/KnownSpells/TogglePossibleSpells");
 
+#if true 
+                // FIXME - make this more robust to add/remove of stuff in EI
+                List<RectTransform> eiToggles = new() { (RectTransform)eiToggle0 };
+                if (eiToggle1 != null) eiToggles.Add((RectTransform)eiToggle1);
+                if (eiToggle2 != null) eiToggles.Add((RectTransform)eiToggle2);
+
+                int i = 0;
+                foreach (var eiToggle in eiToggles) {
+                    eiToggle.localPosition = new Vector2(430.0f, -392.0f - 30f * i);
+                    eiToggle.localScale = new Vector3(0.8f, 0.8f, .8f);
+                    i += 1;
+                }
+#else
                 RectTransform[] eiToggles = { (RectTransform)eiToggle0, (RectTransform)eiToggle1, (RectTransform)eiToggle2 };
 
                 for (int i = 0; i < eiToggles.Length; i++) {
                     eiToggles[i].localPosition = new Vector2(430.0f, -392.0f - 30f * i);
                     eiToggles[i].localScale = new Vector3(0.8f, 0.8f, .8f);
                 }
+#endif
 
                 var eiLearnAll = UIHelpers.SpellbookScreen.Find("MainContainer/LearnAllSpells").transform as RectTransform;
 
