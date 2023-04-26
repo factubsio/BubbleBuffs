@@ -300,7 +300,7 @@ namespace BubbleBuffs {
 
         internal void Hide() {
             FadeOut(Root);
-            Root.SetActive(false);
+            Root?.SetActive(false);
         }
 
         private static GameObject MakeToggle(GameObject togglePrefab, Transform parent, float x, float y, string text, string name, float scale = 1) {
