@@ -244,7 +244,10 @@ namespace BubbleBuffs {
             NoSpellbooksContainer = transform.Find("NoSpellbooksContainer").gameObject;
             Main.Verbose($"NospellbooksContainer: {NoSpellbooksContainer != null}");
 
-            PartyView = UIHelpers.StaticRoot.Find("NestedCanvas2/PartyPCView").gameObject.GetComponent<PartyPCView>();
+            var partyViewTransform = UIUtility.IsGlobalMap()
+                ? UIHelpers.UIRoot.Find("PartyView")
+                : UIHelpers.UIRoot.Find("NestedCanvas2/PartyPCView");
+            PartyView = partyViewTransform.gameObject.GetComponent<PartyPCView>();
 
             Main.Verbose($"PartyView: {PartyView != null}");
 
@@ -426,7 +429,7 @@ namespace BubbleBuffs {
         public GameObject expandButtonPrefab;
 
         private void CreateWindow() {
-            var staticRoot = UIHelpers.StaticRoot;
+            var staticRoot = UIHelpers.UIRoot;
 
 
             var portraitPrefab = staticRoot.Find("NestedCanvas2/PartyPCView/Viewport/Content/PartyCharacterView_01").gameObject;
@@ -582,7 +585,7 @@ namespace BubbleBuffs {
             toggleSettings.Rect().pivot = new Vector2(1, 0);
             toggleSettings.Rect().SetAnchor(.93, .10);
 
-            var actionBarView = UIHelpers.StaticRoot.Find("NestedCanvas1/ActionBarPcView").GetComponent<ActionBarPCView>();
+            var actionBarView = UIHelpers.UIRoot.Find("NestedCanvas1/ActionBarPcView").GetComponent<ActionBarPCView>();
             var panel = GameObject.Instantiate(actionBarView.m_DragSlot.m_ConvertedView.gameObject, toggleSettings.transform);
             panel.DestroyComponents<ActionBarConvertedPCView>();
             panel.DestroyComponents<GridLayoutGroup>();
@@ -859,7 +862,7 @@ namespace BubbleBuffs {
 
             ReactiveProperty<int> SelectedCaster = new ReactiveProperty<int>(-1);
 
-            var actionBarView = UIHelpers.StaticRoot.Find("NestedCanvas1/ActionBarPcView").GetComponent<ActionBarPCView>();
+            var actionBarView = UIHelpers.UIRoot.Find("NestedCanvas1/ActionBarPcView").GetComponent<ActionBarPCView>();
             Main.VerboseNotNull(() => actionBarView);
 
             var spellPopout = GameObject.Instantiate(actionBarView.m_DragSlot.m_ConvertedView.gameObject, detailsRect);
