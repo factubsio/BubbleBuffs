@@ -72,7 +72,7 @@ namespace BubbleBuffs.Extensions {
         }
 
         public static bool IsLong(this ContextActionApplyBuff action) {
-            return action.Permanent || (action.UseDurationSeconds && action.DurationSeconds >= 60) || action.DurationValue.Rate != DurationRate.Rounds;
+            return action.Permanent || (action.UseDurationSeconds ? action.DurationSeconds >= 60 : action.DurationValue.Rate != DurationRate.Rounds);
         }
         public static bool IsLong(this ContextActionEnchantWornItem action) {
             return action.Permanent || action.DurationValue.Rate != DurationRate.Rounds;
