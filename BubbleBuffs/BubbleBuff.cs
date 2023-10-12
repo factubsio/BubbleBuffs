@@ -192,6 +192,7 @@ namespace BubbleBuffs {
                     caster.CustomCap = casterState.Cap;
                     caster.ShareTransmutation = casterState.ShareTransmutation;
                     caster.PowerfulChange = casterState.PowerfulChange;
+                    caster.ReservoirCLBuff = casterState.ReservoirCLBuff;
                     caster.AzataZippyMagic = casterState.UseAzataZippyMagic;
                 }
             }
@@ -330,6 +331,7 @@ namespace BubbleBuffs {
         public bool ArchmageArmor = false;
         public bool ShareTransmutation;
         public bool PowerfulChange;
+        public bool ReservoirCLBuff;
         public bool AzataZippyMagic;
         public UnitEntityData who;
         public AbilityData baseSpell;

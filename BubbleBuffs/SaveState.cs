@@ -43,6 +43,8 @@ namespace BubbleBuffs {
         [JsonProperty]
         public bool PowerfulChange;
         [JsonProperty]
+        public bool ReservoirCLBuff;
+        [JsonProperty]
         public bool UseAzataZippyMagic;
     }
 

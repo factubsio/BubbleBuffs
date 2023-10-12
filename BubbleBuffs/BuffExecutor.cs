@@ -126,10 +126,19 @@ namespace BubbleBuffs {
                         if (!caster.AzataZippyMagic || (caster.AzataZippyMagic && priorSpellTasks.Count() % 2 == 0)) {
                             int neededArcanistPool = 0;
                             if (caster.PowerfulChange) {
-                                neededArcanistPool += 1;
+                                var PowerfulChangeRssLogic = AbilityCache.CasterCache[caster.who.UniqueId]?.PowerfulChange?.GetComponent<AbilityResourceLogic>();
+                                var PowerfulChangeCost = PowerfulChangeRssLogic ? PowerfulChangeRssLogic.CalculateCost(caster.spell) : 1;
+                                neededArcanistPool += Math.Max(0, PowerfulChangeCost);
                             }
                             if (caster.ShareTransmutation && caster.who != forTarget.Unit) {
-                                neededArcanistPool += 1;
+                                var ShareTransmutationRssLogic = AbilityCache.CasterCache[caster.who.UniqueId]?.ShareTransmutation?.GetComponent<AbilityResourceLogic>();
+                                var ShareTransmutationCost = ShareTransmutationRssLogic ? ShareTransmutationRssLogic.CalculateCost(caster.spell) : 1;
+                                neededArcanistPool += Math.Max(0, ShareTransmutationCost);
+                            }
+                            if (caster.ReservoirCLBuff) {
+                                var ReservoirCLBuffRssLogic = AbilityCache.CasterCache[caster.who.UniqueId]?.ReservoirCLBuff?.GetComponent<AbilityResourceLogic>();
+                                var ReservoirCLBuffCost = ReservoirCLBuffRssLogic ? ReservoirCLBuffRssLogic.CalculateCost(caster.spell) : 1;
+                                neededArcanistPool += Math.Max(0, ReservoirCLBuffCost);
                             }
 
                             if (neededArcanistPool != 0) {
@@ -175,6 +184,7 @@ namespace BubbleBuffs {
                             SpellToCast = spellToCast,
                             PowerfulChange = caster.PowerfulChange,
                             ShareTransmutation = caster.ShareTransmutation,
+                            ReservoirCLBuff = caster.ReservoirCLBuff,
                             AzataZippyMagic = caster.AzataZippyMagic,
                             IsDuplicateSpellApplied = IsDuplicateSpellApplied,
                             SelfCastOnly = caster.SelfCastOnly
@@ -214,6 +224,7 @@ namespace BubbleBuffs {
         public AbilityData SlottedSpell;
         public bool PowerfulChange;
         public bool ShareTransmutation;
+        public bool ReservoirCLBuff;
         public bool AzataZippyMagic;
         public bool IsDuplicateSpellApplied;
         public TargetWrapper Target;
