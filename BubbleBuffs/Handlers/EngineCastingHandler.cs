@@ -2,11 +2,14 @@
 using JetBrains.Annotations;
 using Kingmaker;
 using Kingmaker.Blueprints.Classes;
+using Kingmaker.Controllers.Rest;
+using Kingmaker.EntitySystem.Stats;
 using Kingmaker.PubSubSystem;
 using Kingmaker.RuleSystem;
 using Kingmaker.RuleSystem.Rules.Abilities;
 using Kingmaker.UnitLogic;
 using Kingmaker.UnitLogic.Abilities;
+using Kingmaker.UnitLogic.Abilities.Components;
 using Kingmaker.Utility;
 using System;
 using System.Linq;
@@ -17,6 +20,7 @@ namespace BubbleBuffs.Handlers {
 
         private readonly CastTask _castTask;
         private readonly bool _spendSpellSlot;
+        private ModifiableValue.Modifier _casterLevelModifier;
 
         #endregion
 
@@ -34,9 +38,16 @@ namespace BubbleBuffs.Handlers {
 
         private int ArcaneReservoirPointsNeeded {
             get {
+                var PowerfulChangeRssLogic = AbilityCache.CasterCache[_castTask.Caster.UniqueId]?.PowerfulChange?.GetComponent<AbilityResourceLogic>();
+                var ShareTransmutationCost = PowerfulChangeRssLogic ? PowerfulChangeRssLogic.CalculateCost(_castTask.SpellToCast) : 1;
+                var ShareTransmutationRssLogic = AbilityCache.CasterCache[_castTask.Caster.UniqueId]?.ShareTransmutation?.GetComponent<AbilityResourceLogic>();
+                var PowerfulChangeCost = ShareTransmutationRssLogic ? ShareTransmutationRssLogic.CalculateCost(_castTask.SpellToCast) : 1;
+                var ReservoirCLBuffRssLogic = AbilityCache.CasterCache[_castTask.Caster.UniqueId]?.ReservoirCLBuff?.GetComponent<AbilityResourceLogic>();
+                var ReservoirCLBuffCost = ReservoirCLBuffRssLogic ? ReservoirCLBuffRssLogic.CalculateCost(_castTask.SpellToCast) : 1;
                 var points = 0;
-                if (_castTask.ShareTransmutation && _castTask.Caster != _castTask.Target.Unit) points++;
-                if (_castTask.PowerfulChange) points++;
+                if (_castTask.ShareTransmutation && _castTask.Caster != _castTask.Target.Unit) points += Math.Max(0, ShareTransmutationCost);
+                if (_castTask.PowerfulChange) points += Math.Max(0, PowerfulChangeCost);
+                if (_castTask.ReservoirCLBuff) points += Math.Max(0, ReservoirCLBuffCost);
                 return points;
             }
         }
@@ -77,6 +88,7 @@ namespace BubbleBuffs.Handlers {
             // Remove spell resistance
             RemoveSpellResistance();
 
+            ModifyCasterLevel();
             // If this is an Azata Zippy magic secondary cast, then increase the number of spell slots available to offset the spell cast
             if (IsAzataZippyMagicSecondaryCast) {
                 IncreaseSpellSlotsAvailable(_castTask.SpellToCast, _castTask.SpellToCast.SpellSlotCost);
@@ -106,6 +118,8 @@ namespace BubbleBuffs.Handlers {
 
                     // Reset Spell resistance
                     ResetSpellResistance();
+
+                    RestoreCasterLevel();
                 } catch (Exception ex) {
                     Main.Error(ex, "Casting: HandleExecutionProcessEnd");
                 } finally {
@@ -274,6 +288,31 @@ namespace BubbleBuffs.Handlers {
                 // Add the cost to the inventory
                 if (itemCost > 0) Game.Instance.Player.Inventory.Add(item, itemCost * amount);
             }
+        }
+
+        /// <summary>
+        /// Change caster level based on modifiers
+        /// </summary>
+        private void ModifyCasterLevel() {
+            var bonus = 0;
+            // caster level from arcanist reservoir CL buff ability
+            if (_castTask.ReservoirCLBuff) {
+                var potent = _castTask.Caster.HasFact(Resources.GetBlueprint<BlueprintFeature>("995110cc948d5164a820403a9e903151"));
+                bonus += potent ? 2 : 1;
+            }
+            _casterLevelModifier = new() {
+                ModValue = bonus,
+                ModDescriptor = Kingmaker.Enums.ModifierDescriptor.None,
+                StackMode = ModifiableValue.StackMode.ForceStack
+            };
+            _castTask.Caster.Stats.BonusCasterLevel.AddModifier(_casterLevelModifier);
+        }
+
+        /// <summary>
+        /// Restore caster level to original state
+        /// </summary>
+        private void RestoreCasterLevel() {
+            _castTask.Caster.Stats.BonusCasterLevel.RemoveModifier(_casterLevelModifier);
         }
 
         #endregion

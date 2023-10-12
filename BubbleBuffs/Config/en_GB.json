@@ -45,7 +45,8 @@
   "bancasts": "Ban from casting",
   "use.powerfulchange": "Use Powerful Change",
   "use.sharetransmutation": "Allow Share Transmutation",
-  "use.azatazippymagic":  "Control Azata Zippy Magic Secondary Buff",
+  "use.reservoirclbuff": "Use Reservoir Caster Level Buff",
+  "use.azatazippymagic": "Control Azata Zippy Magic Secondary Buff",
   "nolimit": "no limit",
 
   "remove-all": "Remove from all",
@@ -53,7 +54,7 @@
 
   "settings": "Settings",
   "settings-toggle": "Toggle the BubbleBuffs settings panel",
-  "setting-verbose": "Use full animation casting", 
+  "setting-verbose": "Use full animation casting",
   "setting-in-combat": "Allow bubble-buffing in combat",
   "setting-overwritebuff": "Ignore existing buffs"
 

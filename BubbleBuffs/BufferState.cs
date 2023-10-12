@@ -257,6 +257,7 @@ namespace BubbleBuffs {
                     state.Cap = caster.CustomCap;
                     state.ShareTransmutation = caster.ShareTransmutation;
                     state.PowerfulChange = caster.PowerfulChange;
+                    state.ReservoirCLBuff = caster.ReservoirCLBuff;
                     state.UseAzataZippyMagic = caster.AzataZippyMagic;
                 }
             }

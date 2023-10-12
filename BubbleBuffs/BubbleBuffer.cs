@@ -1040,6 +1040,7 @@ namespace BubbleBuffs {
             var (blacklistToggle, _) = MakePopoutToggle("bancasts".i8());
             var (powerfulChangeToggle, powerfulChangeLabel) = MakePopoutToggle("use.powerfulchange".i8());
             var (shareTransmutationToggle, shareTransmutationLabel) = MakePopoutToggle("use.sharetransmutation".i8());
+            var (reservoirCLBuffToggle, reservoirCLBuffLabel) = MakePopoutToggle("use.reservoirclbuff".i8());
             var (azataZippyMagicToggle, azataZippyMagicLabel) = MakePopoutToggle("use.azatazippymagic".i8());
             var defaultLabelColor = shareTransmutationLabel.color;
 
@@ -1108,6 +1109,12 @@ namespace BubbleBuffs {
             powerfulChangeToggle.onValueChanged.AddListener(allow => {
                 if (SelectedCaster.Value >= 0 && view.Get(out var buff)) {
                     buff.CasterQueue[SelectedCaster.Value].PowerfulChange = allow;
+                    state.Recalculate(true);
+                }
+            });
+            reservoirCLBuffToggle.onValueChanged.AddListener(allow => {
+                if (SelectedCaster.Value >= 0 && view.Get(out var buff)) {
+                    buff.CasterQueue[SelectedCaster.Value].ReservoirCLBuff = allow;
                     state.Recalculate(true);
                 }
             });
@@ -1245,13 +1252,17 @@ namespace BubbleBuffs {
                     blacklistToggle.isOn = who.Banned;
                     shareTransmutationToggle.isOn = who.ShareTransmutation;
                     powerfulChangeToggle.isOn = who.PowerfulChange;
+                    reservoirCLBuffToggle.isOn = who.ReservoirCLBuff;
 
                     var skidmarkable = who.spell.IsArcanistSpell && who.spell.Blueprint.School == Kingmaker.Blueprints.Classes.Spells.SpellSchool.Transmutation;
                     shareTransmutationToggle.interactable = skidmarkable && who.who.HasFact(ShareTransmutationFeature);
                     powerfulChangeToggle.interactable = skidmarkable && who.who.HasFact(PowerfulChangeFeature);
+                    reservoirCLBuffToggle.interactable = (who.spell.IsArcanistSpell || (who.spell.Spellbook.Blueprint == SpellTools.Spellbook.ExploiterWizardSpellbook))
+                        && who.who.HasFact(BubbleBlueprints.ReservoirBaseAbility) && !who.who.Progression.IsArchetype(BubbleBlueprints.PhantasmalMageArchetype);
 
                     shareTransmutationLabel.color = shareTransmutationToggle.interactable ? defaultLabelColor : Color.gray;
                     powerfulChangeLabel.color = powerfulChangeToggle.interactable ? defaultLabelColor : Color.gray;
+                    reservoirCLBuffLabel.color = reservoirCLBuffToggle.interactable ? defaultLabelColor : Color.gray;
 
                     increaseCustomCapButton.Interactable = who.AvailableCredits < 100 && who.CustomCap != -1;
                     decreaseCustomCapButton.Interactable = who.AvailableCredits < 100 && who.CustomCap != 0;
@@ -1391,6 +1402,7 @@ namespace BubbleBuffs {
     public class CasterCacheEntry {
         public Ability PowerfulChange;
         public Ability ShareTransmutation;
+        public Ability ReservoirCLBuff;
     }
 
     public class AbilityCache {
@@ -1403,7 +1415,8 @@ namespace BubbleBuffs {
             foreach (var u in Bubble.Group) {
                 var entry = new CasterCacheEntry {
                     PowerfulChange = u.Abilities.GetAbility(BubbleBlueprints.PowerfulChange),
-                    ShareTransmutation = u.Abilities.GetAbility(BubbleBlueprints.ShareTransmutation)
+                    ShareTransmutation = u.Abilities.GetAbility(BubbleBlueprints.ShareTransmutation),
+                    ReservoirCLBuff = u.Abilities.GetAbility(BubbleBlueprints.ReservoirBaseAbility)
                 };
                 CasterCache[u.UniqueId] = entry;
             }
@@ -2414,5 +2427,7 @@ namespace BubbleBuffs {
     static class BubbleBlueprints {
         public static BlueprintAbility ShareTransmutation => Resources.GetBlueprint<BlueprintAbility>("749567e4f652852469316f787921e156");
         public static BlueprintAbility PowerfulChange => Resources.GetBlueprint<BlueprintAbility>("a45f3dae9c64ec848b35f85568f4b220");
+        public static BlueprintAbility ReservoirBaseAbility => Resources.GetBlueprint<BlueprintAbility>("91295893ae9fdfb4b8936a93eff019df");
+        public static BlueprintArchetype PhantasmalMageArchetype => Resources.GetBlueprint<BlueprintArchetype>("e9d0ee69305049fe8400a066010dbcd1");
     }
 }
