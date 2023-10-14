@@ -202,12 +202,12 @@ namespace BubbleBuffs {
         }
         public static void Error(Exception e) {
             Log(e.ToString());
-            PFLog.Mods.Error(e.Message);
+            PFLog.Mods.Exception(e);
         }
         public static void Error(Exception e, string message) {
             Log(message);
             Log(e.ToString());
-            PFLog.Mods.Error(message);
+            PFLog.Mods.Exception(e, message);
         }
         public static void Error(string message) {
             Log(message);
