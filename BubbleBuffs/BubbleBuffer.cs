@@ -115,12 +115,26 @@ namespace BubbleBuffs {
                 var eiToggle2 = UIHelpers.SpellbookScreen.Find("MainContainer/KnownSpells/ToggleMetamagic");
                 var eiToggle1 = UIHelpers.SpellbookScreen.Find("MainContainer/KnownSpells/TogglePossibleSpells");
 
+#if true 
+                // FIXME - make this more robust to add/remove of stuff in EI
+                List<RectTransform> eiToggles = new() { (RectTransform)eiToggle0 };
+                if (eiToggle1 != null) eiToggles.Add((RectTransform)eiToggle1);
+                if (eiToggle2 != null) eiToggles.Add((RectTransform)eiToggle2);
+
+                int i = 0;
+                foreach (var eiToggle in eiToggles) {
+                    eiToggle.localPosition = new Vector2(430.0f, -392.0f - 30f * i);
+                    eiToggle.localScale = new Vector3(0.8f, 0.8f, .8f);
+                    i += 1;
+                }
+#else
                 RectTransform[] eiToggles = { (RectTransform)eiToggle0, (RectTransform)eiToggle1, (RectTransform)eiToggle2 };
 
                 for (int i = 0; i < eiToggles.Length; i++) {
                     eiToggles[i].localPosition = new Vector2(430.0f, -392.0f - 30f * i);
                     eiToggles[i].localScale = new Vector3(0.8f, 0.8f, .8f);
                 }
+#endif
 
                 var eiLearnAll = UIHelpers.SpellbookScreen.Find("MainContainer/LearnAllSpells").transform as RectTransform;
 
@@ -209,10 +223,10 @@ namespace BubbleBuffs {
         }
 
         private static void FadeOut(GameObject obj) {
-            obj.GetComponent<FadeAnimator>().DisappearAnimation();
+            obj?.GetComponent<FadeAnimator>()?.DisappearAnimation();
         }
         private static void FadeIn(GameObject obj) {
-            obj.GetComponent<FadeAnimator>().AppearAnimation();
+            obj?.GetComponent<FadeAnimator>()?.AppearAnimation();
         }
 
         private List<Material> _ToAnimate = new();
@@ -230,7 +244,10 @@ namespace BubbleBuffs {
             NoSpellbooksContainer = transform.Find("NoSpellbooksContainer").gameObject;
             Main.Verbose($"NospellbooksContainer: {NoSpellbooksContainer != null}");
 
-            PartyView = UIHelpers.StaticRoot.Find("NestedCanvas2/PartyPCView").gameObject.GetComponent<PartyPCView>();
+            var partyViewTransform = UIUtility.IsGlobalMap()
+                ? UIHelpers.UIRoot.Find("PartyView")
+                : UIHelpers.UIRoot.Find("NestedCanvas2/PartyPCView");
+            PartyView = partyViewTransform.gameObject.GetComponent<PartyPCView>();
 
             Main.Verbose($"PartyView: {PartyView != null}");
 
@@ -286,7 +303,7 @@ namespace BubbleBuffs {
 
         internal void Hide() {
             FadeOut(Root);
-            Root.SetActive(false);
+            Root?.SetActive(false);
         }
 
         private static GameObject MakeToggle(GameObject togglePrefab, Transform parent, float x, float y, string text, string name, float scale = 1) {
@@ -412,7 +429,7 @@ namespace BubbleBuffs {
         public GameObject expandButtonPrefab;
 
         private void CreateWindow() {
-            var staticRoot = UIHelpers.StaticRoot;
+            var staticRoot = UIHelpers.UIRoot;
 
 
             var portraitPrefab = staticRoot.Find("NestedCanvas2/PartyPCView/Viewport/Content/PartyCharacterView_01").gameObject;
@@ -568,7 +585,7 @@ namespace BubbleBuffs {
             toggleSettings.Rect().pivot = new Vector2(1, 0);
             toggleSettings.Rect().SetAnchor(.93, .10);
 
-            var actionBarView = UIHelpers.StaticRoot.Find("NestedCanvas1/ActionBarPcView").GetComponent<ActionBarPCView>();
+            var actionBarView = UIHelpers.UIRoot.Find("NestedCanvas1/ActionBarPcView").GetComponent<ActionBarPCView>();
             var panel = GameObject.Instantiate(actionBarView.m_DragSlot.m_ConvertedView.gameObject, toggleSettings.transform);
             panel.DestroyComponents<ActionBarConvertedPCView>();
             panel.DestroyComponents<GridLayoutGroup>();
@@ -845,7 +862,7 @@ namespace BubbleBuffs {
 
             ReactiveProperty<int> SelectedCaster = new ReactiveProperty<int>(-1);
 
-            var actionBarView = UIHelpers.StaticRoot.Find("NestedCanvas1/ActionBarPcView").GetComponent<ActionBarPCView>();
+            var actionBarView = UIHelpers.UIRoot.Find("NestedCanvas1/ActionBarPcView").GetComponent<ActionBarPCView>();
             Main.VerboseNotNull(() => actionBarView);
 
             var spellPopout = GameObject.Instantiate(actionBarView.m_DragSlot.m_ConvertedView.gameObject, detailsRect);

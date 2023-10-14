@@ -1,4 +1,7 @@
 ﻿using Kingmaker;
+using Kingmaker.Globalmap;
+using Kingmaker.UI.Common;
+using Kingmaker.UI;
 using Kingmaker.Utility;
 using Owlcat.Runtime.UI.Utility;
 using System;
@@ -12,14 +15,19 @@ namespace BubbleBuffs {
     static class UIHelpers {
         public static WidgetPaths_1_0 WidgetPaths;
         public static Transform Settings => SceneManager.GetSceneByName("UI_LoadingScreen_Scene").GetRootGameObjects().First(x => x.name.StartsWith("CommonPCView")).ChildTransform("Canvas/SettingsView");
-        public static Transform StaticRoot => Game.Instance.UI.Canvas.transform;
-        public static Transform ServiceWindow => StaticRoot.Find("ServiceWindowsPCView");
+        public static Transform UIRoot => UIUtility.IsGlobalMap() ? GlobalMapUI.Instance.transform : StaticCanvas.Instance.transform;
+        public static Transform ServiceWindow => UIUtility.IsGlobalMap() ? UIRoot.Find("ServiceWindowsConfig").transform : UIRoot.Find("ServiceWindowsPCView");
+        // We deal with two different cases for finding our UI bits (thanks Owlcat!)
+        // InGamePCView(Clone)/InGameStaticPartPCView/StaticCanvas/ServiceWindowsPCView
+        // GlobalMapPCView(Clone)/StaticCanvas/ServiceWindowsConfig
 
         public static Transform SpellbookScreen => ServiceWindow.Find(WidgetPaths.SpellScreen);
         public static Transform MythicInfoView => ServiceWindow.Find(WidgetPaths.MythicView);
         public static Transform EncyclopediaView => ServiceWindow.Find(WidgetPaths.EncyclopediaView);
 
         public static Transform CharacterScreen => ServiceWindow.Find(WidgetPaths.CharacterScreen);
+
+        public static Transform InventoryScreen => ServiceWindow.Find(WidgetPaths.InventoryScreen);
 
         public static void SetAnchor(this RectTransform transform, double xMin, double xMax, double yMin, double yMax) {
             transform.anchorMin = new Vector2((float)xMin, (float)yMin);
@@ -139,6 +147,8 @@ namespace BubbleBuffs {
         public virtual string EncyclopediaView => "EncyclopediaView";
 
         public virtual string CharacterScreen => "CharacterInfoView/CharacterScreen";
+        public virtual string InventoryScreen => throw new NotImplementedException(); // If we ever need to support old stuff then put something here
+
     }
 
     class WidgetPaths_1_1 : WidgetPaths_1_0 {
@@ -159,6 +169,6 @@ namespace BubbleBuffs {
 
     }
     class WidgetPaths_2_0 : WidgetPaths_1_4 {
-
+        public override string InventoryScreen => "Background/Windows/InventoryPCView";
     }
 }
