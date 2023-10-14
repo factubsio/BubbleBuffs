@@ -72,10 +72,10 @@ namespace BubbleBuffs.Extensions {
         }
 
         public static bool IsLong(this ContextActionApplyBuff action) {
-            return action.Permanent || (action.UseDurationSeconds && action.DurationSeconds >= 60) || action.DurationValue.Rate != DurationRate.Rounds;
+            return action.Permanent || (action.UseDurationSeconds && action.DurationSeconds >= 60) || action.DurationValue?.Rate != DurationRate.Rounds;
         }
         public static bool IsLong(this ContextActionEnchantWornItem action) {
-            return action.Permanent || action.DurationValue.Rate != DurationRate.Rounds;
+            return action.Permanent || action.DurationValue?.Rate != DurationRate.Rounds;
         }
 
         public static Guid BGuid(this EntityFact fact) {
@@ -137,12 +137,12 @@ namespace BubbleBuffs.Extensions {
                     }
                     if (takeNo) {
                         LogVerbose(level, $"recursing into ifFalse");
-                        foreach (var b in maybe.IfFalse.Actions.SelectMany(a => a.GetBeneficialBuffs(level + 1)))
+                        foreach (var b in (maybe.IfFalse?.Actions).EmptyIfNull().Where(a => a != null).SelectMany(a => a.GetBeneficialBuffs(level + 1)))
                             yield return b;
                     }
                     if (takeYes) {
                         LogVerbose(level, $"recursing into ifTrue");
-                        foreach (var b in maybe.IfTrue.Actions.SelectMany(a => a.GetBeneficialBuffs(level + 1)))
+                        foreach (var b in (maybe.IfTrue?.Actions).EmptyIfNull().Where(a => a != null).SelectMany(a => a.GetBeneficialBuffs(level + 1)))
                             yield return b;
                     }
                 } else if (action is ContextActionCastSpell spellCast) {
@@ -191,7 +191,7 @@ namespace BubbleBuffs.Extensions {
             spell = spell.DeTouchify();
             LogVerbose(level, $"detouchified-to: {spell.Name}");
             if (spell.TryGetComponent<AbilityEffectRunAction>(out var runAction)) {
-                return runAction.Actions.Actions.SelectMany(a => a.GetBeneficialBuffs(level + 1));
+                return runAction.Actions.Actions.Where(a => a != null).SelectMany(a => a.GetBeneficialBuffs(level + 1));
             } else {
                 return new IBeneficialEffect[] { };
             }
