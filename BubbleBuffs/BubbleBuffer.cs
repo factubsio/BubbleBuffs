@@ -179,7 +179,7 @@ namespace BubbleBuffs {
                 var spellRoot = GameObject.Instantiate(spellPrefab.gameObject);
                 spellRoot.name = "BubbleSpellView";
                 spellRoot.DestroyComponents<SpellbookKnownSpellPCView>();
-                spellRoot.DestroyChildrenImmediate("Icon/Decoration", "Icon/Domain", "Icon/MythicArtFrame", "Icon/ArtArrowImage", "RemoveButton", "Level");
+                spellRoot.DestroyChildrenImmediate("Icon/Decoration", "Icon/Domain", "Icon/ForeIcon", "Icon/MythicArtFrame", "Icon/ArtArrowImage", "RemoveButton", "Level");
 
                 return spellRoot;
 
@@ -237,8 +237,11 @@ namespace BubbleBuffs {
             GameObject.Destroy(transform.Find("bubblebuff-toggle")?.gameObject);
             GameObject.Destroy(transform.Find("bubblebuff-root")?.gameObject);
 
-            ToggleButton = GameObject.Instantiate(transform.Find("MainContainer/MetamagicButton").gameObject, transform);
-            (ToggleButton.transform as RectTransform).anchoredPosition = new Vector2(1400, 0);
+            var parent = GameObject.Instantiate(transform.Find("MainContainer/MetamagicButton"), transform);
+            (parent.transform as RectTransform).anchoredPosition = new Vector2(1400, 0);
+            GameObject.Destroy(parent.transform.Find("FrameImage/MagicHackButton").gameObject);
+            
+            ToggleButton = parent.transform.Find("FrameImage/MetamagicButton").gameObject;
             ToggleButton.name = "bubblebuff-toggle";
             ToggleButton.GetComponentInChildren<TextMeshProUGUI>().text = "buffsetup".i8();
 
@@ -285,8 +288,10 @@ namespace BubbleBuffs {
         }
 
         internal void Hide() {
-            FadeOut(Root);
-            Root.SetActive(false);
+            if (Root != null) {
+                FadeOut(Root);
+                Root.SetActive(false);
+            }
         }
 
         private static GameObject MakeToggle(GameObject togglePrefab, Transform parent, float x, float y, string text, string name, float scale = 1) {
