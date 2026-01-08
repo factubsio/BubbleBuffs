@@ -334,6 +334,13 @@ namespace BubbleBuffs {
                 img.color = new Color(1, 1, 1, UnityEngine.Random.Range(0f, 1.0f));
             });
 
+            var (simpleOverlay, simpleOverlayRect) = UIHelpers.Create("simple-overlay", pRect);
+            simpleOverlayRect.FillParent();
+            portrait.SimpleOverlay = simpleOverlay.MakeComponent<Image>(img => {
+                img.gameObject.SetActive(false);
+                img.color = new Color(0.2f, 0.7f, 0.2f, 0.5f);
+            });
+
             var (aoeOverlay, aoeOverlayRect) = UIHelpers.Create("aoe-overlay", pRect);
             aoeOverlayRect.FillParent();
             //aoeOverlayRect.anchorMax = new Vector2(1, 0.4f);
@@ -410,6 +417,7 @@ namespace BubbleBuffs {
         public ReactiveProperty<bool> ShowShort = new(true);
         public ReactiveProperty<bool> ShowHidden = new(false);
         public ReactiveProperty<string> NameFilter = new("");
+        public ReactiveProperty<BuffGroup?> GroupFilter = new(null); // null = show all groups
         public ButtonGroup<Category> CurrentCategory;
 
         private List<UnitEntityData> Group => Game.Instance.SelectionCharacter.ActualGroup;
@@ -494,6 +502,9 @@ namespace BubbleBuffs {
                 RefreshFiltering();
             });
             ShowShort.Subscribe<bool>(show => {
+                RefreshFiltering();
+            });
+            GroupFilter.Subscribe<BuffGroup?>(group => {
                 RefreshFiltering();
             });
             NameFilter.Subscribe<string>(val => {
@@ -590,10 +601,10 @@ namespace BubbleBuffs {
             int width = 450;
             if (Language.Locale == Locale.deDE)
                 width = 550;
-            popGrid.cellSize = new Vector2(width, 40);
-            popGrid.padding.left = 25;
-            popGrid.padding.top = 12;
-            popGrid.padding.bottom = 50;
+            popGrid.cellSize = new Vector2(width, 35);
+            popGrid.padding.left = 20;
+            popGrid.padding.top = 10;
+            popGrid.padding.bottom = 40;
             popGrid.startCorner = GridLayoutGroup.Corner.LowerLeft;
 
             {
@@ -622,6 +633,25 @@ namespace BubbleBuffs {
                 });
             }
 
+            {
+                var (toggle, _) = MakeSettingsToggle(togglePrefab, panel.transform, "setting-simpleoverlay".i8());
+                toggle.isOn = state.UseSimpleOverlay;
+                toggle.onValueChanged.AddListener(enabled => {
+                    state.UseSimpleOverlay = enabled;
+                });
+            }
+
+            // Spam settings per group
+            foreach (BuffGroup group in Enum.GetValues(typeof(BuffGroup))) {
+                var groupCopy = group; // Capture for closure
+                var key = $"spam.{group.ToString().ToLower()}";
+                var (toggle, _) = MakeSettingsToggle(togglePrefab, panel.transform, key.i8());
+                toggle.isOn = state.IsSpamEnabled(groupCopy);
+                toggle.onValueChanged.AddListener(enabled => {
+                    state.SetSpamEnabled(groupCopy, enabled);
+                });
+            }
+
             var b = toggleSettings.GetComponent<OwlcatButton>();
             b.SetTooltip(new TooltipTemplateSimple("settings".i8(), "settings-toggle".i8()), new TooltipConfig {
                 InfoCallPCMethod = InfoCallPCMethod.None,
@@ -642,7 +672,7 @@ namespace BubbleBuffs {
         public static GameObject selectedPrefab;
 
 
-        public static GameObject MakeButton(string title, Transform parent) {
+        public static GameObject MakeButton(string title, Transform parent, float scale = 1f) {
             var button = GameObject.Instantiate(buttonPrefab, parent);
             button.GetComponentInChildren<TextMeshProUGUI>().text = title;
             var buttonRect = button.transform as RectTransform;
@@ -651,15 +681,18 @@ namespace BubbleBuffs {
             buttonRect.pivot = new Vector2(1, 1);
             buttonRect.localPosition = Vector3.zero;
             buttonRect.anchoredPosition = Vector2.zero;
+            buttonRect.localScale = new Vector3(scale, scale, scale);
             return button;
         }
 
         public class ButtonGroup<T> {
             public ReactiveProperty<T> Selected = new();
             private readonly Transform content;
+            private readonly float scale;
 
-            public ButtonGroup(Transform content) {
+            public ButtonGroup(Transform content, float scale = 1f) {
                 this.content = content;
+                this.scale = scale;
             }
 
             public T Value {
@@ -668,7 +701,7 @@ namespace BubbleBuffs {
             }
 
             public void Add(T value, string title) {
-                var button = MakeButton(title, content);
+                var button = MakeButton(title, content, scale);
 
                 var selection = GameObject.Instantiate(selectedPrefab, button.transform);
                 selection.SetActive(false);
@@ -693,6 +726,55 @@ namespace BubbleBuffs {
             return rect;
         }
 
+        private TextMeshProUGUI groupFilterLabel;
+
+        private void MakeGroupFilterPopout(GameObject togglePrefab, Transform parent, float scale) {
+            // Create button container
+            var buttonObj = MakeButton("filter.group.all".i8(), parent, scale);
+            groupFilterLabel = buttonObj.GetComponentInChildren<TextMeshProUGUI>();
+
+            // Create popout panel
+            var actionBarView = UIHelpers.StaticRoot.Find("NestedCanvas1/ActionBarPcView").GetComponent<ActionBarPCView>();
+            var panel = GameObject.Instantiate(actionBarView.m_DragSlot.m_ConvertedView.gameObject, buttonObj.transform);
+            panel.DestroyComponents<ActionBarConvertedPCView>();
+            panel.DestroyComponents<GridLayoutGroup>();
+            panel.SetActive(false);
+            panel.Rect().SetAnchor(1, 0.5f);
+            panel.Rect().pivot = new Vector2(0, 0.5f);
+            panel.Rect().anchoredPosition = new Vector2(5, 0);
+            panel.ChildObject("Background").GetComponent<Image>().raycastTarget = true;
+
+            var popGrid = panel.AddComponent<GridLayoutGroup>();
+            popGrid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
+            popGrid.constraintCount = 1;
+            popGrid.cellSize = new Vector2(200, 30);
+            popGrid.padding.left = 15;
+            popGrid.padding.top = 8;
+            popGrid.padding.bottom = 8;
+
+            // Create option buttons
+            void AddOption(BuffGroup? group, string labelKey) {
+                var optionButton = MakeButton(labelKey.i8(), panel.transform, 0.8f);
+                optionButton.GetComponentInChildren<OwlcatButton>().OnLeftClick.AddListener(() => {
+                    GroupFilter.Value = group;
+                    groupFilterLabel.text = labelKey.i8();
+                    panel.SetActive(false);
+                });
+            }
+
+            AddOption(null, "filter.group.all");
+            AddOption(BuffGroup.Long, "filter.group.normal");
+            AddOption(BuffGroup.Important, "filter.group.important");
+            AddOption(BuffGroup.Short, "filter.group.short");
+            AddOption(BuffGroup.Combat, "filter.group.combat");
+            AddOption(BuffGroup.Boss, "filter.group.boss");
+
+            // Toggle popout on button click
+            buttonObj.GetComponentInChildren<OwlcatButton>().OnLeftClick.AddListener(() => {
+                panel.SetActive(!panel.activeSelf);
+            });
+        }
+
         private void MakeFilters(GameObject togglePrefab, Transform content) {
             var filterRect = MakeVerticalRect("filters", content);
             //filterToggles.AddComponent<Image>().color = Color.green;
@@ -709,12 +791,15 @@ namespace BubbleBuffs {
             var searchRect = search.RootGameObject.transform as RectTransform;
             searchRect.sizeDelta = new Vector2(280, 100);
 
-            const float scale = 0.8f;
-            GameObject showHidden = MakeToggle(togglePrefab, filterRect, 0.8f, .5f, "showhidden".i8(), "bubble-toggle-show-hidden", scale);
-            GameObject showShort = MakeToggle(togglePrefab, filterRect, .8f, .5f, "showshort".i8(), "bubble-toggle-show-short", scale);
-            GameObject showRequested = MakeToggle(togglePrefab, filterRect, .8f, .5f, "showreq".i8(), "bubble-toggle-show-requested", scale);
-            GameObject showNotRequested = MakeToggle(togglePrefab, filterRect, .8f, .5f, "showNOTreq".i8(), "bubble-toggle-show-not-requested", scale);
-            GameObject sortByName = MakeToggle(togglePrefab, filterRect, .8f, .5f, "sort.name".i8(), "bubble-toggle-sort-by-name", scale);
+            const float scale = 0.6f;
+            GameObject showHidden = MakeToggle(togglePrefab, filterRect, 0.6f, .5f, "showhidden".i8(), "bubble-toggle-show-hidden", scale);
+            GameObject showShort = MakeToggle(togglePrefab, filterRect, .6f, .5f, "showshort".i8(), "bubble-toggle-show-short", scale);
+            GameObject showRequested = MakeToggle(togglePrefab, filterRect, .6f, .5f, "showreq".i8(), "bubble-toggle-show-requested", scale);
+            GameObject showNotRequested = MakeToggle(togglePrefab, filterRect, .6f, .5f, "showNOTreq".i8(), "bubble-toggle-show-not-requested", scale);
+            GameObject sortByName = MakeToggle(togglePrefab, filterRect, .6f, .5f, "sort.name".i8(), "bubble-toggle-sort-by-name", scale);
+
+            // Group filter popout
+            MakeGroupFilterPopout(togglePrefab, filterRect, scale);
 
             search.InputField.onValueChanged.AddListener(val => {
                 NameFilter.Value = val;
@@ -724,7 +809,7 @@ namespace BubbleBuffs {
             categoryRect.anchorMin = new Vector2(1 - filterRect.anchorMax.x, 0.1f);
             categoryRect.anchorMax = new Vector2(1 - filterRect.anchorMin.x, 0.4f);
 
-            CurrentCategory = new ButtonGroup<Category>(categoryRect);
+            CurrentCategory = new ButtonGroup<Category>(categoryRect, 0.7f);
             CurrentCategory.Selected.Subscribe<Category>(_ => RefreshFiltering());
 
             CurrentCategory.Add(Category.Spell, "cat.spells".i8());
@@ -765,7 +850,9 @@ namespace BubbleBuffs {
                     });
                 } else {
                     view.DisplayOrder.Sort((a, b) => {
-                        return a.discovery - b.discovery;
+                        int levelCompare = a.spellLevel.CompareTo(b.spellLevel);
+                        if (levelCompare != 0) return levelCompare;
+                        return a.name.CompareTo(b.name);
                     });
                 }
 
@@ -799,6 +886,12 @@ namespace BubbleBuffs {
                     show = false;
                 if (!ShowShort.value && buff.HideBecause(HideReason.Short))
                     show = false;
+
+                // Group filter only applies to requested buffs
+                if (buff.Requested > 0 && GroupFilter.Value.HasValue) {
+                    if (buff.InGroup != GroupFilter.Value.Value)
+                        show = false;
+                }
 
                 widget.SetActive(show);
             }
@@ -865,13 +958,13 @@ namespace BubbleBuffs {
             var spellPopGrid = spellPopout.AddComponent<GridLayoutGroup>();
             spellPopGrid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
             spellPopGrid.constraintCount = 1;
-            int spellPopWidth = 450;
+            int spellPopWidth = 400;
             if (Language.Locale == Locale.deDE)
-                spellPopWidth = 650;
-            spellPopGrid.cellSize = new Vector2(spellPopWidth, 40);
-            spellPopGrid.padding.left = 25;
-            spellPopGrid.padding.top = 12;
-            spellPopGrid.padding.bottom = 12;
+                spellPopWidth = 580;
+            spellPopGrid.cellSize = new Vector2(spellPopWidth, 35);
+            spellPopGrid.padding.left = 20;
+            spellPopGrid.padding.top = 10;
+            spellPopGrid.padding.bottom = 10;
 
             GameObject MakeSpellLabel(string text) {
                 var labelRoot = GameObject.Instantiate(togglePrefab, spellPopout.transform);
@@ -970,13 +1063,13 @@ namespace BubbleBuffs {
             var popGrid = casterPopout.AddComponent<GridLayoutGroup>();
             popGrid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
             popGrid.constraintCount = 1;
-            int width = 550;
+            int width = 500;
             if (Language.Locale == Locale.deDE)
-                width = 650;
-            popGrid.cellSize = new Vector2(width, 40);
-            popGrid.padding.left = 25;
-            popGrid.padding.top = 12;
-            popGrid.padding.bottom = 12;
+                width = 580;
+            popGrid.cellSize = new Vector2(width, 35);
+            popGrid.padding.left = 20;
+            popGrid.padding.top = 10;
+            popGrid.padding.bottom = 10;
 
 
 
@@ -1192,13 +1285,15 @@ namespace BubbleBuffs {
             groupRect.gameObject.SetActive(false);
             groupRect.SetAnchor(0.9f, 0.6f);
             groupRect.anchoredPosition = new Vector2(-20, 0);
-            groupRect.sizeDelta = new Vector2(140, 100);
+            groupRect.sizeDelta = new Vector2(140, 155);
 
-            var buffGroup = new ButtonGroup<BuffGroup>(groupRect);
+            var buffGroup = new ButtonGroup<BuffGroup>(groupRect, 0.7f);
 
             buffGroup.Add(BuffGroup.Long, "group.normal".i8());
             buffGroup.Add(BuffGroup.Important, "group.important".i8());
             buffGroup.Add(BuffGroup.Short, "group.short".i8());
+            buffGroup.Add(BuffGroup.Combat, "group.combat".i8());
+            buffGroup.Add(BuffGroup.Boss, "group.boss".i8());
 
             castersRect.SetAsLastSibling();
 
@@ -1382,9 +1477,9 @@ namespace BubbleBuffs {
 
 
 
-        internal void Execute(BuffGroup group) {
+        internal void Execute(BuffGroup group, bool isSmartSpam = false) {
             UnitBuffPartView.StartSuppression();
-            Executor.Execute(group);
+            Executor.Execute(group, isSmartSpam);
             Invoke("EndBuffPartViewSuppression", 1.0f);
         }
 
@@ -1598,6 +1693,8 @@ namespace BubbleBuffs {
         private ButtonSprites applyBuffsShortSprites;
         private ButtonSprites showMapSprites;
         private ButtonSprites applyBuffsImportantSprites;
+        private ButtonSprites applyBuffsCombatSprites;
+        private ButtonSprites applyBuffsBossSprites;
         private GameObject buttonsContainer;
         public GameObject bubbleHud;
         public GameObject hudLayout;
@@ -1605,6 +1702,7 @@ namespace BubbleBuffs {
         public static Sprite[] UnitFrameSprites = new Sprite[2];
 
         public List<OwlcatButton> Buttons = new();
+        public Dictionary<BuffGroup, (OwlcatButton button, Image overlay)> GroupButtons = new();
 
         public static void TryAddFeature(UnitEntityData u, string feature) {
             var bp = Resources.GetBlueprint<BlueprintFeature>(feature);
@@ -1657,6 +1755,10 @@ namespace BubbleBuffs {
                     applyBuffsShortSprites = ButtonSprites.Load("apply_buffs_short", new Vector2Int(95, 95));
                 if (applyBuffsImportantSprites == null)
                     applyBuffsImportantSprites = ButtonSprites.Load("apply_buffs_important", new Vector2Int(95, 95));
+                if (applyBuffsCombatSprites == null)
+                    applyBuffsCombatSprites = ButtonSprites.Load("apply_buffs_important", new Vector2Int(95, 95));
+                if (applyBuffsBossSprites == null)
+                    applyBuffsBossSprites = ButtonSprites.Load("apply_buffs_important", new Vector2Int(95, 95));
                 if (showMapSprites == null)
                     showMapSprites = ButtonSprites.Load("show_map", new Vector2Int(95, 95));
 
@@ -1734,7 +1836,7 @@ namespace BubbleBuffs {
                     GameObject.DestroyImmediate(buttonsContainer.transform.GetChild(1).gameObject);
                 }
 
-                void AddButton(string text, string tooltip, ButtonSprites sprites, Action act) {
+                void AddButton(string text, string tooltip, ButtonSprites sprites, BuffGroup group) {
                     var applyBuffsButton = GameObject.Instantiate(prefab, buttonsContainer.transform);
                     applyBuffsButton.SetActive(true);
                     OwlcatButton button = applyBuffsButton.GetComponentInChildren<OwlcatButton>();
@@ -1742,8 +1844,31 @@ namespace BubbleBuffs {
                         pressedSprite = sprites.down,
                         highlightedSprite = sprites.hover,
                     };
+
+                    // Create overlay for spam indicator
+                    var overlayObj = new GameObject("SpamOverlay");
+                    overlayObj.transform.SetParent(applyBuffsButton.transform, false);
+                    var overlay = overlayObj.AddComponent<Image>();
+                    overlay.color = new Color(0.2f, 0.8f, 0.2f, 0.5f);
+                    overlay.raycastTarget = false;
+                    var overlayRect = overlayObj.GetComponent<RectTransform>();
+                    overlayRect.anchorMin = Vector2.zero;
+                    overlayRect.anchorMax = Vector2.one;
+                    overlayRect.sizeDelta = Vector2.zero;
+                    overlayRect.anchoredPosition = Vector2.zero;
+                    overlay.gameObject.SetActive(false);
+
+                    GroupButtons[group] = (button, overlay);
+
                     button.OnLeftClick.AddListener(() => {
-                        act();
+                        if (SpellbookController.state.IsSpamEnabled(group)) {
+                            // Toggle spam active state
+                            SpellbookController.state.ToggleSpamActive(group);
+                            overlay.gameObject.SetActive(SpellbookController.state.IsSpamActive(group));
+                        } else {
+                            // Normal one-shot execution
+                            GlobalBubbleBuffer.Execute(group);
+                        }
                     });
                     button.SetTooltip(new TooltipTemplateSimple(text, tooltip), new TooltipConfig {
                         InfoCallPCMethod = InfoCallPCMethod.None
@@ -1756,12 +1881,30 @@ namespace BubbleBuffs {
                 }
 
 
-                AddButton("group.normal.tooltip.header".i8(), "group.normal.tooltip.desc".i8(), applyBuffsSprites, () => GlobalBubbleBuffer.Execute(BuffGroup.Long));
-                AddButton("group.important.tooltip.header".i8(), "group.important.tooltip.desc".i8(), applyBuffsImportantSprites, () => GlobalBubbleBuffer.Execute(BuffGroup.Important));
-                AddButton("group.short.tooltip.header".i8(), "group.short.tooltip.desc".i8(), applyBuffsShortSprites, () => GlobalBubbleBuffer.Execute(BuffGroup.Short));
+                void AddSimpleButton(string text, string tooltip, ButtonSprites sprites, Action act) {
+                    var applyBuffsButton = GameObject.Instantiate(prefab, buttonsContainer.transform);
+                    applyBuffsButton.SetActive(true);
+                    OwlcatButton button = applyBuffsButton.GetComponentInChildren<OwlcatButton>();
+                    button.m_CommonLayer[0].SpriteState = new SpriteState {
+                        pressedSprite = sprites.down,
+                        highlightedSprite = sprites.hover,
+                    };
+                    button.OnLeftClick.AddListener(() => act());
+                    button.SetTooltip(new TooltipTemplateSimple(text, tooltip), new TooltipConfig {
+                        InfoCallPCMethod = InfoCallPCMethod.None
+                    });
+                    Buttons.Add(button);
+                    applyBuffsButton.GetComponentInChildren<Image>().sprite = sprites.normal;
+                }
+
+                AddButton("group.normal.tooltip.header".i8(), "group.normal.tooltip.desc".i8(), applyBuffsSprites, BuffGroup.Long);
+                AddButton("group.important.tooltip.header".i8(), "group.important.tooltip.desc".i8(), applyBuffsImportantSprites, BuffGroup.Important);
+                AddButton("group.short.tooltip.header".i8(), "group.short.tooltip.desc".i8(), applyBuffsShortSprites, BuffGroup.Short);
+                AddButton("group.combat.tooltip.header".i8(), "group.combat.tooltip.desc".i8(), applyBuffsCombatSprites, BuffGroup.Combat);
+                AddButton("group.boss.tooltip.header".i8(), "group.boss.tooltip.desc".i8(), applyBuffsBossSprites, BuffGroup.Boss);
                 if (DungeonController.IsDungeonCampaign) {
                     DungeonShowMap showMap = new();
-                    AddButton("showmap.tooltip.header".i8(), "showmap.tooltip.desc".i8(), showMapSprites, () => showMap.RunAction());
+                    AddSimpleButton("showmap.tooltip.header".i8(), "showmap.tooltip.desc".i8(), showMapSprites, () => showMap.RunAction());
                 }
 
                 Main.Verbose("remove old bubble?");
@@ -1832,8 +1975,8 @@ namespace BubbleBuffs {
 
         }
 
-        public static void Execute(BuffGroup group) {
-            Instance.SpellbookController.Execute(group);
+        public static void Execute(BuffGroup group, bool isSmartSpam = false) {
+            Instance.SpellbookController.Execute(group, isSmartSpam);
         }
 
 
@@ -1883,6 +2026,14 @@ namespace BubbleBuffs {
         Long,
         Short,
         Important,
+        Combat,
+        Boss,
+    }
+
+    public enum DurationTier {
+        Short,
+        Medium,
+        Long,
     }
 
 
@@ -1933,6 +2084,7 @@ namespace BubbleBuffs {
         public OwlcatButton Expand;
         public Image Overlay;
         public Image FullOverlay;
+        public Image SimpleOverlay;
         public bool State = false;
 
         public void ExpandOff() {
@@ -2065,7 +2217,7 @@ namespace BubbleBuffs {
 
     class BufferView {
         public Dictionary<BuffKey, GameObject> buffWidgets = new();
-        public List<(BuffKey key, string name, int discovery)> DisplayOrder = new();
+        public List<(BuffKey key, string name, int discovery, int spellLevel)> DisplayOrder = new();
 
         public GameObject buffWindow;
         public GameObject removeFromAll;
@@ -2112,7 +2264,7 @@ namespace BubbleBuffs {
             availableBuffs.transform.SetAsFirstSibling();
             Main.Verbose("made new buff list");
             availableBuffs.name = "AvailableBuffList";
-            availableBuffs.GetComponentInChildren<GridLayoutGroupWorkaround>().constraintCount = 5;
+            availableBuffs.GetComponentInChildren<GridLayoutGroupWorkaround>().constraintCount = 6;
             Main.Verbose("set constraint count");
             var listRect = availableBuffs.transform as RectTransform;
             listRect.localPosition = Vector2.zero;
@@ -2124,7 +2276,7 @@ namespace BubbleBuffs {
             GameObject.Destroy(listRect.Find("ToggleAllSpells")?.gameObject);
             GameObject.Destroy(listRect.Find("ToggleMetamagic")?.gameObject);
             var scrollContent = availableBuffs.transform.Find("StandardScrollView/Viewport/Content");
-            scrollContent.localScale = new Vector3(0.8f, 0.8f, 0.8f);
+            scrollContent.localScale = new Vector3(0.7f, 0.7f, 0.7f);
             Main.Verbose("got scroll content");
             Main.Verbose($"destroying old stuff: {scrollContent.childCount}");
             int toDestroy = scrollContent.childCount;
@@ -2182,7 +2334,7 @@ namespace BubbleBuffs {
                     widget.ChildObject("School").SetActive(true);
                     widget.SetActive(true);
 
-                    DisplayOrder.Add((buff.Key, buff.Name, DisplayOrder.Count));
+                    DisplayOrder.Add((buff.Key, buff.Name, DisplayOrder.Count, buff.Spell.SpellLevel));
                     buffWidgets[buff.Key] = widget;
                 }
             }
@@ -2249,46 +2401,71 @@ namespace BubbleBuffs {
 
         private void UpdateTargetBuffColor(BubbleBuff buff, int i) {
             var fullOverlay = targets[i].FullOverlay;
+            var simpleOverlay = targets[i].SimpleOverlay;
             targets[i].Button.Interactable = true;
-            if (buff == null) {
+
+            if (state.UseSimpleOverlay) {
                 fullOverlay.gameObject.SetActive(false);
-                return;
-            }
-            bool isMass = false;
-            bool massGood = false;
-
-            if (buff.IsMass && buff.Requested > 0) {
-                isMass = true;
-                if (buff.Fulfilled > 0)
-                    massGood = true;
-            }
-
-            var me = Bubble.Group[i];
-
-
-            if (isMass && !buff.UnitWants(me)) {
-                var target = massGood ? massGoodColor : massBadColor;
-                targets[i].Overlay.gameObject.SetActive(true);
-                var current = targets[i].Overlay.color;
-                targets[i].Overlay.color = new Color(target.r, target.g, target.b, current.a);
-            } else {
                 targets[i].Overlay.gameObject.SetActive(false);
-            }
 
-            fullOverlay.gameObject.SetActive(true);
+                if (buff == null) {
+                    simpleOverlay.gameObject.SetActive(false);
+                    return;
+                }
 
-            if (!buff.CanTarget(me)) {
-                fullOverlay.color = Color.red;
-                targets[i].Button.Interactable = false;
+                var me = Bubble.Group[i];
 
-            } else if (buff.UnitWants(me)) {
-                if (buff.UnitGiven(me)) {
-                    fullOverlay.color = Color.green;
+                if (!buff.CanTarget(me)) {
+                    targets[i].Button.Interactable = false;
+                    simpleOverlay.gameObject.SetActive(false);
+                } else if (buff.UnitWants(me)) {
+                    simpleOverlay.gameObject.SetActive(true);
+                    simpleOverlay.color = new Color(0.2f, 0.7f, 0.2f, 0.5f);
                 } else {
-                    fullOverlay.color = Color.yellow;
+                    simpleOverlay.gameObject.SetActive(false);
                 }
             } else {
-                fullOverlay.color = Color.gray;
+                simpleOverlay.gameObject.SetActive(false);
+
+                if (buff == null) {
+                    fullOverlay.gameObject.SetActive(false);
+                    return;
+                }
+                bool isMass = false;
+                bool massGood = false;
+
+                if (buff.IsMass && buff.Requested > 0) {
+                    isMass = true;
+                    if (buff.Fulfilled > 0)
+                        massGood = true;
+                }
+
+                var me = Bubble.Group[i];
+
+                if (isMass && !buff.UnitWants(me)) {
+                    var target = massGood ? massGoodColor : massBadColor;
+                    targets[i].Overlay.gameObject.SetActive(true);
+                    var current = targets[i].Overlay.color;
+                    targets[i].Overlay.color = new Color(target.r, target.g, target.b, current.a);
+                } else {
+                    targets[i].Overlay.gameObject.SetActive(false);
+                }
+
+                fullOverlay.gameObject.SetActive(true);
+
+                if (!buff.CanTarget(me)) {
+                    fullOverlay.color = Color.red;
+                    targets[i].Button.Interactable = false;
+
+                } else if (buff.UnitWants(me)) {
+                    if (buff.UnitGiven(me)) {
+                        fullOverlay.color = Color.green;
+                    } else {
+                        fullOverlay.color = Color.yellow;
+                    }
+                } else {
+                    fullOverlay.color = Color.gray;
+                }
             }
         }
 
@@ -2333,7 +2510,7 @@ namespace BubbleBuffs {
                 h.constraint = GridLayoutGroup.Constraint.FixedRowCount;
                 h.constraintCount = 1;
                 h.childAlignment = TextAnchor.MiddleCenter;
-                h.cellSize = new Vector2(400, 100);
+                h.cellSize = new Vector2(250, 80);
             });
 
             foreach (BuffGroup group in Enum.GetValues(typeof(BuffGroup))) {

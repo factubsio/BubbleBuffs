@@ -115,6 +115,44 @@ namespace BubbleBuffs {
             return false;
         }
 
+        /// <summary>
+        /// Gets the minimum remaining time (in seconds) for any matching buff on the unit.
+        /// Returns 0 if no matching buff is present.
+        /// Returns float.MaxValue for permanent buffs.
+        /// </summary>
+        internal float GetMinRemainingSeconds(UnitBuffData unitBuffData, HashSet<Guid> ignoreForOverwriteCheck) {
+            try {
+                if (AppliedBuffs == null)
+                    return 0f;
+
+                var relevantBuffGuids = AppliedBuffs.Except(ignoreForOverwriteCheck).ToHashSet();
+                if (relevantBuffGuids.Count == 0)
+                    return 0f;
+
+                float minTime = 0f;
+                foreach (var fact in unitBuffData.Unit.Buffs.RawFacts) {
+                    var guid = fact.BGuid();
+                    if (relevantBuffGuids.Contains(guid)) {
+                        if (fact is Buff buff) {
+                            // Permanent buffs should not trigger reapply
+                            if (buff.IsPermanent)
+                                return float.MaxValue;
+
+                            float remaining = (float)buff.TimeLeft.TotalSeconds;
+                            // Track the minimum remaining time (or first found if minTime is 0)
+                            if (minTime == 0f || remaining < minTime)
+                                minTime = remaining;
+                        }
+                    }
+                }
+
+                return minTime;
+            } catch (Exception ex) {
+                Main.Error(ex, "GetMinRemainingSeconds");
+                return 0f; // Fallback: reapply the buff
+            }
+        }
+
         public readonly bool Empty = true;
         public bool IsLong { get; private set; }
     }

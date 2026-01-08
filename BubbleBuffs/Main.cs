@@ -28,6 +28,9 @@ using System.IO;
 using Kingmaker.Cheats;
 using Newtonsoft.Json;
 using Kingmaker.Blueprints.Items.Shields;
+using Kingmaker.UI.Models.Log.CombatLog_ThreadSystem;
+using Kingmaker.UI.Models.Log.CombatLog_ThreadSystem.LogThreads.Common;
+using System.Linq;
 using Kingmaker.Designers;
 using System.Linq.Expressions;
 
@@ -105,6 +108,7 @@ namespace BubbleBuffs {
 #endif
             CheatsCommon.SendAnalyticEvents?.Set(false);
             modEntry.OnUpdate = OnUpdate;
+            modEntry.OnGUI = OnGUI;
             ModSettings.ModEntry = modEntry;
             ModPath = modEntry.Path;
             Main.Log("LOADING");
@@ -134,6 +138,83 @@ namespace BubbleBuffs {
 
 
             return true;
+        }
+
+        private static string reapplyThresholdInput = "";
+        private static string checkIntervalInput = "";
+
+        static void OnGUI(UnityModManager.ModEntry modEntry) {
+            if (GUILayout.Button("Reset All Buff Selections", GUILayout.Width(250))) {
+                var state = GlobalBubbleBuffer.Instance?.SpellbookController?.state;
+                if (state != null) {
+                    state.SavedState.Buffs.Clear();
+                    state.StopAllSpam();
+                    state.Save(true);
+                    Log("All buff selections have been reset.");
+                } else {
+                    Log("Cannot reset: No active game loaded.");
+                }
+            }
+            GUILayout.Label("Note: You must have a game loaded to reset buff selections.");
+
+            GUILayout.Space(15);
+            GUILayout.Label("<b>Spam Config</b>", new GUIStyle(GUI.skin.label) { richText = true });
+
+            var config = Config.SpamConfig.Instance;
+
+            // UseSmartReapply toggle
+            GUILayout.BeginHorizontal();
+            bool newUseSmartReapply = GUILayout.Toggle(config.UseSmartReapply, "Use Smart Reapply", GUILayout.Width(200));
+            GUILayout.Label("(Check buff remaining time vs simple interval spam)");
+            GUILayout.EndHorizontal();
+            if (newUseSmartReapply != config.UseSmartReapply) {
+                config.UseSmartReapply = newUseSmartReapply;
+            }
+
+            // ReapplyThresholdSeconds
+            GUILayout.BeginHorizontal();
+            GUILayout.Label("Reapply Threshold (seconds):", GUILayout.Width(200));
+            if (reapplyThresholdInput == "") reapplyThresholdInput = config.ReapplyThresholdSeconds.ToString("F1");
+            reapplyThresholdInput = GUILayout.TextField(reapplyThresholdInput, GUILayout.Width(60));
+            GUILayout.Label("Reapply when buff has less than this time remaining");
+            GUILayout.EndHorizontal();
+
+            // CheckIntervalSeconds
+            GUILayout.BeginHorizontal();
+            GUILayout.Label("Check Interval (seconds):", GUILayout.Width(200));
+            if (checkIntervalInput == "") checkIntervalInput = config.CheckIntervalSeconds.ToString("F1");
+            checkIntervalInput = GUILayout.TextField(checkIntervalInput, GUILayout.Width(60));
+            GUILayout.Label("How often to check/spam buffs");
+            GUILayout.EndHorizontal();
+
+            // SkipIfUnitHasPendingCommands toggle
+            GUILayout.BeginHorizontal();
+            bool newSkipPending = GUILayout.Toggle(config.SkipIfUnitHasPendingCommands, "Skip If Unit Has Pending Commands", GUILayout.Width(250));
+            GUILayout.Label("(Avoid interrupting manual actions)");
+            GUILayout.EndHorizontal();
+            if (newSkipPending != config.SkipIfUnitHasPendingCommands) {
+                config.SkipIfUnitHasPendingCommands = newSkipPending;
+            }
+
+            GUILayout.Space(5);
+
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button("Apply & Save", GUILayout.Width(120))) {
+                if (float.TryParse(reapplyThresholdInput, out float threshold)) {
+                    config.ReapplyThresholdSeconds = threshold;
+                }
+                if (float.TryParse(checkIntervalInput, out float interval)) {
+                    config.CheckIntervalSeconds = interval;
+                }
+                Config.SpamConfig.Save();
+                Log($"SpamConfig saved: UseSmartReapply={config.UseSmartReapply}, Threshold={config.ReapplyThresholdSeconds}s, Interval={config.CheckIntervalSeconds}s");
+            }
+            if (GUILayout.Button("Reload from File", GUILayout.Width(120))) {
+                Config.SpamConfig.Reload();
+                reapplyThresholdInput = "";
+                checkIntervalInput = "";
+            }
+            GUILayout.EndHorizontal();
         }
 
         static void OnUpdate(UnityModManager.ModEntry modEntry, float delta) {
@@ -212,6 +293,17 @@ namespace BubbleBuffs {
         public static void Error(string message) {
             Log(message);
             PFLog.Mods.Error(message);
+        }
+
+        public static void ErrorWithCombatLog(Exception e, string message) {
+            Error(e, message);
+            try {
+                var logMessage = new CombatLogMessage($"[BubbleBuffs Error] {message}: {e.Message}", Color.red, PrefixIcon.RightArrow, null, true);
+                var messageLog = LogThreadService.Instance.m_Logs[LogChannelType.Common].First(x => x is MessageLogThread);
+                messageLog.AddMessage(logMessage);
+            } catch {
+                // Silently fail if combat log is not available
+            }
         }
 
         static HashSet<string> filtersEnabled = new() {

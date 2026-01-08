@@ -121,7 +121,7 @@ namespace BubbleBuffs.Handlers {
 
                     RestoreCasterLevel();
                 } catch (Exception ex) {
-                    Main.Error(ex, "Casting: HandleExecutionProcessEnd");
+                    Main.ErrorWithCombatLog(ex, "Casting: HandleExecutionProcessEnd");
                 } finally {
                     // Remove from event bus
                     EventBus.Unsubscribe(this);

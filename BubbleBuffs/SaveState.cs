@@ -30,6 +30,12 @@ namespace BubbleBuffs {
         [JsonProperty]
         public bool OverwriteBuff;
         [JsonProperty]
+        public bool UseSimpleOverlay = true;
+        [JsonProperty]
+        public HashSet<BuffGroup> AutoTriggerGroups = new();
+        [JsonProperty]
+        public HashSet<BuffGroup> SpamEnabledGroups = new();
+        [JsonProperty]
         public int Version;
     }
 

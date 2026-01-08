@@ -5,6 +5,19 @@ This mod for Pathfinder Wrath of the Righteous adds an in-game option to spellbo
 
 To download a pre-built version of this mod, go to Nexus Mod at https://www.nexusmods.com/pathfinderwrathoftherighteous/mods/195
 
+# Installing WOTR mods on Mac
+`brew install mono`
+Download UMM
+unzip, say into ~/Downloads
+`mono ~/Downloads/UnityModManagerInstaller/Console.exe`
+Follow instructions to install it for WOTR
+
+Download the latest release zip from `https://github.com/xvaldetaro/BubbleBuffs/tags`
+Unzip it into `~/Library/Application Support/Steam/SteamApps/common/Pathfinder Second Adventure/Mods/BubbleBuffs` (or whatever folder UMM found for you)
+
+Once loaded, check if when you select a buff target it highlights the portrait with green (didn't for me). If it doesn't, click on the gear icon on the bottom right corner and mark "Portrait Overlay Fix" and restart the game. It should work then.
+
+This should work for any other mod now.
 
 ## Development Setup (Windows)
 1. [Install Visual Studio 2022](https://visualstudio.microsoft.com/vs/) (any version)
@@ -16,7 +29,7 @@ To download a pre-built version of this mod, go to Nexus Mod at https://www.nexu
 Owlcat's wiki is slightly out of date, but still a good resource at https://github.com/spacehamster/OwlcatModdingWiki/wiki/Debugging#debugging-with-visual-studio
 
 Instructions below are updated for Pathfinder Wrath of the Righteous Definitive Edition
-1. To debug, download the [Unity Hub](https://unity3d.com/get-unity/download).  
+1. To debug, download the [Unity Hub](https://unity3d.com/get-unity/download).
 2. Go https://unity3d.com/get-unity/download/archive download and install version 2020.3.33f1 of the editor (this coincides with the Pathfinder WOTR Definitive Edition Unity update).
 3. Navigate to [UnityFolder]\Editor\Data\PlaybackEngines\windowsstandalonesupport\Variations\win64_development_mono\ and copy UnityPlayer.dll and WinPixEventRuntime.dll to [GameDir] and overwrite it (I prefer to save the original UnityPlayer.dll as UnityPlayer.dll.original).
 4. Use text editor open [GameDir]\Wrath_Data\boot.config and add:
@@ -34,7 +47,7 @@ Project              Machine              Type    Port       Information
 
 Note: This project includes a post build option that will automatically update the default mod location in the Pathfinder WOTR mod folder.  To prevent automatically overwriting the existing mod, change the post build option.
 
-### Acknowledgments:  
+### Acknowledgments:
 
 -   @Balkoth for Buffbot which is the direct inspiration for this
 -   Discord members who tested super early broken extra-poop versions!

@@ -78,6 +78,31 @@ namespace BubbleBuffs.Extensions {
             return action.Permanent || action.DurationValue?.Rate != DurationRate.Rounds;
         }
 
+        public static DurationTier GetDurationTier(this ContextActionApplyBuff action) {
+            if (action.Permanent)
+                return DurationTier.Long;
+
+            var rate = action.DurationValue?.Rate;
+
+            // Check seconds-based duration first
+            if (action.UseDurationSeconds) {
+                if (action.DurationSeconds < 60)
+                    return DurationTier.Short;
+                if (action.DurationSeconds < 600)
+                    return DurationTier.Medium;
+                return DurationTier.Long;
+            }
+
+            // Rate-based classification
+            if (rate == DurationRate.Rounds)
+                return DurationTier.Short;
+            if (rate == DurationRate.Minutes)
+                return DurationTier.Medium;
+
+            // TenMinutes, Hours, Days = Long
+            return DurationTier.Long;
+        }
+
         public static Guid BGuid(this EntityFact fact) {
             return fact.Blueprint.AssetGuid.m_Guid;
         }

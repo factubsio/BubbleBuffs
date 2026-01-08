@@ -25,7 +25,7 @@ namespace BubbleBuffs {
                 return Rulebook.Trigger<RuleCastSpell>(new(task.SpellToCast, task.Target));
             } 
             catch (Exception ex) {
-                Main.Error(ex, "Instant Engine Casting");
+                Main.ErrorWithCombatLog(ex, "Instant Engine Casting");
                 return null;
             } 
         }

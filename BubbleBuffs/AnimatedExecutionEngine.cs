@@ -20,7 +20,7 @@ namespace BubbleBuffs {
                 return UnitUseAbility.CreateCastCommand(task.SpellToCast, task.Target);
             } 
             catch (Exception ex) {
-                Main.Error(ex, "Animated Engine Casting");
+                Main.ErrorWithCombatLog(ex, "Animated Engine Casting");
                 return null;
             }
         }

@@ -47,6 +47,7 @@ namespace BubbleBuffs {
     }
     public class BubbleBuff {
         public BuffGroup InGroup = BuffGroup.Long;
+        public DurationTier DurationTier = DurationTier.Long;
         public AbilityData Spell;
         HashSet<string> wanted = new();
         HashSet<string> notWanted = new();
