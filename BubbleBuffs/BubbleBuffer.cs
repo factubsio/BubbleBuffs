@@ -1330,13 +1330,26 @@ namespace BubbleBuffs {
             // Calculate height based on available width and aspect ratio:
             // Total Width = (PortraitCount * Height * AspectRatio) + ((PortraitCount - 1) * Spacing)
             // Solving for Height: Height = (TotalWidth - TotalSpacing) / (PortraitCount * AspectRatio)
+            const float groupHeightMin = 60f;
+            const float groupHeightMax = 165f;
             float groupHeight = Mathf.Clamp(
                 (allowedWidth - (Group.Count - 1) * groupSpacing) / (Group.Count * aspectRatio),
-                60f,  // Minimum height to ensure visibility
-                165f  // Maximum height to prevent portraits from dominating the screen
+                groupHeightMin,  // Minimum height to ensure visibility
+                groupHeightMax   // Maximum height to prevent portraits from dominating the screen
             );
 
-            groupRect.SetAnchor(0.5f, 0.08f);
+            // VERTICAL POSITIONING:
+            // Adjust vertical anchor based on portrait height to keep them visually centered.
+            // When portraits are at max height (165px), use base position (8% from bottom).
+            // As portraits shrink, move them up proportionally to maintain visual balance.
+            // The adjustment scales linearly: smaller portraits move higher up the screen.
+            float anchorY = Mathf.Lerp(
+                0.16f, // Position when at minimum height
+                0.08f, // Base position when at maximum height
+                Mathf.InverseLerp(groupHeightMin, groupHeightMax, groupHeight)
+            );
+
+            groupRect.SetAnchor(0.5f, anchorY);
             groupRect.sizeDelta = new Vector2(0, groupHeight); // width will be controlled by ContentSizeFitter
             groupRect.pivot = new Vector2(0.5f, 0);
 
