@@ -1344,7 +1344,7 @@ namespace BubbleBuffs {
             // As portraits shrink, move them up proportionally to maintain visual balance.
             // The adjustment scales linearly: smaller portraits move higher up the screen.
             float anchorY = Mathf.Lerp(
-                0.16f, // Position when at minimum height
+                0.14f, // Position when at minimum height
                 0.08f, // Base position when at maximum height
                 Mathf.InverseLerp(groupHeightMin, groupHeightMax, groupHeight)
             );
