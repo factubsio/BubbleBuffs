@@ -1325,6 +1325,37 @@ namespace BubbleBuffs {
 
                 portrait.Image.sprite = Group[i].Portrait.SmallPortrait;
 
+                // --- ADDING THE NAME LABEL ---
+                var namePlate = new GameObject("NamePlate", typeof(RectTransform));
+                namePlate.transform.SetParent(portrait.GameObject.transform, false);
+
+                var plateRect = namePlate.GetComponent<RectTransform>();
+                plateRect.anchorMin = new Vector2(0, 0);
+                plateRect.anchorMax = new Vector2(1, 0.16f);
+                plateRect.offsetMin = Vector2.zero;
+                plateRect.offsetMax = Vector2.zero;
+
+                var bg = namePlate.AddComponent<UnityEngine.UI.Image>();
+                bg.color = new Color(0.1f, 0.1f, 0.1f, 0.8f);
+                bg.raycastTarget = false;
+
+                var textObj = new GameObject("NameText", typeof(RectTransform));
+                textObj.transform.SetParent(namePlate.transform, false);
+
+                var text = textObj.AddComponent<TextMeshProUGUI>();
+                text.raycastTarget = false;
+                text.text = Group[i]?.CharacterName ?? "???";
+                text.fontSize = Mathf.Clamp(groupHeight * 0.12f, 8, 16);
+                text.alignment = TextAlignmentOptions.Center;
+                text.color = Color.white;
+
+                var textRect = textObj.GetComponent<RectTransform>();
+                textRect.anchorMin = Vector2.zero;
+                textRect.anchorMax = Vector2.one;
+                textRect.offsetMin = new Vector2(2, 2);
+                textRect.offsetMax = new Vector2(-2, -2);
+                // -----------------------------
+
                 int personIndex = i;
 
                 portrait.Button.OnLeftClick.AddListener(() => {
