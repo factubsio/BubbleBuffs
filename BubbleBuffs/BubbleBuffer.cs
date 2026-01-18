@@ -1302,14 +1302,59 @@ namespace BubbleBuffs {
 
             float requiredWidthHalf = Group.Count * 0.033f;
 
-            const float groupHeight = 166.25f;
+            // UI Layout Constants
+            const float settingsButtonAnchorX = 0.93f; // The horizontal anchor point of the Settings button
+            const float settingsButtonWidth = 50f;     // Fixed width of the Settings button in pixels
+            const float aspectRatio = 0.75f;           // Standard portrait ratio (Width / Height)
 
-            groupRect.SetAnchor(0.5f, 0.08f);
-            groupRect.sizeDelta = new Vector2(300, groupHeight);
+            float parentWidth = content.GetComponent<RectTransform>().rect.width;
+
+            // DYNAMIC SPACING:
+            // Adjust gap between portraits based on density to prevent overcrowding.
+            // Spacing scales linearly from 8px (for 10 or fewer portraits) down to 2px (for 20 or more).
+            float groupSpacing = Mathf.Lerp(
+                8,  // Maximum spacing
+                2,  // Minimum spacing
+                Mathf.InverseLerp(10, 20, Group.Count)
+            );
+
+            // BOUNDARY CALCULATION:
+            // To keep the portrait group centered relative to the available space (avoiding the Settings button),
+            // we calculate the margin on the right and mirror it on the left.
+            // 1. Right Margin = Distance from Parent Right Edge to the Settings Button's Left Edge + a gap.
+            // 2. Mirroring: ParentWidth - (2 * Right Margin) gives us the symmetrical "Allowed Width" for portraits.
+            float rightMarginOffset = (parentWidth - (parentWidth * settingsButtonAnchorX)) + settingsButtonWidth + groupSpacing;
+            float allowedWidth = parentWidth - (2 * rightMarginOffset);
+
+            // DIMENSION CALCULATION:
+            // Calculate height based on available width and aspect ratio:
+            // Total Width = (PortraitCount * Height * AspectRatio) + ((PortraitCount - 1) * Spacing)
+            // Solving for Height: Height = (TotalWidth - TotalSpacing) / (PortraitCount * AspectRatio)
+            const float groupHeightMin = 60f;
+            const float groupHeightMax = 165f;
+            float groupHeight = Mathf.Clamp(
+                (allowedWidth - (Group.Count - 1) * groupSpacing) / (Group.Count * aspectRatio),
+                groupHeightMin,  // Minimum height to ensure visibility
+                groupHeightMax   // Maximum height to prevent portraits from dominating the screen
+            );
+
+            // VERTICAL POSITIONING:
+            // Adjust vertical anchor based on portrait height to keep them visually centered.
+            // When portraits are at max height (165px), use base position (8% from bottom).
+            // As portraits shrink, move them up proportionally to maintain visual balance.
+            // The adjustment scales linearly: smaller portraits move higher up the screen.
+            float anchorY = Mathf.Lerp(
+                0.14f, // Position when at minimum height
+                0.08f, // Base position when at maximum height
+                Mathf.InverseLerp(groupHeightMin, groupHeightMax, groupHeight)
+            );
+
+            groupRect.SetAnchor(0.5f, anchorY);
+            groupRect.sizeDelta = new Vector2(0, groupHeight); // width will be controlled by ContentSizeFitter
             groupRect.pivot = new Vector2(0.5f, 0);
 
             var horizontalGroup = groupHolder.AddComponent<HorizontalLayoutGroup>();
-            horizontalGroup.spacing = 6;
+            horizontalGroup.spacing = groupSpacing;
             horizontalGroup.childControlHeight = true;
             horizontalGroup.childForceExpandHeight = true;
 
