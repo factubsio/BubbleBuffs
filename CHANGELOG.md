@@ -1,3 +1,10 @@
+## Version 5.2.4
+* Fixed Repository.json, Info.json versions to be in line with mod version
+* Bumped game version in Info.json to current
+* (Bug Fix) Removed LinkedSlot check that was causing Opposing School spells on Wizards to be never castable by BubbleBuff due to them counting as double credit when calculating the "cost" of buffing, but not counting the double slots they occupy when slotting in calculation of available credit for buffing.
+* Added ADDB's expanded party slots
+* Added Ham's scrolling party slots and scrolling expanded button options
+
 ## Version 5.1.4
 * Fixes and stuff
 

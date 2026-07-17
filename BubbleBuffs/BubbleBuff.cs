@@ -226,20 +226,24 @@ namespace BubbleBuffs {
                 return CreditsNeeded(spell.ConvertedFrom);
             }
 
-            if (spell.Spellbook == null)
-                return 1;
+            return 1;
 
-            if (spell.Spellbook.Blueprint.Spontaneous) {
-                return 1;
-            }
-            else {
-                if (spell.SpellSlot?.LinkedSlots != null && (spell.SpellSlot?.IsOpposition ?? false)) {
-                    return spell.SpellSlot.LinkedSlots.Count();
-                }
-                else {
-                    return 1;
-                }
-            }
+            //This doesn't seem to be necessary. We return 1 in most cases, and the only time we don't - it breaks cost calculation for opposig school spells, preventing use of those spells alltogether.
+            //Simply treating them as any other spell seems to work fine and not cause issues - the game seems to handle everything by itself just fine.
+            //if (spell.Spellbook == null)
+            //    return 1;
+            //
+            //if (spell.Spellbook.Blueprint.Spontaneous) {
+            //    return 1;
+            //}
+            //else {
+            //    if (spell.SpellSlot?.LinkedSlots != null && (spell.SpellSlot?.IsOpposition ?? false)) {
+            //        return spell.SpellSlot.LinkedSlots.Count();
+            //    }
+            //    else {
+            //        return 1;
+            //    }
+            //}
         }
 
         public void Validate() {

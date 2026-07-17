@@ -32,6 +32,22 @@
 
   "hideability": "Hide ability",
 
+  "group.extra1": "Extra1",
+  "group.extra1.tooltip.header": "Buff Extra1!",
+  "group.extra1.tooltip.desc": "Try to cast spells set in the buff window (Extra1)",
+  "group.extra1.log": "Buffed Extra1!",
+
+  "group.extra2": "Extra2",
+  "group.extra2.tooltip.header": "Buff Extra2!",
+  "group.extra2.tooltip.desc": "Try to cast spells set in the buff window (Extra2)",
+  "group.extra2.log": "Buffed Extra2!",
+
+  "group.extra3": "Extra3",
+  "group.extra3.tooltip.header": "Buff Extra3!",
+  "group.extra3.tooltip.desc": "Try to cast spells set in the buff window (Extra3)",
+  "group.extra3.log": "Buffed Extra3!",
+
+
   "tooltip.results": "Results",
   "tooltip.applied": "Buffs Applied",
   "tooltip.skipped": "Buffs Skipped",

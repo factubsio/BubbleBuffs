@@ -5,7 +5,7 @@
 		<TargetFramework>net481</TargetFramework>
 		<AssemblyName>BubbleBuffs</AssemblyName>
 		<Description>BubbleBuffs</Description>
-		<Version>5.2.3</Version>
+		<Version>5.2.4</Version>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 		<LangVersion>latest</LangVersion>
 		<RootNamespace>BubbleBuffs</RootNamespace>

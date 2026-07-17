@@ -47,6 +47,7 @@ using Kingmaker.UI.Models.Log.CombatLog_ThreadSystem.LogThreads.Common;
 using Kingmaker.UI.MVVM._PCView.Modificators;
 using Kingmaker.Dungeon.Actions;
 using Kingmaker.Dungeon;
+using Kingmaker.UnitLogic.Buffs;
 
 namespace BubbleBuffs {
 
@@ -1188,17 +1189,33 @@ namespace BubbleBuffs {
                 });
             }
 
-            var groupRect = MakeVerticalRect("buff-group", detailsRect);
-            groupRect.gameObject.SetActive(false);
-            groupRect.SetAnchor(0.9f, 0.6f);
-            groupRect.anchoredPosition = new Vector2(-20, 0);
-            groupRect.sizeDelta = new Vector2(140, 100);
+            var source = UIHelpers.SpellbookScreen.Find("MainContainer/KnownSpells/StandardScrollView/");
+            var scrollRect = GameObject.Instantiate(source.gameObject, detailsRect, false).GetComponent<ScrollRectExtended>();
+            var scrollRectTransform = (RectTransform)scrollRect.transform;
+            scrollRect.name = "buff-group";
+            scrollRect.gameObject.SetActive(false);
+            scrollRectTransform.SetAnchor(0.9f, 0.6f);
+            scrollRectTransform.anchoredPosition = new Vector2(-40, -30);
+            scrollRectTransform.sizeDelta = new Vector2(200, 200);
 
-            var buffGroup = new ButtonGroup<BuffGroup>(groupRect);
+            foreach (Transform transform in scrollRect.content)
+                GameObject.DestroyImmediate(transform.gameObject);
+
+            var gridLayout = scrollRect.content.GetComponent<GridLayoutGroupWorkaround>();
+            gridLayout.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
+            gridLayout.constraintCount = 1;
+            gridLayout.cellSize = new Vector2(200, 50);
+            gridLayout.spacing = new Vector2(0, 0);
+            gridLayout.padding = new RectOffset(0, 0, 0, 0);
+
+            var buffGroup = new ButtonGroup<BuffGroup>(scrollRect.content);
 
             buffGroup.Add(BuffGroup.Long, "group.normal".i8());
             buffGroup.Add(BuffGroup.Important, "group.important".i8());
             buffGroup.Add(BuffGroup.Short, "group.short".i8());
+            buffGroup.Add(BuffGroup.Extra1, "group.extra1".i8());
+            buffGroup.Add(BuffGroup.Extra2, "group.extra2".i8());
+            buffGroup.Add(BuffGroup.Extra3, "group.extra3".i8());
 
             castersRect.SetAsLastSibling();
 
@@ -1220,7 +1237,7 @@ namespace BubbleBuffs {
             UpdateDetailsView = () => {
                 bool hasBuff = view.Get(out var buff);
 
-                groupRect.gameObject.SetActive(hasBuff);
+                scrollRectTransform.gameObject.SetActive(hasBuff);
                 hideSpell.SetActive(hasBuff);
                 expandSpellPopout.SetActive(hasBuff);
                 if (!hasBuff) {
@@ -1293,20 +1310,43 @@ namespace BubbleBuffs {
         private SearchBar search;
 
         private void MakeGroupHolder(GameObject portraitPrefab, GameObject expandButtonPrefab, GameObject buttonPrefab, Transform content) {
+            var source = UIHelpers.SpellbookScreen.Find("MainContainer/KnownSpells/StandardScrollView/");
+            var scrollRect = GameObject.Instantiate(source.gameObject, content, false).GetComponent<ScrollRectExtended>();
+            var scrollRectTransform = (RectTransform)scrollRect.transform;
+            scrollRect.name = "GroupHolderScroller";
+            scrollRect.vertical = false;
+            scrollRect.horizontal = true;
+
+            var viewPort = scrollRect.content.parent;
+            viewPort.gameObject.AddComponent<RectMask2D>();
+
+            var oldMask = viewPort.GetComponent<Mask>();
+            if (oldMask != null)
+                GameObject.DestroyImmediate(oldMask);
+
+            GameObject.DestroyImmediate(scrollRect.content.gameObject);
+
             var groupHolder = new GameObject("GroupHolder", typeof(RectTransform));
             var groupRect = groupHolder.GetComponent<RectTransform>();
-            groupRect.AddTo(content);
+            groupRect.AddTo(viewPort);
+            scrollRect.content = groupRect;
             groupHolder.MakeComponent<ContentSizeFitter>(f => {
                 f.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
             });
 
             float requiredWidthHalf = Group.Count * 0.033f;
 
-            const float groupHeight = 166.25f;
+            const float groupHeight = 158f;
+            float groupWidth = 118.5f * 8f;
 
+            scrollRectTransform.SetAnchor(0.5f, 0.08f);
+            scrollRectTransform.sizeDelta = new Vector2(groupWidth, 172f);
+            scrollRectTransform.pivot = new Vector2(0.5f, 0);
+            
             groupRect.SetAnchor(0.5f, 0.08f);
-            groupRect.sizeDelta = new Vector2(300, groupHeight);
+            groupRect.sizeDelta = new Vector2(groupWidth, groupHeight);
             groupRect.pivot = new Vector2(0.5f, 0);
+            groupRect.anchoredPosition = new Vector2(0, 0);
 
             var horizontalGroup = groupHolder.AddComponent<HorizontalLayoutGroup>();
             horizontalGroup.spacing = 6;
@@ -1353,6 +1393,10 @@ namespace BubbleBuffs {
 
                 totalCasters += Group[i].Spellbooks?.Count() ?? 0;
             }
+
+            // layout testing
+            //for (int i = 0; i < 7; i++)
+            //    GameObject.Instantiate(view.targets[0].GameObject, (view.targets[0].Transform.parent));
         }
 
         private void ShowBuffWindow() {
@@ -1759,6 +1803,10 @@ namespace BubbleBuffs {
                 AddButton("group.normal.tooltip.header".i8(), "group.normal.tooltip.desc".i8(), applyBuffsSprites, () => GlobalBubbleBuffer.Execute(BuffGroup.Long));
                 AddButton("group.important.tooltip.header".i8(), "group.important.tooltip.desc".i8(), applyBuffsImportantSprites, () => GlobalBubbleBuffer.Execute(BuffGroup.Important));
                 AddButton("group.short.tooltip.header".i8(), "group.short.tooltip.desc".i8(), applyBuffsShortSprites, () => GlobalBubbleBuffer.Execute(BuffGroup.Short));
+                AddButton("group.extra1.tooltip.header".i8(), "group.extra1.tooltip.desc".i8(), applyBuffsShortSprites, () => GlobalBubbleBuffer.Execute(BuffGroup.Extra1));
+                AddButton("group.extra2.tooltip.header".i8(), "group.extra2.tooltip.desc".i8(), applyBuffsShortSprites, () => GlobalBubbleBuffer.Execute(BuffGroup.Extra2));
+                AddButton("group.extra3.tooltip.header".i8(), "group.extra3.tooltip.desc".i8(), applyBuffsShortSprites, () => GlobalBubbleBuffer.Execute(BuffGroup.Extra3));
+
                 if (DungeonController.IsDungeonCampaign) {
                     DungeonShowMap showMap = new();
                     AddButton("showmap.tooltip.header".i8(), "showmap.tooltip.desc".i8(), showMapSprites, () => showMap.RunAction());
@@ -1883,6 +1931,9 @@ namespace BubbleBuffs {
         Long,
         Short,
         Important,
+        Extra1,
+        Extra2,
+        Extra3
     }
 
 
@@ -2333,7 +2384,7 @@ namespace BubbleBuffs {
                 h.constraint = GridLayoutGroup.Constraint.FixedRowCount;
                 h.constraintCount = 1;
                 h.childAlignment = TextAnchor.MiddleCenter;
-                h.cellSize = new Vector2(400, 100);
+                h.cellSize = new Vector2(300, 100);
             });
 
             foreach (BuffGroup group in Enum.GetValues(typeof(BuffGroup))) {

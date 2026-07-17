@@ -3,7 +3,7 @@
     "Author": "bubbles",
     "DisplayName": "Bubble Buffs",
     "EntryMethod": "BubbleBuffs.Main.Load",
-    "GameVersion": "1.4.0",
+    "GameVersion": "2.7.0",
     "HomePage": "https://www.nexusmods.com/pathfinderwrathoftherighteous/mods/195",
     "Id": "BubbleBuffs",
     "ManagerVersion": "0.23.0",

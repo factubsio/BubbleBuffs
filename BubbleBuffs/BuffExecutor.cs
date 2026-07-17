@@ -59,6 +59,9 @@ namespace BubbleBuffs {
             { BuffGroup.Long, -1 },
             { BuffGroup.Important, -1 },
             { BuffGroup.Short, -1 },
+            { BuffGroup.Extra1, -1 },
+            { BuffGroup.Extra2, -1 },
+            { BuffGroup.Extra3, -1 }
         };
 
         public void Execute(BuffGroup buffGroup) {
